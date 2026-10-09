@@ -1,0 +1,202 @@
+{
+  "$defs": {
+    "Point": {
+      "additionalProperties": false,
+      "properties": {
+        "lat": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Lat",
+          "type": "number"
+        },
+        "lng": {
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Lng",
+          "type": "number"
+        }
+      },
+      "required": [
+        "lat",
+        "lng"
+      ],
+      "title": "Point",
+      "type": "object"
+    },
+    "Station": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "canonical_id": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Canonical Id"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/Point"
+        },
+        "address": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Address"
+        },
+        "price_per_gallon": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Price Per Gallon"
+        },
+        "currency": {
+          "const": "USD",
+          "default": "USD",
+          "title": "Currency",
+          "type": "string"
+        },
+        "unit": {
+          "const": "US_gallon",
+          "default": "US_gallon",
+          "title": "Unit",
+          "type": "string"
+        },
+        "fuel_type": {
+          "enum": [
+            "regular",
+            "midgrade",
+            "premium",
+            "diesel"
+          ],
+          "title": "Fuel Type",
+          "type": "string"
+        },
+        "octane": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Octane"
+        },
+        "price_updated_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Price Updated At"
+        },
+        "fetched_at": {
+          "format": "date-time",
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "payment_type": {
+          "default": "unknown",
+          "enum": [
+            "cash",
+            "credit",
+            "unknown"
+          ],
+          "title": "Payment Type",
+          "type": "string"
+        },
+        "membership_required": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Membership Required"
+        },
+        "attribution": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Attribution",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "location",
+        "price_per_gallon",
+        "fuel_type",
+        "fetched_at",
+        "source"
+      ],
+      "title": "Station",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "gaswise.price-feed.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stations": {
+      "items": {
+        "$ref": "#/$defs/Station"
+      },
+      "maxItems": 100,
+      "title": "Stations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "stations"
+  ],
+  "title": "PriceFeed",
+  "type": "object"
+}

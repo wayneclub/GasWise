@@ -1,0 +1,13 @@
+{
+  "origin": {"lat": 34.03938, "lng": -118.2663},
+  "postal_code": "90015",
+  "fuel_type": "premium",
+  "payment_type": "credit",
+  "gallons": "10",
+  "mpg": "20",
+  "time_value_per_hour": "20",
+  "strategy": "best_value",
+  "max_price_age_minutes": 240,
+  "preferred_sources": ["gasbuddy_web", "gasbuddy", "google_places"],
+  "max_results": 5
+}

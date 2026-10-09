@@ -1,0 +1,1766 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GasWise API",
+    "description": "Independent fuel cost API. Decimal money is serialized as strings. Demo is synthetic.",
+    "version": "0.5.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/capabilities": {
+      "get": {
+        "summary": "Capabilities",
+        "operationId": "capabilities_v1_capabilities_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/sources": {
+      "get": {
+        "summary": "Price Sources",
+        "operationId": "price_sources_v1_sources_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/sources/aaa/averages": {
+      "get": {
+        "summary": "Aaa Averages",
+        "operationId": "aaa_averages_v1_sources_aaa_averages_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "default": "CA",
+              "title": "State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AAASnapshot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/prices": {
+      "post": {
+        "summary": "Prices",
+        "operationId": "prices_v1_prices_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Search"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/sources/google/prices": {
+      "post": {
+        "summary": "Google Prices",
+        "operationId": "google_prices_v1_sources_google_prices_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GooglePriceSearch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GooglePrices"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/sources/gasbuddy/brands": {
+      "get": {
+        "summary": "Gasbuddy Brands",
+        "operationId": "gasbuddy_brands_v1_sources_gasbuddy_brands_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GasBuddyBrands"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/sources/gasbuddy/prices": {
+      "post": {
+        "summary": "Gasbuddy Prices",
+        "operationId": "gasbuddy_prices_v1_sources_gasbuddy_prices_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GasBuddySearch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GasBuddyPrices"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/recommendations": {
+      "post": {
+        "summary": "Recommendations",
+        "operationId": "recommendations_v1_recommendations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Search"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/recommendations/stream": {
+      "post": {
+        "summary": "Stream",
+        "operationId": "stream_v1_recommendations_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Search"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "SSE snapshot / error events",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/event-stream": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AAASnapshot": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "aaa"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "price_as_of": {
+            "type": "string",
+            "format": "date",
+            "title": "Price As Of"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retrieved At"
+          },
+          "update_frequency": {
+            "type": "string",
+            "title": "Update Frequency",
+            "default": "daily"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency",
+            "default": "USD"
+          },
+          "volume_unit": {
+            "type": "string",
+            "title": "Volume Unit",
+            "default": "US_gallon"
+          },
+          "regions": {
+            "items": {
+              "$ref": "#/components/schemas/RegionAverage"
+            },
+            "type": "array",
+            "title": "Regions"
+          },
+          "county_status": {
+            "type": "string",
+            "title": "County Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_url",
+          "state",
+          "price_as_of",
+          "retrieved_at",
+          "regions",
+          "county_status"
+        ],
+        "title": "AAASnapshot"
+      },
+      "Decision": {
+        "properties": {
+          "recommended_station_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Station Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "robust",
+              "uncertain",
+              "single_source",
+              "no_eligible_stations"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "savings_vs_runner_up": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Savings Vs Runner Up"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "recommended_station_id",
+          "status",
+          "reason"
+        ],
+        "title": "Decision"
+      },
+      "GasBuddyBrand": {
+        "properties": {
+          "brand_id": {
+            "type": "integer",
+            "title": "Brand Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "brand_id",
+          "slug",
+          "name"
+        ],
+        "title": "GasBuddyBrand"
+      },
+      "GasBuddyBrands": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "const": "gasbuddy_web",
+            "title": "Source",
+            "default": "gasbuddy_web"
+          },
+          "verified_on": {
+            "type": "string",
+            "title": "Verified On"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "exhaustive": {
+            "type": "boolean",
+            "title": "Exhaustive",
+            "default": false
+          },
+          "all_brands": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "All Brands"
+          },
+          "brands": {
+            "items": {
+              "$ref": "#/components/schemas/GasBuddyBrand"
+            },
+            "type": "array",
+            "title": "Brands"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "verified_on",
+          "source_url",
+          "brands"
+        ],
+        "title": "GasBuddyBrands"
+      },
+      "GasBuddyPrices": {
+        "properties": {
+          "transport": {
+            "type": "string",
+            "enum": [
+              "http",
+              "browser",
+              "session_http"
+            ],
+            "title": "Transport",
+            "default": "http"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "prices": {
+            "items": {
+              "$ref": "#/components/schemas/GasBuddyQuote"
+            },
+            "type": "array",
+            "title": "Prices"
+          },
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          },
+          "partial": {
+            "type": "boolean",
+            "title": "Partial"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "fetched_at",
+          "prices",
+          "partial",
+          "warnings"
+        ],
+        "title": "GasBuddyPrices"
+      },
+      "GasBuddyQuote": {
+        "properties": {
+          "membership_required": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Membership Required"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "street": {
+            "type": "string",
+            "title": "Street"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "region": {
+            "type": "string",
+            "title": "Region"
+          },
+          "postal_code": {
+            "type": "string",
+            "title": "Postal Code"
+          },
+          "price_per_gallon": {
+            "type": "string",
+            "title": "Price Per Gallon"
+          },
+          "currency": {
+            "type": "string",
+            "const": "USD",
+            "title": "Currency",
+            "default": "USD"
+          },
+          "unit": {
+            "type": "string",
+            "const": "US_gallon",
+            "title": "Unit",
+            "default": "US_gallon"
+          },
+          "fuel_type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "midgrade",
+              "premium",
+              "diesel"
+            ],
+            "title": "Fuel Type"
+          },
+          "octane": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Octane"
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit"
+            ],
+            "title": "Payment Type"
+          },
+          "price_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Updated At"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          },
+          "report_kind": {
+            "type": "string",
+            "enum": [
+              "datafeed",
+              "community",
+              "unknown"
+            ],
+            "title": "Report Kind"
+          },
+          "source": {
+            "type": "string",
+            "const": "gasbuddy_web",
+            "title": "Source",
+            "default": "gasbuddy_web"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address",
+          "street",
+          "city",
+          "region",
+          "postal_code",
+          "price_per_gallon",
+          "fuel_type",
+          "payment_type",
+          "price_updated_at",
+          "fetched_at",
+          "report_kind",
+          "source_url"
+        ],
+        "title": "GasBuddyQuote"
+      },
+      "GasBuddySearch": {
+        "properties": {
+          "search": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{5}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Point"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fuel_type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "midgrade",
+              "premium",
+              "diesel"
+            ],
+            "title": "Fuel Type",
+            "default": "premium"
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit",
+              "cash_or_credit"
+            ],
+            "title": "Payment Type",
+            "default": "credit"
+          },
+          "brand_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand Id"
+          },
+          "max_price_age_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10080.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Price Age Minutes"
+          },
+          "max_results": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "default": 5
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "GasBuddySearch"
+      },
+      "GooglePriceSearch": {
+        "properties": {
+          "origin": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "fuel_type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "midgrade",
+              "premium",
+              "diesel"
+            ],
+            "title": "Fuel Type",
+            "default": "premium"
+          },
+          "radius_meters": {
+            "type": "number",
+            "maximum": 50000.0,
+            "minimum": 100.0,
+            "title": "Radius Meters",
+            "default": 5000
+          },
+          "max_results": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "default": 20
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "origin"
+        ],
+        "title": "GooglePriceSearch"
+      },
+      "GooglePrices": {
+        "properties": {
+          "stations": {
+            "items": {
+              "$ref": "#/components/schemas/Station"
+            },
+            "type": "array",
+            "title": "Stations"
+          },
+          "source": {
+            "type": "string",
+            "const": "google_places",
+            "title": "Source",
+            "default": "google_places"
+          },
+          "attribution": {
+            "type": "string",
+            "title": "Attribution",
+            "default": "Google Maps"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "stations"
+        ],
+        "title": "GooglePrices"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Point": {
+        "properties": {
+          "lat": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat"
+          },
+          "lng": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lng"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lat",
+          "lng"
+        ],
+        "title": "Point"
+      },
+      "PriceComparison": {
+        "properties": {
+          "station_key": {
+            "type": "string",
+            "title": "Station Key"
+          },
+          "selected_source": {
+            "type": "string",
+            "title": "Selected Source"
+          },
+          "selection_reason": {
+            "type": "string",
+            "title": "Selection Reason"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/PriceEvidence"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "eligible_source_count": {
+            "type": "integer",
+            "title": "Eligible Source Count"
+          },
+          "price_spread": {
+            "type": "string",
+            "title": "Price Spread"
+          },
+          "agreement": {
+            "type": "string",
+            "enum": [
+              "single_source",
+              "consistent",
+              "conflicting"
+            ],
+            "title": "Agreement"
+          },
+          "quality": {
+            "type": "string",
+            "enum": [
+              "corroborated",
+              "limited",
+              "disputed"
+            ],
+            "title": "Quality"
+          },
+          "comparable_cost_min": {
+            "type": "string",
+            "title": "Comparable Cost Min"
+          },
+          "comparable_cost_max": {
+            "type": "string",
+            "title": "Comparable Cost Max"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "station_key",
+          "selected_source",
+          "selection_reason",
+          "evidence",
+          "eligible_source_count",
+          "price_spread",
+          "agreement",
+          "quality",
+          "comparable_cost_min",
+          "comparable_cost_max"
+        ],
+        "title": "PriceComparison"
+      },
+      "PriceEvidence": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "provider_station_id": {
+            "type": "string",
+            "title": "Provider Station Id"
+          },
+          "price_per_gallon": {
+            "type": "string",
+            "title": "Price Per Gallon"
+          },
+          "price_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Updated At"
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit",
+              "unknown"
+            ],
+            "title": "Payment Type"
+          },
+          "octane": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Octane"
+          },
+          "eligible": {
+            "type": "boolean",
+            "title": "Eligible"
+          },
+          "exclusion_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclusion Reason"
+          },
+          "comparable": {
+            "type": "boolean",
+            "title": "Comparable",
+            "default": false
+          },
+          "comparison_exclusion_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Exclusion Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "provider_station_id",
+          "price_per_gallon",
+          "price_updated_at",
+          "payment_type",
+          "octane",
+          "eligible"
+        ],
+        "title": "PriceEvidence"
+      },
+      "RankedStation": {
+        "properties": {
+          "station": {
+            "$ref": "#/components/schemas/Station"
+          },
+          "route": {
+            "$ref": "#/components/schemas/Route"
+          },
+          "detour_miles": {
+            "type": "string",
+            "title": "Detour Miles"
+          },
+          "extra_travel_minutes": {
+            "type": "string",
+            "title": "Extra Travel Minutes"
+          },
+          "stop_minutes": {
+            "type": "string",
+            "title": "Stop Minutes"
+          },
+          "purchase_cost": {
+            "type": "string",
+            "title": "Purchase Cost"
+          },
+          "detour_fuel_cost": {
+            "type": "string",
+            "title": "Detour Fuel Cost"
+          },
+          "actual_fuel_cost": {
+            "type": "string",
+            "title": "Actual Fuel Cost"
+          },
+          "time_cost": {
+            "type": "string",
+            "title": "Time Cost"
+          },
+          "generalized_trip_cost": {
+            "type": "string",
+            "title": "Generalized Trip Cost"
+          },
+          "price_age_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Age Minutes"
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "fresh",
+              "aging",
+              "stale",
+              "unknown"
+            ],
+            "title": "Freshness"
+          },
+          "break_even_gallons_vs_nearest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Break Even Gallons Vs Nearest"
+          },
+          "price_comparison": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PriceComparison"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "station",
+          "route",
+          "detour_miles",
+          "extra_travel_minutes",
+          "stop_minutes",
+          "purchase_cost",
+          "detour_fuel_cost",
+          "actual_fuel_cost",
+          "time_cost",
+          "generalized_trip_cost",
+          "price_age_minutes",
+          "freshness"
+        ],
+        "title": "RankedStation"
+      },
+      "RegionAverage": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "prices": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Prices"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "level",
+          "prices"
+        ],
+        "title": "RegionAverage"
+      },
+      "Route": {
+        "properties": {
+          "distance_meters": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Distance Meters"
+          },
+          "duration_seconds": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Duration Seconds"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "distance_meters",
+          "duration_seconds",
+          "source"
+        ],
+        "title": "Route"
+      },
+      "Search": {
+        "properties": {
+          "origin": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Point"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trip_mode": {
+            "type": "string",
+            "enum": [
+              "round_trip",
+              "on_route"
+            ],
+            "title": "Trip Mode",
+            "default": "round_trip"
+          },
+          "fuel_type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "midgrade",
+              "premium",
+              "diesel"
+            ],
+            "title": "Fuel Type",
+            "default": "premium"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{5}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "required_octane": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 87.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Octane"
+          },
+          "gallons": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Gallons",
+            "default": "10"
+          },
+          "mpg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 200.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Mpg",
+            "default": "20"
+          },
+          "time_value_per_hour": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 500.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Time Value Per Hour",
+            "default": "0"
+          },
+          "radius_meters": {
+            "type": "number",
+            "maximum": 50000.0,
+            "minimum": 100.0,
+            "title": "Radius Meters",
+            "default": 10000
+          },
+          "max_results": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "default": 5
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit"
+            ],
+            "title": "Payment Type",
+            "default": "credit"
+          },
+          "preferred_sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Preferred Sources"
+          },
+          "memberships": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Memberships"
+          },
+          "strategy": {
+            "type": "string",
+            "enum": [
+              "cheapest_overall",
+              "fastest_stop",
+              "best_value",
+              "on_my_route"
+            ],
+            "title": "Strategy",
+            "default": "cheapest_overall"
+          },
+          "max_price_age_minutes": {
+            "type": "integer",
+            "maximum": 10080.0,
+            "minimum": 1.0,
+            "title": "Max Price Age Minutes",
+            "default": 1440
+          },
+          "stop_minutes": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 60.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Stop Minutes",
+            "default": "5"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "origin"
+        ],
+        "title": "Search"
+      },
+      "SearchResult": {
+        "properties": {
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "demo",
+              "google"
+            ],
+            "title": "Mode"
+          },
+          "strategy": {
+            "type": "string",
+            "title": "Strategy"
+          },
+          "baseline_route": {
+            "$ref": "#/components/schemas/Route"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/RankedStation"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "excluded_count": {
+            "type": "integer",
+            "title": "Excluded Count"
+          },
+          "source_statuses": {
+            "items": {
+              "$ref": "#/components/schemas/SourceStatus"
+            },
+            "type": "array",
+            "title": "Source Statuses"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Decision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "generated_at",
+          "mode",
+          "strategy",
+          "baseline_route",
+          "results",
+          "warnings",
+          "excluded_count"
+        ],
+        "title": "SearchResult"
+      },
+      "SourceStatus": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "not_configured"
+            ],
+            "title": "Status"
+          },
+          "quote_count": {
+            "type": "integer",
+            "title": "Quote Count",
+            "default": 0
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "status"
+        ],
+        "title": "SourceStatus"
+      },
+      "Station": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "canonical_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "price_per_gallon": {
+            "type": "string",
+            "title": "Price Per Gallon"
+          },
+          "currency": {
+            "type": "string",
+            "const": "USD",
+            "title": "Currency",
+            "default": "USD"
+          },
+          "unit": {
+            "type": "string",
+            "const": "US_gallon",
+            "title": "Unit",
+            "default": "US_gallon"
+          },
+          "fuel_type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "midgrade",
+              "premium",
+              "diesel"
+            ],
+            "title": "Fuel Type"
+          },
+          "octane": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Octane"
+          },
+          "price_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Updated At"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit",
+              "unknown"
+            ],
+            "title": "Payment Type",
+            "default": "unknown"
+          },
+          "membership_required": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Membership Required"
+          },
+          "attribution": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Attribution"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "location",
+          "price_per_gallon",
+          "fuel_type",
+          "fetched_at",
+          "source"
+        ],
+        "title": "Station"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

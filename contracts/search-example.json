@@ -1,0 +1,15 @@
+{
+  "origin": {"lat": 34.0522, "lng": -118.2437},
+  "destination": {"lat": 34.0736, "lng": -118.4004},
+  "trip_mode": "on_route",
+  "fuel_type": "premium",
+  "gallons": "10",
+  "mpg": "20",
+  "time_value_per_hour": "20",
+  "strategy": "best_value",
+  "radius_meters": 10000,
+  "max_results": 5,
+  "max_price_age_minutes": 1440,
+  "stop_minutes": "5",
+  "memberships": []
+}
