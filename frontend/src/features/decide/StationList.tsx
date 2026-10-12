@@ -2,10 +2,9 @@ import { CaretDownIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
 import type { RankedStation } from '../../api/types'
 import { useI18n } from '../../i18n'
-import { freshnessKey } from '../../lib/recommend'
 import type { NavApp } from '../../lib/prefs'
-import { StationDetails, StationRating } from './StationDetails'
-import { comparisonPrice, minutes, perGallon, sourceLabel, usd } from '../../lib/format'
+import { StationDetails, StationRating, TopTierBadge } from './StationDetails'
+import { age, comparisonPrice, minutes, perGallon, sourceLabel, usd } from '../../lib/format'
 
 // Wide screens have room for the comparison next to the pick; phones keep it collapsed.
 const wide = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches
@@ -39,12 +38,12 @@ export function StationList({ rows, navApp = 'google', tripMode = 'round_trip' }
             {rows.map((row) => (
               <tr key={`${row.station.source}:${row.station.id}`} className="align-top">
                 <td className="py-3 pl-5 pr-2">
-                  <button type="button" onClick={() => setSelected(row)} className="font-medium underline decoration-line underline-offset-4" aria-label={`${t('station.view')} ${row.station.name}`}>{row.station.name}</button><StationRating station={row.station} />
+                  <div className="flex flex-wrap items-center gap-1.5"><button type="button" onClick={() => setSelected(row)} className="font-medium underline decoration-line underline-offset-4" aria-label={`${t('station.view')} ${row.station.name}`}>{row.station.name}</button>{row.station.top_tier_brand ? <TopTierBadge brand={row.station.top_tier_brand} /> : null}</div><StationRating station={row.station} />
                   <p className="num text-[12px] text-muted">
                     {t(tripMode === 'on_route' ? 'list.metaOnRoute' : 'list.meta', {
                       time: minutes(row.extra_travel_minutes, t),
                       source: sourceLabel(row.station.source),
-                      freshness: t(freshnessKey(row.price_age_minutes)),
+                      freshness: t('age.updated', { age: age(row.station.price_updated_at, t) }),
                     })}
                   </p>
                 </td>

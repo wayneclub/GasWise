@@ -13,8 +13,8 @@ export const TOP_TIER_LIST_URL = 'https://www.toptiergas.com/gasoline-brands/'
 /** Brand-level license from the automaker-run TOP TIER program; not a government rating. */
 export function TopTierBadge({ brand, size: _size = 'sm' }: { brand: string; size?: 'sm' | 'lg' }) {
   const { t } = useI18n()
-  return <span role="img" title={t('topTier.note', { brand })} aria-label={t('topTier.label', { brand })} className="inline-flex shrink-0 items-center gap-1 rounded-full border border-accent/20 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold tracking-wide text-accent">
-    <ShieldCheckIcon size={12}/><span>TOP TIER</span>
+  return <span role="img" title={t('topTier.note', { brand })} aria-label={t('topTier.label', { brand })} className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-accent/20 bg-accent-soft px-1.5 py-0 text-[9px] font-semibold tracking-wide text-accent">
+    <ShieldCheckIcon size={10}/><span>TOP TIER</span>
   </span>
 }
 
@@ -27,7 +27,6 @@ export function StationRating({ station }: { station: StationSummary }) {
         ? t('station.ratingOnly', { rating: station.rating.toFixed(1) })
         : t('station.rating', { rating: station.rating.toFixed(1), count: station.review_count })}
     </span>
-    {station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}
   </p>
 }
 export function StationDetails({ station, row, open, onClose, navApp, status, tripMode = 'round_trip' }: {
@@ -48,11 +47,10 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
   }
   return <Sheet open={open} onClose={onClose} title={t('station.details')}>
     <div className="flex flex-col gap-4">
-      <div><h3 className="text-xl font-semibold">{station.name}</h3><p className="mt-1 text-sm text-muted">{station.address}</p></div>
+      <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-xl font-semibold">{station.name}</h3>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div><p className="mt-1 text-sm text-muted">{station.address}</p></div>
       <StationRating station={station} />
       {station.rating != null ? <p className="text-xs text-faint">{t('station.ratingNote', { source: station.rating_source ?? 'Google Maps' })}</p> : null}
       {station.top_tier_brand ? <div className="flex items-start gap-3 rounded-control bg-sunken p-3">
-        <TopTierBadge brand={station.top_tier_brand} size="lg" />
         <p className="text-xs leading-snug text-muted">
         {t('topTier.note', { brand: station.top_tier_brand })}{' '}
         <a href={TOP_TIER_LIST_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">{t('topTier.source')}</a>

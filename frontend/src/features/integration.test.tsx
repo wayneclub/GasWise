@@ -4,6 +4,8 @@ import App from '../App'
 import { I18nProvider } from '../i18n/I18nProvider'
 import { VehicleIdentityContext } from '../lib/vehicleIdentity'
 import { Parts } from './parts/Parts'
+import { StationList } from './decide/StationList'
+import type { RankedStation } from '../api/types'
 import { VehiclePicker } from './setup/VehiclePicker'
 import fixture from '../test/fixtures/demo-search.json'
 
@@ -285,3 +287,21 @@ it('opens settings as a page and preserves the fuel session on return', async ()
   const body = JSON.parse(String(fetch.mock.calls[0][1]?.body))
   expect(body).toMatchObject({ opening_policy: 'require_open', discovery_tiles: 5, route_limit: 100, max_results: 100, allow_unknown_payment: true, unknown_payment_credit_markup: '0.20' })
 })
+
+ it('places compact TOP TIER next to the name and reports quote age rather than collection freshness', () => {
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date('2026-10-12T16:30:00Z'))
+  try {
+    const rows = structuredClone(fixture.ranking.results) as unknown as RankedStation[]
+    rows[0].station.source = 'google_maps_web'
+    rows[0].station.top_tier_brand = 'Chevron'
+    rows[0].station.price_updated_at = '2026-10-11T21:30:00Z'
+    rows[0].station.fetched_at = '2026-10-12T16:30:00Z'
+    render(english(<StationList rows={rows} />))
+    fireEvent.click(screen.getByRole('button', { name: /Compare/ }))
+    const name = screen.getByRole('button', { name: `View details ${rows[0].station.name}` })
+    expect(within(name.parentElement!).getByText('TOP TIER')).toBeInTheDocument()
+    expect(screen.getByText(/Google Maps,.*19 h ago/)).toBeInTheDocument()
+    expect(screen.queryByText(/updated today/i)).not.toBeInTheDocument()
+  } finally { vi.useRealTimers() }
+ })

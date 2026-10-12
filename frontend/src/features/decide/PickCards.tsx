@@ -169,9 +169,9 @@ export function HeroPick({
         </p>
       </div>
 
-      <h2 id="hero-pick" className="mt-3 text-[26px] font-semibold leading-tight tracking-tight">
+      <div className="mt-3 flex flex-wrap items-center gap-2"><h2 id="hero-pick" className="text-[26px] font-semibold leading-tight tracking-tight">
         {station.name}
-      </h2>
+      </h2>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div>
       {station.address ? <p className="mt-0.5 truncate text-[14px] text-muted">{station.address}</p> : null}
       <div className="mt-2"><StationRating station={station} /></div>
       {station.comparison_price_per_gallon ? <p className="mt-1 text-xs text-caution">{t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
@@ -274,7 +274,7 @@ export function AlternativePick({ pick, navApp, tripMode = 'round_trip' }: { pic
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[12px] font-medium text-muted">{pick.keys.map((key) => t(`pick.${key}`)).join(' / ')}</p>
-        <button type="button" onClick={() => setDetailsOpen(true)} className="w-full truncate text-left text-[15px] font-medium underline decoration-line underline-offset-4" aria-label={`${t('station.view')} ${station.name}`}>{station.name}</button>
+        <div className="flex items-center gap-1.5"><button type="button" onClick={() => setDetailsOpen(true)} className="min-w-0 truncate text-left text-[15px] font-medium underline decoration-line underline-offset-4" aria-label={`${t('station.view')} ${station.name}`}>{station.name}</button>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div>
         <StationRating station={station} />
         <p className="text-xs text-muted">{t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</p>
       </div>
