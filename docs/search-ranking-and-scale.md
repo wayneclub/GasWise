@@ -52,3 +52,6 @@ Coordinate-bearing Waze quotes that omit state/direction can merge only with one
 Production validation (AWS, 2026-10-12): HTTPS returned 200; the narrowly scoped Cloudflare script/connect CSP was present and the browser reported no CSP errors. First full search took 3.439 seconds end-to-end (backend 2606.8ms); repeated search took 1.171 seconds end-to-end (backend 62.2ms), with zero upstream calls and unchanged report timestamps. Cash/hourly-value reranking also used zero upstream calls. These remain single-request samples, not a production load-test claim.
 
 GasBuddy bootstrap and the official AAA page returned 403 from the AWS host. Maps/Waze still produced eligible station rankings; unavailable providers remain visible. AAA worked from the local host, but production does not fabricate a city average when it cannot fetch the official data. A licensed/reliably reachable regional feed or an explicitly dated shared snapshot pipeline would be needed for uninterrupted production benchmarks; none is silently substituted here.
+
+
+Subsequent direct AWS AAA transport recovery is recorded in [upstream-reachability](upstream-reachability.md). The earlier 403 measurements are historical; GasBuddy remains challenged.

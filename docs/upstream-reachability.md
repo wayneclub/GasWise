@@ -30,3 +30,36 @@ fetch times, expire stale prices, coalesce calls, and report collector outages.
 Neither recovery path is installed by this diagnostic change.
 
 [Cloudflare challenge detection](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/challenge-pages/detect-response/)
+
+## Controlled Docker comparison and direct AAA recovery
+
+Subsequent probes used the **same immutable multiarch image**
+`sha-11d1a608fa45455ed57f9a6b2ddeab825cdcb25f`, Python 3.12.15,
+OpenSSL 3.0.22 and HTTPX 0.28.1 on both the Mac's Linux Docker engine and AWS.
+Fresh sessions, identical URLs/headers, no environment proxy, HTTP/1.1 and HTTP/2:
+
+| Request | Local Linux container (LAX edge) | AWS container (NRT edge) |
+| --- | --- | --- |
+| GasBuddy HTTPX, HTTP/1.1 or HTTP/2 | 200, expected homepage token marker | 403, challenge |
+| AAA HTTPX, HTTP/1.1 or HTTP/2 | 403, challenge | 403, challenge |
+| AAA standard libcurl on AWS | — | **200, dated public tables** |
+
+This separates two different problems. GasBuddy shows an environment/network
+path-dependent decision with equivalent client binaries. IP/ASN reputation,
+geography and edge policy are candidates, not proven private-rule details.
+AAA's result changes with the HTTP/TLS implementation on the **same AWS server**;
+it is therefore not a blanket AWS IP rejection. HTTP protocol selection alone
+did not resolve either failure.
+
+AAA now uses a fresh **standard libcurl** session (no browser impersonation,
+clearance cookies, challenge execution or external proxy). Reads are restricted
+to `gasprices.aaa.com`, bounded to 4 MB, and retain publication date and official
+source URL. A full adapter call **inside AWS** returned publication 2026-10-12,
+90 state/metro/county rows, county status available, and Los Angeles–Long Beach
+Premium 6.7405. This is live retrieval proof, not a mocked contract.
+
+The proposed Mac relay was explicitly cancelled by the user. Its two local
+LaunchAgents and reverse SSH socket were stopped/removed, and its uncommitted
+application integration was reverted. Production never depended on that relay.
+GasBuddy direct AWS reachability remains unresolved; do not infer that AAA's
+transport fix also restores GasBuddy or manufacture missing quotes.

@@ -17,6 +17,7 @@ from gaswise.providers.google.routes import MapsWebRouteProvider
 from gaswise.providers.http.parts import PartsHTTP
 from gaswise.providers.http.public import PublicHTTP
 from gaswise.providers.pricing.aaa import AAAProvider
+from gaswise.providers.pricing.aaa_http import AAAHTTP
 from gaswise.providers.pricing.demo import DemoComparisonSource, DemoProvider
 from gaswise.providers.pricing.feed import HTTPPriceSource
 from gaswise.providers.pricing.registry import SourceRegistry
@@ -116,7 +117,7 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             snapshot_loader=loader,
             transport=settings.gasbuddy_web_transport,
         )
-        aaa = AAAProvider(client)
+        aaa = AAAProvider(AAAHTTP())
         maps_web = MapsWebProvider(maps_client, settings.maps_web_session_file)
         waze = (
             WazeProvider(
