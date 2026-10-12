@@ -313,7 +313,7 @@ export const es: Record<MessageKey, string> = {
   "station.hours": "Horario",
   "station.amenities": "Servicios",
   "station.all": "Estaciones abiertas ({count})",
-  "station.allNote": "Incluye estaciones excluidas de las recomendaciones. La búsqueda es limitada.",
+  "station.allNote": "Con precio del combustible elegido · Abiertas",
   "coverage.summary": "{found} encontradas · {priced} con precio · {eligible} elegibles · {routed} con costes",
   "coverage.why": "¿Por qué hay pocas recomendaciones?",
   "coverage.routed": "Incluida en la comparación",

@@ -313,7 +313,7 @@ export const en = {
   "station.hours": "Opening status",
   "station.amenities": "Station services",
   "station.all": "Open nearby stations ({count})",
-  "station.allNote": "Within 8 km · Confirmed open · Sources may omit stations.",
+  "station.allNote": "Selected fuel price available · Confirmed open",
   "coverage.summary": "{found} found · {priced} with prices · {eligible} eligible · {routed} with costs",
   "coverage.why": "Why fewer recommendations?",
   "coverage.routed": "Included in cost comparison",

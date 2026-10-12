@@ -313,7 +313,7 @@ export const zhCN: Record<MessageKey, string> = {
   "station.hours": "营业状态",
   "station.amenities": "加油站服务",
   "station.all": "附近营业中（{count}）",
-  "station.allNote": "8 公里内 · 确认营业中 · 来源可能漏列站点",
+  "station.allNote": "有所选油品报价 · 确认营业中",
   "coverage.summary": "找到 {found} 家 · {priced} 家有油价 · {eligible} 家符合条件 · {routed} 家有成本计算",
   "coverage.why": "为什么推荐比较少？",
   "coverage.routed": "已纳入成本比较",

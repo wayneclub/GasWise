@@ -63,3 +63,24 @@ LaunchAgents and reverse SSH socket were stopped/removed, and its uncommitted
 application integration was reverted. Production never depended on that relay.
 GasBuddy direct AWS reachability remains unresolved; do not infer that AAA's
 transport fix also restores GasBuddy or manufacture missing quotes.
+
+## Missing-price extraction audit
+
+A subsequent live AWS audit around public ZIP 90015 checked the source fields
+before removing unpriced cards. Google returned 20 discovered stations, 14
+Regular summary quotes and no Premium quotes; five bounded detail requests also
+returned no field-86 fuel tables. No Regular price was substituted for Premium.
+Waze returned 20 venues with 64 positive grade-price entries, including 20
+`gas_premium` entries; none of those entries had an empty or non-positive price.
+A separate local GasBuddy live audit compared positive raw Premium cash/credit
+reports with parsed results: five raw reports became exactly five quotes, across
+three priced stations and two pages. AWS GasBuddy remains challenged, so this
+local result does not establish its deployed coverage.
+
+The UI problem was discovery inventory being displayed before any source quote
+was required. Nearby cards now merge sources first, then omit stations without
+a finite positive price. A real Waze/GasBuddy quote can still supply a Maps
+inventory station. Unpriced inventory is retained internally for closure matching
+and honest coverage diagnostics; it is not a recommendation or a displayed card.
+These observations are a bounded sample, not proof that all upstream responses
+always have the same shape or that every station is covered.

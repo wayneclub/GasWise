@@ -313,7 +313,7 @@ export const zhTW: Record<MessageKey, string> = {
   "station.hours": "營業狀態",
   "station.amenities": "加油站服務",
   "station.all": "附近營業中（{count}）",
-  "station.allNote": "8 公里內 · 確認營業中 · 來源可能漏列站點",
+  "station.allNote": "有所選油品報價 · 確認營業中",
   "coverage.summary": "找到 {found} 家 · {priced} 家有油價 · {eligible} 家符合條件 · {routed} 家有成本計算",
   "coverage.why": "為什麼推薦比較少？",
   "coverage.routed": "已納入成本比較",
