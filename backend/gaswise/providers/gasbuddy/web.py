@@ -227,6 +227,7 @@ class GasBuddyWebProvider:
         allowed_ids = set(station_ids[:query.max_results])
         return GasBuddyPrices(
             fetched_at=fetched,
+            page_requests=listing.get("_page_requests", 1),
             transport=self.transport,
             postal_code=query.postal_code,
             search=getattr(query, "search", None) or query.postal_code,

@@ -37,6 +37,9 @@ def distance(a: Point, b: Point) -> float:
 
 def opening_from_row(row) -> dict:
     """Observed field 203 status labels; the search request pins hl=en for these strings."""
+    # Observed field 23 = 1 on the native permanently-closed Shell page.
+    if len(row) > 23 and row[23] == 1:
+        return {"open_now": False, "business_status": "permanently_closed", "opening_status": "Permanently closed"}
     try:
         block = row[203][1]
         label = block[4][0] if isinstance(block[4], list) else None
@@ -172,7 +175,7 @@ class MapsWebProvider:
             "!2m3!1f0!2f0!3f0!3m2!1i1280!2i720!4f13.1!7i20!10b1" + FEATURES
         )
         data = await self.get_data(
-            "/search", {"tbm": "map", "hl": "en", "gl": "us", "pb": pb, "q": "gas stations"}, headers
+            "/search", {"tbm": "map", "hl": "en", "gl": "us", "pb": pb, "q": query.search_text}, headers
         )
         initial = self.parse(data, query)
         indexed = {}
@@ -239,7 +242,7 @@ class MapsWebProvider:
                     row[243] != "US"
                     or not isinstance(row[9], list)
                     or not isinstance(row[13], list)
-                    or "Gas station" not in row[13]
+                    or not {"Gas station", "Truck stop", "Diesel fuel supplier"}.intersection(row[13])
                 ):
                     continue
                 place_id = row[78]

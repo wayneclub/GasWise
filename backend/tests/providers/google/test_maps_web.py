@@ -306,3 +306,12 @@ def test_public_rating_count_retained_and_invalid_rating_does_not_drop_station()
     data = MapsWebProvider.parse([row], query())
     assert len(data.stations) == 1
     assert data.stations[0].rating is None and data.stations[0].review_count is None
+
+
+def test_permanently_closed_marker_without_hours_cannot_be_ranked_as_open():
+    row = record()
+    row[23], row[203] = 1, None
+    result = MapsWebProvider.parse([row], query())
+    assert result.inventory[0].open_now is False
+    assert result.inventory[0].business_status == "permanently_closed"
+    assert result.stations[0].business_status == "permanently_closed"

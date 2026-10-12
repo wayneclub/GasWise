@@ -1,5 +1,14 @@
 /** Source of truth for UI copy. Other locales must provide every key (type-checked). */
 export const en = {
+  "cache.sourceUnavailable": "{source}: temporarily unavailable",
+  "cache.failed": "Update failed · showing the previous snapshot",
+
+  "cache.updating": "Checking prices…",
+  "cache.policy": "Checks prices every 2 min while visible; pauses in background.",
+  "cache.reused": "Recent snapshot reused; original quote times preserved.",
+  "coverage.excludedStations": "Not recommended ({count})",
+  "coverage.unlocated": "Location not verified; excluded from route comparison.",
+
   "prefs.cashback": "Card cashback",
   "prefs.cashbackHint": "Estimated on fuel purchases only. Check your card’s gas eligibility and reward cap.",
   "prefs.cashbackCash": "Cash purchases receive no card cashback.",

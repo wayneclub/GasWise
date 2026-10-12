@@ -4,6 +4,7 @@ import App from '../App'
 import { I18nProvider } from '../i18n/I18nProvider'
 import { VehicleIdentityContext } from '../lib/vehicleIdentity'
 import { Parts } from './parts/Parts'
+import { ExcludedStations } from './decide/ExcludedStations'
 import { StationList } from './decide/StationList'
 import type { RankedStation } from '../api/types'
 import { VehiclePicker } from './setup/VehiclePicker'
@@ -305,3 +306,30 @@ it('opens settings as a page and preserves the fuel session on return', async ()
     expect(screen.queryByText(/updated today/i)).not.toBeInTheDocument()
   } finally { vi.useRealTimers() }
  })
+
+it('switches cash/card on the main screen through rerank, without acquiring prices again', async () => {
+  const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))
+  render(<App />)
+  await screen.findByRole('heading', {name:'Chevron',level:2})
+  fireEvent.click(screen.getByRole('radio',{name:'Cash'}))
+  await waitFor(()=>expect(fetch).toHaveBeenCalledTimes(2))
+  expect(fetch.mock.calls[1][0]).toBe('/api/v1/smart/rerank')
+  expect(JSON.parse(String(fetch.mock.calls[1][1]?.body)).options.payment_type).toBe('cash')
+  fireEvent.click(screen.getByRole('radio',{name:'Card'}))
+  await waitFor(()=>expect(fetch).toHaveBeenCalledTimes(3))
+  expect(fetch.mock.calls[2][0]).toBe('/api/v1/smart/rerank')
+  expect(JSON.parse(String(fetch.mock.calls[2][1]?.body)).options.payment_type).toBe('credit')
+})
+
+it('shows both recovered payment quotes and closure evidence without a navigation recommendation', () => {
+  const result = structuredClone(fixture) as unknown as import('../api/types').SmartResult
+  const station = {...result.snapshot.stations[0],name:'C.T. Truck Stop',source:'gasbuddy_web',canonical_id:'google_places:closed',payment_type:'credit' as const,price_per_gallon:'6.37',open_now:false,business_status:'permanently_closed' as const,details:{location_source_name:'Shell'}}
+  result.snapshot.stations = [station,{...station,payment_type:'cash',price_per_gallon:'6.17'}]
+  result.snapshot.unlocated_gasbuddy = []
+  render(english(<ExcludedStations records={[[station.canonical_id,station]]} result={result} />))
+  expect(screen.getByText('C.T. Truck Stop')).toBeInTheDocument()
+  expect(screen.getByText('Google Maps · Shell')).toBeInTheDocument()
+  expect(screen.getByText('Cash $6.17')).toBeInTheDocument()
+  expect(screen.getByText('Card $6.37')).toBeInTheDocument()
+  expect(screen.queryByRole('link',{name:/Navigate/})).not.toBeInTheDocument()
+})

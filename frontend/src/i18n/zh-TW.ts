@@ -1,6 +1,14 @@
 import type { MessageKey } from './en'
 
 export const zhTW: Record<MessageKey, string> = {
+  "cache.sourceUnavailable": "{source}：暫時無法取得",
+  "cache.failed": "更新失敗 · 顯示上次取得的報價",
+
+  "cache.updating": "正在檢查油價…",
+  "cache.policy": "畫面開啟時每 2 分鐘檢查油價；背景時暫停。",
+  "cache.reused": "重用近期快照，保留原報價時間。",
+  "coverage.excludedStations": "未納入推薦（{count}）",
+  "coverage.unlocated": "尚未確認站點位置，未納入路程比較。",
   "prefs.cashback": "信用卡回饋",
   "prefs.cashbackHint": "只按加油付款額估算；請確認加油回饋資格與上限。",
   "prefs.cashbackCash": "現金付款不計信用卡回饋。",

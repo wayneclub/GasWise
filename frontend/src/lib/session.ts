@@ -44,6 +44,8 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
     calculate_routes: true,
     route_limit: 100,
     discovery_tiles: 5,
+    gasbuddy_page_limit: 3,
+    station_lookup_limit: 5,
     trip_mode: prefs.tripMode,
     ...(prefs.tripMode === 'on_route' && prefs.destination ? { destination: prefs.destination } : {}),
     ...(prefs.vehicle
@@ -76,10 +78,10 @@ export function locate(): Promise<Origin> {
 }
 
 /**
- * One fuel decision transaction: locate once, acquire prices once, then rerank
- * locally-held snapshots with zero upstream calls. No polling, no auto-refresh.
+ * One fuel decision transaction: locate once, refresh visible prices on a bounded interval, then rerank
+ * locally-held snapshots with zero upstream calls. No polling in hidden tabs; manual refresh bypasses the price cache.
  */
-export function useFuelSession(prefs: Prefs) {
+export function useFuelSession(prefs: Prefs, active = true) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [error, setError] = useState<SessionError | null>(null)
   const [result, setResult] = useState<SmartResult | null>(null)
@@ -90,31 +92,48 @@ export function useFuelSession(prefs: Prefs) {
   const [origin, setOrigin] = useState<Origin | null>(null)
   const [reranking, setReranking] = useState(false)
   const [expired, setExpired] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const lastCheck = useRef(0)
+  const retryDelay = useRef(120000)
   const locationRequest = useRef(0)
   const controller = useRef<AbortController | null>(null)
   const rerankController = useRef<AbortController | null>(null)
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
 
-  const search = useCallback(async (at: Origin) => {
+  // Ranking choices rerank the held snapshot. Vehicle or fuel changes need new prices.
+  const rankKey = JSON.stringify(rankOptions(prefs))
+  const searchKey = JSON.stringify([prefs.vehicle?.id ?? null, prefs.fuelType, prefs.mpg, prefs.tripMode, prefs.destination])
+  const lastRankKey = useRef(rankKey)
+  const lastSearchKey = useRef(searchKey)
+
+  const search = useCallback(async (at: Origin, force = false, background = false) => {
     controller.current?.abort()
     rerankController.current?.abort()
     setReranking(false)
     const abort = new AbortController()
     controller.current = abort
-    setPhase('searching')
+    if (!background) setPhase('searching')
+    setRefreshing(background)
+    lastCheck.current = Date.now()
     setError(null)
     setExpired(false)
     try {
-      const next = await api.search(searchBody(prefsRef.current, at), abort.signal)
+      const requestedPrefs = prefsRef.current
+      const next = await api.search({ ...searchBody(requestedPrefs, at), force_refresh: force }, abort.signal)
       if (abort.signal.aborted) return
+      lastRankKey.current = JSON.stringify(rankOptions(requestedPrefs))
       setResult(next)
+      retryDelay.current = 120000
       setPhase('ready')
     } catch (caught) {
       if (abort.signal.aborted) return
       const apiError = caught instanceof ApiError ? caught : new ApiError(0, 'unexpected_error')
       setError({ kind: 'api', code: apiError.code, retryAfterSeconds: apiError.retryAfterSeconds, at: Date.now() })
-      setPhase('error')
+      retryDelay.current = Math.min(600000, retryDelay.current * 2)
+      setPhase(background && resultRef.current ? 'ready' : 'error')
+    } finally {
+      if (!abort.signal.aborted) setRefreshing(false)
     }
   }, [])
 
@@ -163,7 +182,7 @@ export function useFuelSession(prefs: Prefs) {
     [search],
   )
 
-  const refresh = useCallback(() => (origin ? search(origin) : start({ userInitiated: true })), [origin, search, start])
+  const refresh = useCallback(() => (origin ? search(origin, true) : start({ userInitiated: true })), [origin, search, start])
 
   const expandRoutes = useCallback(async () => {
     if (!result) return
@@ -184,12 +203,6 @@ export function useFuelSession(prefs: Prefs) {
       setPhase('ready')
     }
   }, [result])
-
-  // Ranking choices rerank the held snapshot. Vehicle or fuel changes need new prices.
-  const rankKey = JSON.stringify(rankOptions(prefs))
-  const searchKey = JSON.stringify([prefs.vehicle?.id ?? null, prefs.fuelType, prefs.mpg, prefs.tripMode, prefs.destination])
-  const lastRankKey = useRef(rankKey)
-  const lastSearchKey = useRef(searchKey)
 
   useEffect(() => {
     if (searchKey !== lastSearchKey.current) {
@@ -225,11 +238,23 @@ export function useFuelSession(prefs: Prefs) {
     }
   }, [rankKey, searchKey, result, origin, phase, search])
 
+  useEffect(() => {
+    if (!active || !origin || !result || phase !== 'ready') return
+    const check = () => {
+      if (document.visibilityState !== 'visible' || navigator.onLine === false || refreshing || reranking) return
+      if (Date.now() - lastCheck.current >= retryDelay.current) void search(origin, false, true)
+    }
+    check()
+    const timer = window.setInterval(check, 120000)
+    document.addEventListener('visibilitychange', check)
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', check) }
+  }, [active, origin, result, phase, refreshing, reranking, search])
+
   useEffect(() => () => {
     locationRequest.current++
     controller.current?.abort()
     rerankController.current?.abort()
   }, [])
 
-  return { phase, error, result, origin, originKind, locationPermission, reranking, expired, start, refresh, expandRoutes }
+  return { phase, error, result, origin, originKind, locationPermission, reranking, refreshing, expired, start, refresh, expandRoutes }
 }

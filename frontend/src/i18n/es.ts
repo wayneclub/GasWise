@@ -1,6 +1,14 @@
 import type { MessageKey } from './en'
 
 export const es: Record<MessageKey, string> = {
+  "cache.sourceUnavailable": "{source}: no disponible temporalmente",
+  "cache.failed": "Falló la actualización · se muestra la instantánea anterior",
+
+  "cache.updating": "Comprobando precios…",
+  "cache.policy": "Comprueba cada 2 min en pantalla; se pausa en segundo plano.",
+  "cache.reused": "Instantánea reciente; se conservan las fechas de los precios.",
+  "coverage.excludedStations": "No recomendadas ({count})",
+  "coverage.unlocated": "Ubicación sin verificar; excluida de la comparación de rutas.",
   "prefs.cashback": "Reembolso de tarjeta",
   "prefs.cashbackHint": "Estimado solo sobre combustible. Comprueba elegibilidad y límites de tu tarjeta.",
   "prefs.cashbackCash": "El efectivo no recibe reembolso de tarjeta.",

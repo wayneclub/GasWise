@@ -1,6 +1,7 @@
-"""One-shot discovery and signed, client-held transaction snapshots. No history/cache."""
+"""Bounded cached acquisition and signed client-held snapshots; no persistent history."""
 
 import asyncio
+import copy
 import hashlib
 import hmac
 import json
@@ -12,10 +13,17 @@ from gaswise.contracts.search import Search
 from gaswise.contracts.smart import SmartResult, SmartSnapshot, SnapshotRoute
 from gaswise.contracts.sources import GasBuddySearch, GooglePriceSearch, MapsWebSearch
 from gaswise.domain.ports import PriceSnapshot, ProviderError
-from gaswise.domain.pricing.comparison import comparison_price, distance_meters, ineligible, merged_opening, select_prices
+from gaswise.domain.pricing.comparison import (
+    comparison_price,
+    distance_meters,
+    ineligible,
+    merged_opening,
+    select_prices,
+)
 from gaswise.domain.pricing.identity import inventory_match
 from gaswise.domain.pricing.top_tier import tag_top_tier
 from gaswise.domain.vehicles.fuel_policy import check_vehicle_fuel, resolve_fuel_query
+from gaswise.services.pricing.cache import TTLCache
 from gaswise.services.pricing.search import SearchService
 
 
@@ -80,6 +88,7 @@ class SmartService:
         self.top_tier = top_tier
         self.inflight = {}
         self.waiters = {}
+        self.cache = TTLCache()
 
     def sign(self, snapshot):
         # Clients return the snapshot through their own JSON stack, so sign a canonical form.
@@ -87,6 +96,23 @@ class SmartService:
 
     async def search(self, query):
         return await self.coalesce("search:" + query.model_dump_json(), lambda: self.collect(query))
+
+    async def cached(self, key, operation, seconds=90, refresh=False):
+        # Keys are digests: exact origin/query identity without plaintext coordinates.
+        key = "cache:" + hashlib.sha256(key.encode()).hexdigest()
+        if not refresh:
+            value = self.cache.get(key)
+            if value is not None:
+                return value, True
+        shared = key in self.inflight
+
+        async def load():
+            value = await operation()
+            self.cache.put(key, value, seconds)
+            return value
+
+        value = await self.coalesce(key, load)
+        return copy.deepcopy(value), shared
 
     async def coalesce(self, key, operation):
         # Merge concurrent clicks; no retained completed-response cache.
@@ -120,13 +146,14 @@ class SmartService:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
         self.inflight.clear()
+        self.cache.clear()
 
     async def collect(self, query):
         if query.calculate_routes and self.router is None and self.demo is None:
             # Fail before collecting any price or Places data.
             raise ProviderError("smart_routing_not_configured")
         search = Search.model_validate(
-            query.model_dump(exclude={"calculate_routes", "route_limit", "maps_detail_limit", "discovery_tiles"})
+            query.model_dump(exclude={"calculate_routes", "route_limit", "maps_detail_limit", "discovery_tiles", "force_refresh", "gasbuddy_page_limit", "station_lookup_limit"})
         )
         vehicle = None
         if search.vehicle_id is not None:
@@ -149,11 +176,10 @@ class SmartService:
             statuses.append(SourceStatus(source="synthetic", status="ok", quote_count=len(stations)))
         else:
             if self.gasbuddy is not None:
-                calls["gasbuddy_search"] += 1
                 try:
                     # Do not apply ranking choices at acquisition time.
-                    raw = await self.gasbuddy.prices(
-                        GasBuddySearch(
+                    gb_query = GasBuddySearch(
+                            max_pages=query.gasbuddy_page_limit,
                             origin=search.origin,
                             postal_code=search.postal_code,
                             fuel_type=search.fuel_type,
@@ -161,16 +187,20 @@ class SmartService:
                             include_payment_variants=True,
                             max_results=100,
                         )
-                    )
+                    raw, hit = await self.cached("gasbuddy:" + gb_query.model_dump_json(), lambda: self.gasbuddy.prices(gb_query), refresh=query.force_refresh)
+                    calls["gasbuddy_search"] += int(not hit)
+                    calls["gasbuddy_pages"] = raw.page_requests if not hit else 0
+                    calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
                     warnings.extend(raw.warnings)
                 except ProviderError as error:
+                    calls["gasbuddy_search"] += 1
                     statuses.append(
                         SourceStatus(source="gasbuddy_web", status="unavailable", detail=str(error))
                     )
             if self.maps_web is not None:
                 # Explicit session source replaces paid Nearby discovery. Never
                 # fall back to paid Places calls after a website failure.
-                calls["google_maps_web_search"] = 1
+                calls["google_maps_web_search"] = 0
                 calls["google_maps_web_details"] = 0
                 try:
                     # Sample the centre and four overlapping viewports. Each website
@@ -186,19 +216,22 @@ class SmartService:
                             lat=max(-89, min(89, search.origin.lat + north * offset / 111320)),
                             lng=((search.origin.lng + east * offset / (111320 * max(0.1, math.cos(math.radians(search.origin.lat)))) + 180) % 360) - 180,
                         )
-                        calls["google_maps_web_search"] = index + 1
                         try:
-                            tile = await self.maps_web.prices(MapsWebSearch(
+                            tile_query = MapsWebSearch(
                                 origin=centre, fuel_type=search.fuel_type,
                                 radius_meters=search.radius_meters, max_results=100,
                                 detail_limit=query.maps_detail_limit if index == 0 else 0,
-                            ))
+                            )
+                            tile, hit = await self.cached("maps:" + tile_query.model_dump_json(), lambda: self.maps_web.prices(tile_query), refresh=query.force_refresh)
+                            calls["google_maps_web_search"] += int(not hit)
+                            calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
                         except ProviderError as error:
+                            calls["google_maps_web_search"] += 1
                             if not inventory_by_id:
                                 raise
                             warnings.append(f"Discovery stopped after {index} completed viewports: {error}")
                             break
-                        detail_requests += tile.detail_requests
+                        detail_requests += tile.detail_requests if not hit else 0
                         for item in tile.inventory:
                             if distance_meters(search.origin, item.location) <= search.radius_meters:
                                 old = inventory_by_id.get(item.place_id)
@@ -208,6 +241,34 @@ class SmartService:
                                 key = (item.source, item.id, item.payment_type)
                                 old = quotes_by_id.get(key)
                                 quotes_by_id[key] = item.model_copy(update=merged_opening(old, item)) if old else item
+                    # A small, explicit address lookup budget recovers stations omitted
+                    # from generic Maps viewports. Require the same full US address.
+                    calls["google_maps_web_station_lookup"] = 0
+                    if raw is not None and query.station_lookup_limit:
+                        known_zips = {item.address.rsplit(" ", 1)[-1][:5] for item in inventory_by_id.values() if item.address}
+                        candidates = {}
+                        for quote in raw.prices:
+                            age = (datetime.now(UTC) - quote.price_updated_at).total_seconds() / 60 if quote.price_updated_at else None
+                            if age is None or age < -5 or age > search.max_price_age_minutes or inventory_match(list(inventory_by_id.values()), quote.address):
+                                continue
+                            candidates.setdefault(quote.address, quote)
+                        candidates = sorted(candidates.values(), key=lambda q: (q.postal_code[:5] not in known_zips, q.price_per_gallon))
+                        for quote in candidates[:query.station_lookup_limit]:
+                            lookup = MapsWebSearch(origin=search.origin, fuel_type=search.fuel_type, radius_meters=search.radius_meters, max_results=10, search_text="gas station " + quote.address)
+                            try:
+                                located, hit = await self.cached("maps:" + lookup.model_dump_json(), lambda: self.maps_web.prices(lookup), seconds=90, refresh=query.force_refresh)
+                                calls["google_maps_web_station_lookup"] += int(not hit)
+                                calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
+                                matched = inventory_match(located.inventory, quote.address)
+                                if matched is not None:
+                                    inventory_by_id[matched.place_id] = matched
+                                    for item in located.stations:
+                                        if item.canonical_id == "google_places:" + matched.place_id:
+                                            quotes_by_id[(item.source, item.id, item.payment_type)] = item
+                            except ProviderError as error:
+                                calls["google_maps_web_station_lookup"] += 1
+                                warnings.append("Station address lookup stopped: " + str(error))
+                                break
                     data = tile.model_copy(update={
                         "inventory": sorted(inventory_by_id.values(), key=lambda item: distance_meters(search.origin, item.location))[:100],
                         "stations": list(quotes_by_id.values()),
@@ -248,7 +309,7 @@ class SmartService:
                                 rating=matched.rating,
                                 review_count=matched.review_count,
                                 rating_source=matched.rating_source,
-                                details={"opening_status": matched.opening_status},
+                                details={"opening_status": matched.opening_status, "source_url": quote.source_url, "location_source_name": matched.name},
                                 **merged_opening(matched),
                             )
                         )
@@ -342,16 +403,17 @@ class SmartService:
                     "GasBuddy quotes have no verified coordinates; location and cost ranking unavailable."
                 )
             if self.waze is not None:
-                calls["waze_search"] = 1
+                calls["waze_search"] = 0
                 try:
-                    quotes = await self.waze.stations(
-                        GooglePriceSearch(
+                    waze_query = GooglePriceSearch(
                             origin=search.origin,
                             fuel_type=search.fuel_type,
                             radius_meters=search.radius_meters,
                             max_results=20,
                         )
-                    )
+                    quotes, hit = await self.cached("waze:" + waze_query.model_dump_json(), lambda: self.waze.stations(waze_query), refresh=query.force_refresh)
+                    calls["waze_search"] += int(not hit)
+                    calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
                     for quote in quotes:
                         matched = inventory_match(maps_inventory, quote.address, quote.location)
                         if matched is not None:
@@ -379,6 +441,7 @@ class SmartService:
                     statuses.append(SourceStatus(source="waze", status="ok", quote_count=len(quotes)))
                     warnings.append("Waze payment conditions and numeric octane are unverified.")
                 except ProviderError as error:
+                    calls["waze_search"] += 1
                     statuses.append(SourceStatus(source="waze", status="unavailable", detail=str(error)))
             if not any(s.status == "ok" for s in statuses):
                 raise ProviderError("smart_price_sources_unavailable")
@@ -401,7 +464,7 @@ class SmartService:
             await self.collect_routes(snapshot, query.route_limit, calls)
         signature = self.sign(snapshot)
         ranking = await self.rank(snapshot, search) if query.calculate_routes else None
-        return SmartResult(snapshot=snapshot, signature=signature, ranking=ranking, upstream_calls=calls)
+        return SmartResult(snapshot=snapshot, signature=signature, ranking=ranking, cache_hits=calls.pop("_cache_hits", 0), upstream_calls=calls)
 
     async def collect_routes(self, snapshot, route_limit, calls):
         search = snapshot.query
@@ -414,13 +477,18 @@ class SmartService:
 
         async def fetch_route(via=None):
             try:
-                route = await router.route(search.origin, destination, via)
+                route, hit = await self.cached(
+                    "route:" + json.dumps([point_key(search.origin), point_key(destination), point_key(via) if via else None]),
+                    lambda: router.route(search.origin, destination, via), seconds=300,
+                )
+                calls["routes"] -= int(hit and self.demo is None)
+                calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
             except ProviderError as error:
                 if counter_name:
                     calls[counter_name] += getattr(error, "upstream_http_requests", 0)
                 raise
             if counter_name:
-                calls[counter_name] += route.upstream_http_requests
+                calls[counter_name] += route.upstream_http_requests if not hit else 0
             return route
 
         if search.trip_mode == "on_route" and snapshot.baseline is None:
@@ -430,7 +498,7 @@ class SmartService:
             snapshot.baseline = Route(distance_meters=0, duration_seconds=0, source="no_trip")
         # Keep cheap AND nearby candidates. This is bounded shortlist discovery,
         # not proof of a global optimum. All snapshot quotes remain available.
-        selections, _, _ = select_prices(snapshot.stations, search, now)
+        selections, _, _ = select_prices(snapshot.stations, search.model_copy(update={"payment_type": "cash_or_credit"}), now)
         unique = {point_key(row.station.location): row.station for row in selections}
         by_price = sorted(unique.values(), key=comparison_price)
         by_distance = sorted(unique.values(), key=lambda st: distance_meters(search.origin, st.location))
@@ -475,6 +543,7 @@ class SmartService:
             snapshot=snapshot,
             signature=self.sign(snapshot),
             ranking=await self.rank(snapshot, snapshot.query),
+            cache_hits=calls.pop("_cache_hits", 0),
             upstream_calls=calls,
         )
 

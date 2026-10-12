@@ -136,3 +136,30 @@ async def test_denied_session_is_not_retried_or_switched_to_browser(kwargs, expe
     assert calls["bootstrap"] == 1
     assert calls["api"] <= 1
     assert calls["clients"][0].is_closed and worker._csrf is None
+
+
+async def test_cursor_pages_recover_later_station_with_its_own_metadata():
+    import json
+
+    from gaswise.contracts.sources import GasBuddySearch
+
+    cursors = []
+    def handler(request):
+        if request.method == "GET":
+            return httpx.Response(200, text='<script>window.gbcsrf = "fixture";</script>')
+        cursor = json.loads(request.content)["variables"].get("cursor")
+        cursors.append(cursor)
+        number = len(cursors)
+        return httpx.Response(200, json={"data":{"locationBySearchTerm":{"stations":{
+            "cursor":{"next":"next" if number == 1 else None},
+            "results":[{"id":str(number),"name":"Later station" if number == 2 else "First station","priceUnit":"dollars_per_gallon","address":{"country":"US","line1":f"{number} Main St","locality":"Los Angeles","region":"CA","postalCode":"90021"},"prices":[{"fuelProduct":"premium_gas","credit":{"price":6.37,"postedTime":datetime.now(UTC).isoformat()}}]}]
+        }}}})
+    worker = GasBuddyHTTPSession(client_factory=lambda:httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    provider = GasBuddyWebProvider(None, snapshot_loader=worker.snapshot, transport="http")
+    try:
+        result = await provider.prices(GasBuddySearch(postal_code="90021", max_pages=3, max_results=100))
+        assert cursors == [None, "next"]
+        assert result.page_requests == 2 and result.partial is False
+        assert {q.name for q in result.prices} == {"First station", "Later station"}
+    finally:
+        await worker.close()

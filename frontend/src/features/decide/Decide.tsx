@@ -15,9 +15,9 @@ import { StationList } from './StationList'
 
 const DOWNTOWN_LA = { lat: 34.0522, lng: -118.2437 }
 
-export function Decide({ prefs, update, onSettings }: { prefs: Prefs; update: (change: Partial<Prefs>) => void; onSettings: () => void }) {
+export function Decide({ prefs, update, onSettings, active = true }: { active?: boolean; prefs: Prefs; update: (change: Partial<Prefs>) => void; onSettings: () => void }) {
   const { t } = useI18n()
-  const session = useFuelSession(prefs)
+  const session = useFuelSession(prefs, active)
   const [locationOpen, setLocationOpen] = useState(false)
   const [locationLabel, setLocationLabel] = useState<string | null>(null)
   const { start } = session
@@ -50,7 +50,9 @@ export function Decide({ prefs, update, onSettings }: { prefs: Prefs; update: (c
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="flex flex-col gap-4">
           <section aria-label={t('decide.yourFill')} className="flex flex-col gap-3">
-            <h2 className="text-sm font-semibold">{t('decide.yourFill')}</h2>
+            <div className="flex items-center justify-between gap-3"><h2 className="text-sm font-semibold">{t('decide.yourFill')}</h2>
+              <Segmented label={t('prefs.payment')} value={prefs.payment} options={[{value:'cash_or_credit',label:t('prefs.all')},{value:'cash',label:t('prefs.cash')},{value:'credit',label:t('prefs.card')}]} onChange={(payment) => update({payment})} />
+            </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <Stepper
                 label={t('ui.gallons')}
@@ -85,9 +87,10 @@ export function Decide({ prefs, update, onSettings }: { prefs: Prefs; update: (c
             </div>
           ) : null}
 
+          {session.refreshing ? <p role="status" className="text-xs text-accent">{t('cache.updating')}</p> : null}
           {phase === 'ready' && error ? (
             <p role="status" className="rounded-control bg-caution-soft px-4 py-3 text-[14px] text-caution">
-              {error.kind === 'location' ? t('context.keptLocation') : t('decide.rerankFailed')}
+              {error.kind === 'location' ? t('context.keptLocation') : t('cache.failed')}
             </p>
           ) : null}
 
@@ -151,6 +154,9 @@ export function Decide({ prefs, update, onSettings }: { prefs: Prefs; update: (c
                 })}
                 {assessment ? ` ${t('decide.coverage', { usable: assessment.usable, total: assessment.total })}` : ''}
               </p>
+              {result.snapshot.source_statuses.filter(s=>s.status==='unavailable').map(s=><p key={s.source} className="text-caution">{t('cache.sourceUnavailable',{source:sourceLabel(s.source)})}</p>)}
+              <p className="mt-1">{t('cache.policy')}</p>
+              {result.cache_hits ? <p>{t('cache.reused', { count: result.cache_hits })}</p> : null}
               <p className="mt-1">{t('decide.rerankNote')}</p>
             </footer>
           </div>

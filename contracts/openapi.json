@@ -1713,6 +1713,13 @@
       },
       "GasBuddyPrices": {
         "properties": {
+          "page_requests": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Page Requests",
+            "default": 1
+          },
           "transport": {
             "type": "string",
             "enum": [
@@ -2081,6 +2088,13 @@
       },
       "GasBuddySearch": {
         "properties": {
+          "max_pages": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Max Pages",
+            "default": 1
+          },
           "include_payment_variants": {
             "type": "boolean",
             "title": "Include Payment Variants",
@@ -2425,6 +2439,13 @@
             "minimum": 1.0,
             "title": "Max Results",
             "default": 20
+          },
+          "search_text": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Search Text",
+            "default": "gas stations"
           },
           "detail_limit": {
             "type": "integer",
@@ -4705,6 +4726,12 @@
       },
       "SmartResult": {
         "properties": {
+          "cache_hits": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Cache Hits",
+            "default": 0
+          },
           "snapshot": {
             "$ref": "#/components/schemas/SmartSnapshot-Output"
           },
@@ -5069,6 +5096,25 @@
             "minimum": 100.0,
             "title": "Radius Meters",
             "default": 10000
+          },
+          "force_refresh": {
+            "type": "boolean",
+            "title": "Force Refresh",
+            "default": false
+          },
+          "gasbuddy_page_limit": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Gasbuddy Page Limit",
+            "default": 1
+          },
+          "station_lookup_limit": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Station Lookup Limit",
+            "default": 0
           },
           "calculate_routes": {
             "type": "boolean",

@@ -1,6 +1,14 @@
 import type { MessageKey } from './en'
 
 export const zhCN: Record<MessageKey, string> = {
+  "cache.sourceUnavailable": "{source}：暂时无法获取",
+  "cache.failed": "更新失败 · 显示上次获取的报价",
+
+  "cache.updating": "正在检查油价…",
+  "cache.policy": "打开页面时每 2 分钟检查油价；后台时暂停。",
+  "cache.reused": "复用近期快照，保留原报价时间。",
+  "coverage.excludedStations": "未纳入推荐（{count}）",
+  "coverage.unlocated": "尚未确认站点位置，未纳入路线比较。",
   "prefs.cashback": "信用卡返现",
   "prefs.cashbackHint": "仅按加油付款金额估算；请确认加油返现资格与上限。",
   "prefs.cashbackCash": "现金付款不计信用卡返现。",

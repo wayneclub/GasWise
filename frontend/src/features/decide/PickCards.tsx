@@ -19,7 +19,7 @@ import { useState } from 'react'
 import type { RankedStation, StrategyKey } from '../../api/types'
 import { LinkButton } from '../../components/ui'
 import { type MessageKey, type Translate, useI18n } from '../../i18n'
-import { comparisonPrice, age, gallons as gal, miles, minutes, perGallon, usd } from '../../lib/format'
+import { sourceLabel, comparisonPrice, age, gallons as gal, miles, minutes, perGallon, usd } from '../../lib/format'
 import { navigationUrl } from '../../lib/navigation'
 import type { NavApp } from '../../lib/prefs'
 import { type Assessment, breakdown, openingLabel, type Pick, type Tradeoff } from '../../lib/recommend'
@@ -175,7 +175,11 @@ export function HeroPick({
       {station.address ? <p className="mt-0.5 truncate text-[14px] text-muted">{station.address}</p> : null}
       <div className="mt-2"><StationRating station={station} /></div>
       {station.comparison_price_per_gallon ? <p className="mt-1 text-xs text-caution">{t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
-      <p className="mt-1 text-xs text-muted">{t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}{station.membership_required ? ` · ${t('station.member', { name: station.membership_required })}` : ''}</p>
+      <p className="mt-1 text-xs text-muted">{sourceLabel(station.source)} · {t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}{station.membership_required ? ` · ${t('station.member', { name: station.membership_required })}` : ''}</p>
+      {row?.price_comparison ? <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">{(['cash','credit'] as const).map(payment => {
+        const quote = row.price_comparison?.evidence.filter(e => e.payment_type === payment && e.source === station.source && e.price_updated_at && Date.now()-new Date(e.price_updated_at).getTime() <= 24*60*60*1000).sort((a,b)=>new Date(b.price_updated_at!).getTime()-new Date(a.price_updated_at!).getTime())[0]
+        return quote ? <span key={payment} className="rounded-full border border-line px-2 py-0.5">{t(payment === 'cash'?'prefs.cash':'prefs.card')} {perGallon(quote.price_per_gallon)}</span> : null
+      })}</div> : null}
       {pick.keys.length > 1 ? (
         <p className="mt-2 flex flex-wrap gap-1.5">
           {pick.keys.slice(1).map((key) => (

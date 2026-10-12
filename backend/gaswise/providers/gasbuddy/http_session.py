@@ -62,31 +62,44 @@ class GasBuddyHTTPSession:
                 if self._client is None or time.monotonic() - self._created_at >= self.session_seconds:
                     await self._discard_session()
                     await self._bootstrap()
-                response = await self._client.post(
-                    GRAPHQL,
-                    headers={
-                        "Origin": "https://www.gasbuddy.com",
-                        "Referer": LANDING,
-                        "Accept": "*/*",
-                        "apollo-require-preflight": "true",
-                        "gbcsrf": self._csrf,
-                    },
-                    json={
-                        "operationName": "SearchPrices",
-                        "variables": gasbuddy_variables(query, fuel),
-                        "query": METADATA_QUERY,
-                    },
-                )
-                if response.headers.get("cf-mitigated") == "challenge":
-                    raise ProviderError("gasbuddy_http_api_challenge")
-                if not response.is_success:
-                    raise ProviderError("gasbuddy_http_api_rejected")
-                data = response.json()
-                if data.get("errors"):
-                    raise ProviderError("gasbuddy_http_query_rejected")
-                listing = data["data"]["locationBySearchTerm"]["stations"]
-                # Produce the provider's existing metadata envelope using THIS API response.
-                # Homepage has no search-specific stations, so its Apollo cache is not used.
+                variables = gasbuddy_variables(query, fuel)
+                results, seen_cursors = {}, set()
+                listing = None
+                page_requests = 0
+                for _ in range(getattr(query, "max_pages", 1)):
+                    page_requests += 1
+                    response = await self._client.post(
+                        GRAPHQL,
+                        headers={
+                            "Origin": "https://www.gasbuddy.com",
+                            "Referer": LANDING,
+                            "Accept": "*/*",
+                            "apollo-require-preflight": "true",
+                            "gbcsrf": self._csrf,
+                        },
+                        json={
+                            "operationName": "SearchPrices",
+                            "variables": variables,
+                            "query": METADATA_QUERY,
+                        },
+                    )
+                    if response.headers.get("cf-mitigated") == "challenge":
+                        raise ProviderError("gasbuddy_http_api_challenge")
+                    if not response.is_success:
+                        raise ProviderError("gasbuddy_http_api_rejected")
+                    data = response.json()
+                    if data.get("errors"):
+                        raise ProviderError("gasbuddy_http_query_rejected")
+                    page = data["data"]["locationBySearchTerm"]["stations"]
+                    for station in page["results"]:
+                        results.setdefault(str(station["id"]), station)
+                    listing = page
+                    cursor = (page.get("cursor") or {}).get("next")
+                    if not cursor or cursor in seen_cursors:
+                        break
+                    seen_cursors.add(cursor)
+                    variables = {**variables, "cursor": cursor}
+                listing = {**listing, "results": list(results.values()), "_page_requests": page_requests}
                 state = {f"Station:{station['id']}": station for station in listing["results"]}
                 return state, listing
             except httpx.RequestError:

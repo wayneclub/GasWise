@@ -5,6 +5,7 @@ import { useI18n } from '../../i18n'
 import { comparisonPrice, perGallon, sourceLabel } from '../../lib/format'
 import type { NavApp } from '../../lib/prefs'
 import { reasonKey } from '../../lib/stationStatus'
+import { ExcludedStations } from './ExcludedStations'
 import { StationDetails, StationRating, TopTierBadge, type StationSummary } from './StationDetails'
 
 export function NearbyStations({ result, navApp, onExpandRoutes, allowUnknownPayment, onUnknownPayment }: { allowUnknownPayment?: boolean; onUnknownPayment?: (value: boolean) => void; result: SmartResult; navApp: NavApp; onExpandRoutes?: () => void }) {
@@ -22,6 +23,7 @@ export function NearbyStations({ result, navApp, onExpandRoutes, allowUnknownPay
     if (!old?.price_per_gallon || (s.payment_type !== 'unknown' && old.payment_type === 'unknown')) stations.set(key, { ...old, ...s })
   }
   for (const row of rows) stations.set(row.station.canonical_id ?? `${row.station.source}:${row.station.id}`, row.station)
+  const excluded = [...stations].filter(([,s]) => s.open_now !== true || ['temporarily_closed', 'permanently_closed'].includes(s.business_status ?? ''))
   for (const [key, candidate] of stations) if (candidate.open_now !== true || ['temporarily_closed', 'permanently_closed'].includes(candidate.business_status ?? '')) stations.delete(key)
   const station = selected ? stations.get(selected) : undefined
   const row = rows.find((r) => (r.station.canonical_id ?? `${r.station.source}:${r.station.id}`) === selected)
@@ -36,6 +38,7 @@ export function NearbyStations({ result, navApp, onExpandRoutes, allowUnknownPay
       </details>
     </div> : null}
     {coverage && coverage.eligible > coverage.routed && (result.snapshot.routes?.length ?? 0) < 100 && onExpandRoutes ? <Button variant="secondary" onClick={onExpandRoutes}>{t('coverage.moreRoutes')}</Button> : null}
+    <ExcludedStations records={excluded} result={result} />
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
       {[...stations].slice(0, visible).map(([key, s]) => <article key={key} className="rounded-box border border-line bg-surface p-4">
         <div className="flex items-start justify-between gap-3"><div className="flex min-w-0 flex-wrap items-center gap-1.5"><h3 className="font-medium">{s.name}</h3>{s.top_tier_brand ? <TopTierBadge brand={s.top_tier_brand} /> : null}</div><span className="shrink-0 text-sm num">{s.price_per_gallon ? perGallon(comparisonPrice({ ...s, price_per_gallon: s.price_per_gallon })) : t('coverage.noPrice')}</span></div>

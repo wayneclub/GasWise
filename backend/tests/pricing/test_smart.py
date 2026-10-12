@@ -122,6 +122,7 @@ async def test_one_nearby_matches_gasbuddy_without_text_or_routes():
     assert gb.calls == 1 and len(calls) == 1
     assert result.upstream_calls == {
         "gasbuddy_search": 1,
+        "gasbuddy_pages": 1,
         "google_nearby": 1,
         "google_text_search": 0,
         "routes": 0,

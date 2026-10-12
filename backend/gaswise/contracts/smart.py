@@ -8,6 +8,9 @@ from gaswise.contracts.vehicles import VehicleProfile
 
 
 class SmartSearch(Search):
+    force_refresh: bool = False
+    gasbuddy_page_limit: int = Field(default=1, ge=1, le=5)
+    station_lookup_limit: int = Field(default=0, ge=0, le=5)
     calculate_routes: bool = False
     route_limit: int = Field(default=5, ge=1, le=100)
     discovery_tiles: int = Field(default=1, ge=1, le=5)
@@ -45,6 +48,7 @@ class SearchCoverage(Model):
 
 
 class SmartResult(Model):
+    cache_hits: int = Field(default=0, ge=0)
     snapshot: SmartSnapshot
     signature: str
     ranking: SearchResult | None = None
@@ -54,7 +58,13 @@ class SmartResult(Model):
     @property
     def coverage(self) -> SearchCoverage:
         from collections import Counter
-        from gaswise.domain.pricing.comparison import closed_reason, distance_meters, ineligible, select_prices
+
+        from gaswise.domain.pricing.comparison import (
+            closed_reason,
+            distance_meters,
+            ineligible,
+            select_prices,
+        )
         query = self.snapshot.query
         now = self.ranking.generated_at if self.ranking else self.snapshot.collected_at
         groups = {}

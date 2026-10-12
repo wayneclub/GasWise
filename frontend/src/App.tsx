@@ -26,7 +26,7 @@ function ServiceTabs({ prefs, update }: { prefs: Prefs; update: (change: Partial
         <button type="button" onClick={() => setSettingsOpen(true)} aria-label={t('decide.settings')} className="grid size-10 shrink-0 place-items-center rounded-control text-muted hover:bg-sunken hover:text-ink"><GearSixIcon size={20} /></button>
       </div>
     </header>
-    <div role="tabpanel" id="panel-fuel" aria-labelledby="tab-fuel" hidden={settingsOpen || tab !== 'fuel'}><Decide prefs={prefs} update={update} onSettings={() => setSettingsOpen(true)} /></div>
+    <div role="tabpanel" id="panel-fuel" aria-labelledby="tab-fuel" hidden={settingsOpen || tab !== 'fuel'}><Decide active={!settingsOpen && tab === 'fuel'} prefs={prefs} update={update} onSettings={() => setSettingsOpen(true)} /></div>
     <div role="tabpanel" id="panel-parts" aria-labelledby="tab-parts" hidden={settingsOpen || tab !== 'parts'}><Parts key={prefs.vehicle?.id ?? 'manual'} vehicle={prefs.vehicle} onChooseCar={() => setSettingsOpen(true)} /></div>
     {settingsOpen ? <main aria-label={t('decide.settings')} className="mx-auto max-w-5xl px-4 py-6 lg:py-10"><div className="mb-6 flex items-center justify-between"><h1 className="text-2xl font-semibold">{t('decide.settings')}</h1><button type="button" onClick={() => setSettingsOpen(false)} className="rounded-control border border-line px-4 py-2 text-sm">{t('settings.back')}</button></div><PreferencesForm prefs={prefs} update={update} advanced /></main> : null}
   </>

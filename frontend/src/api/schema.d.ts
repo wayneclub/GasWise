@@ -723,6 +723,11 @@ export interface components {
         /** GasBuddyPrices */
         GasBuddyPrices: {
             /**
+             * Page Requests
+             * @default 1
+             */
+            page_requests: number;
+            /**
              * Transport
              * @default http
              * @enum {string}
@@ -883,6 +888,11 @@ export interface components {
         /** GasBuddySearch */
         GasBuddySearch: {
             /**
+             * Max Pages
+             * @default 1
+             */
+            max_pages: number;
+            /**
              * Include Payment Variants
              * @default false
              */
@@ -1037,6 +1047,11 @@ export interface components {
              * @default 20
              */
             max_results: number;
+            /**
+             * Search Text
+             * @default gas stations
+             */
+            search_text: string;
             /**
              * Detail Limit
              * @default 0
@@ -1893,6 +1908,11 @@ export interface components {
         };
         /** SmartResult */
         SmartResult: {
+            /**
+             * Cache Hits
+             * @default 0
+             */
+            cache_hits: number;
             snapshot: components["schemas"]["SmartSnapshot-Output"];
             /** Signature */
             signature: string;
@@ -2038,6 +2058,21 @@ export interface components {
              * @default 10000
              */
             radius_meters: number;
+            /**
+             * Force Refresh
+             * @default false
+             */
+            force_refresh: boolean;
+            /**
+             * Gasbuddy Page Limit
+             * @default 1
+             */
+            gasbuddy_page_limit: number;
+            /**
+             * Station Lookup Limit
+             * @default 0
+             */
+            station_lookup_limit: number;
             /**
              * Calculate Routes
              * @default false

@@ -26,6 +26,7 @@ class GooglePrices(Model):
 
 
 class MapsWebSearch(GooglePriceSearch):
+    search_text: str = Field(default="gas stations", min_length=1, max_length=200)
     max_results: int = Field(default=20, ge=1, le=100)
     fuel_type: Literal["regular", "midgrade", "premium", "diesel"] = "regular"
     detail_limit: int = Field(default=0, ge=0, le=10)
@@ -67,6 +68,7 @@ class WazePriceSearch(Model):
 
 
 class GasBuddySearch(Model):
+    max_pages: int = Field(default=1, ge=1, le=5)
     include_payment_variants: bool = False
     search: str | None = Field(default=None, min_length=1, max_length=200)
     postal_code: str | None = Field(default=None, pattern=r"^\d{5}$")
@@ -123,6 +125,7 @@ class GasBuddyQuote(Model):
 
 
 class GasBuddyPrices(Model):
+    page_requests: int = Field(default=1, ge=1, le=5)
     transport: Literal["http", "browser", "session_http"] = "http"
     fetched_at: AwareDatetime
     postal_code: str | None = None
