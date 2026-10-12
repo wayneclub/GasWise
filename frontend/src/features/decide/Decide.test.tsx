@@ -205,7 +205,7 @@ it('labels estimated card prices and keeps TOP TIER as a compact text badge', as
 
 it('makes an unavailable AAA benchmark explicit without inventing an average', async () => {
   const unavailable = structuredClone(demo)
-  unavailable.snapshot.warnings.push('AAA regional average unavailable for CA')
+  unavailable.snapshot.warnings = [...(unavailable.snapshot.warnings ?? []), 'AAA regional average unavailable for CA']
   vi.spyOn(globalThis, 'fetch').mockImplementation(() => respond(unavailable))
   render(<App />)
   expect(await screen.findByText('AAA: temporarily unavailable')).toBeInTheDocument()
