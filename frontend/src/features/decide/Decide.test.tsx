@@ -201,3 +201,13 @@ it('labels estimated card prices and keeps TOP TIER as a compact text badge', as
   expect(badge).toHaveTextContent('TOP TIER')
   expect(badge.querySelector('img')).toBeNull()
 })
+
+
+it('makes an unavailable AAA benchmark explicit without inventing an average', async () => {
+  const unavailable = structuredClone(demo)
+  unavailable.snapshot.warnings.push('AAA regional average unavailable for CA')
+  vi.spyOn(globalThis, 'fetch').mockImplementation(() => respond(unavailable))
+  render(<App />)
+  expect(await screen.findByText('AAA: temporarily unavailable')).toBeInTheDocument()
+  expect(screen.queryByText(/Metro average/)).not.toBeInTheDocument()
+})

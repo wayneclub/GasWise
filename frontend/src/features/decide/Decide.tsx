@@ -158,6 +158,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
                 {assessment ? ` ${t('decide.coverage', { usable: assessment.usable, total: assessment.total })}` : ''}
               </p>
               {result.snapshot.source_statuses.filter(s=>s.status==='unavailable').map(s=><p key={s.source} className="text-caution">{t('cache.sourceUnavailable',{source:sourceLabel(s.source)})}</p>)}
+              {result.snapshot.warnings.some(w => w.startsWith('AAA regional average unavailable')) ? <p className="text-caution">{t('cache.sourceUnavailable',{source:'AAA'})}</p> : null}
               <p className="mt-1">{t('cache.policy')}</p>
               {result.cache_hits ? <p>{t('cache.reused', { count: result.cache_hits })}</p> : null}
               <p className="mt-1">{t('decide.rerankNote')}</p>
