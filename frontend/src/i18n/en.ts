@@ -1,9 +1,9 @@
 /** Source of truth for UI copy. Other locales must provide every key (type-checked). */
 export const en = {
   "board.title": "Top 3 stations",
-  "board.money": "Lowest cost",
-  "board.balanced": "Best balance",
-  "board.time": "Fastest",
+  "board.money": "Cost",
+  "board.balanced": "Balance",
+  "board.time": "Speed",
   "board.value": "Your time value ($/hour)",
   "board.radius": "Search radius",
   "board.benchmark": "vs AAA {region}",
