@@ -70,7 +70,7 @@ async def test_missing_supplier_engine_configuration_not_native_proof():
 
 def test_generic_other_brand_preserves_mpn_and_model():
 
-    root = REPO_ROOT / "artifacts" / "amazon-research"
+    root = REPO_ROOT / "backend" / "tests" / "fixtures" / "products"
     for asin, brand in [("B019IPTB0W", "Mann"), ("B002EBSLA4", "Bosch")]:
         result = identify_amazon(
             (root / f"{asin}-identity-minimal.html").read_text(), f"https://www.amazon.com/dp/{asin}"
