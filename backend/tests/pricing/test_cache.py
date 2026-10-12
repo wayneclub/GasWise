@@ -47,10 +47,10 @@ async def test_repeat_and_payment_changes_reuse_prices_and_routes_force_only_ref
     assert not service.cache.entries
 
 
-async def test_cache_expiry_loads_new_prices_and_errors_are_not_reused():
+async def test_cache_expiry_loads_new_prices_and_failures_have_a_short_cooldown():
     service = SmartService(b"test", "prices_only")
     now, calls = [0], []
-    service.cache.clock = lambda: now[0]
+    service.cache.clock = service.failures.clock = lambda: now[0]
 
     async def source():
         calls.append(1)
@@ -68,7 +68,14 @@ async def test_cache_expiry_loads_new_prices_and_errors_are_not_reused():
     for _ in range(2):
         with pytest.raises(ProviderError):
             await service.cached("rejected-source", rejected)
+    assert len(calls) == 3
+    now[0] += 30
+    with pytest.raises(ProviderError):
+        await service.cached("rejected-source", rejected)
     assert len(calls) == 4
+    with pytest.raises(ProviderError):
+        await service.cached("rejected-source", rejected, refresh=True)
+    assert len(calls) == 5
 
 
 async def test_shared_cache_load_survives_one_cancelled_waiter():
@@ -108,3 +115,26 @@ async def test_cache_does_not_make_stale_quotes_eligible():
     assert second.cache_hits > 0
     assert not second.ranking.results
     assert first.ranking.results
+
+
+async def test_unavailable_source_cooldown_reduces_requests_without_claiming_prices():
+    class RejectedGasBuddy:
+        calls = 0
+
+        async def prices(self, query):
+            self.calls += 1
+            raise ProviderError("gasbuddy_http_bootstrap_challenge")
+
+    gb, maps = RejectedGasBuddy(), MapsInventory()
+    service = SmartService(b"test", "prices_only", gasbuddy=gb, maps_web=maps)
+    query = SmartSearch(origin=Point(lat=34, lng=-118))
+    first = await service.search(query)
+    second = await service.search(query)
+    assert gb.calls == maps.calls == 1
+    assert not any(second.upstream_calls.values())
+    assert second.cache_hits == 2
+    failed = next(s for s in second.snapshot.source_statuses if s.source == "gasbuddy_web")
+    assert failed.status == "unavailable" and failed.quote_count == 0
+    assert first.snapshot.stations[0].price_updated_at == second.snapshot.stations[0].price_updated_at
+    await service.search(query.model_copy(update={"force_refresh": True}))
+    assert gb.calls == maps.calls == 2

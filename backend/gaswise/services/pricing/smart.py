@@ -89,6 +89,7 @@ class SmartService:
         self.inflight = {}
         self.waiters = {}
         self.cache = TTLCache()
+        self.failures = TTLCache(capacity=64)
 
     def sign(self, snapshot):
         # Clients return the snapshot through their own JSON stack, so sign a canonical form.
@@ -101,17 +102,34 @@ class SmartService:
         # Keys are digests: exact origin/query identity without plaintext coordinates.
         key = "cache:" + hashlib.sha256(key.encode()).hexdigest()
         if not refresh:
+            failure = self.failures.get(key)
+            if failure is not None:
+                error = ProviderError(failure)
+                error.cache_hit, error.upstream_http_requests = True, 0
+                raise error
             value = self.cache.get(key)
             if value is not None:
                 return value, True
         shared = key in self.inflight
 
         async def load():
-            value = await operation()
+            try:
+                value = await operation()
+            except ProviderError as error:
+                self.failures.put(key, str(error), 30)
+                raise
+            self.failures.entries.pop(key, None)
             self.cache.put(key, value, seconds)
             return value
 
-        value = await self.coalesce(key, load)
+        try:
+            value = await self.coalesce(key, load)
+        except ProviderError as error:
+            owned = copy.copy(error)
+            owned.cache_hit = shared
+            if shared:
+                owned.upstream_http_requests = 0
+            raise owned from None
         return copy.deepcopy(value), shared
 
     async def coalesce(self, key, operation):
@@ -147,6 +165,7 @@ class SmartService:
         await asyncio.gather(*tasks, return_exceptions=True)
         self.inflight.clear()
         self.cache.clear()
+        self.failures.clear()
 
     async def collect(self, query):
         if query.calculate_routes and self.router is None and self.demo is None:
@@ -193,7 +212,8 @@ class SmartService:
                     calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
                     warnings.extend(raw.warnings)
                 except ProviderError as error:
-                    calls["gasbuddy_search"] += 1
+                    calls["gasbuddy_search"] += int(not getattr(error, "cache_hit", False))
+                    calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(getattr(error, "cache_hit", False))
                     statuses.append(
                         SourceStatus(source="gasbuddy_web", status="unavailable", detail=str(error))
                     )
@@ -226,7 +246,8 @@ class SmartService:
                             calls["google_maps_web_search"] += int(not hit)
                             calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
                         except ProviderError as error:
-                            calls["google_maps_web_search"] += 1
+                            calls["google_maps_web_search"] += int(not getattr(error, "cache_hit", False))
+                            calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(getattr(error, "cache_hit", False))
                             if not inventory_by_id:
                                 raise
                             warnings.append(f"Discovery stopped after {index} completed viewports: {error}")
@@ -266,7 +287,8 @@ class SmartService:
                                         if item.canonical_id == "google_places:" + matched.place_id:
                                             quotes_by_id[(item.source, item.id, item.payment_type)] = item
                             except ProviderError as error:
-                                calls["google_maps_web_station_lookup"] += 1
+                                calls["google_maps_web_station_lookup"] += int(not getattr(error, "cache_hit", False))
+                                calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(getattr(error, "cache_hit", False))
                                 warnings.append("Station address lookup stopped: " + str(error))
                                 break
                     data = tile.model_copy(update={
@@ -441,7 +463,8 @@ class SmartService:
                     statuses.append(SourceStatus(source="waze", status="ok", quote_count=len(quotes)))
                     warnings.append("Waze payment conditions and numeric octane are unverified.")
                 except ProviderError as error:
-                    calls["waze_search"] += 1
+                    calls["waze_search"] += int(not getattr(error, "cache_hit", False))
+                    calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(getattr(error, "cache_hit", False))
                     statuses.append(SourceStatus(source="waze", status="unavailable", detail=str(error)))
             if not any(s.status == "ok" for s in statuses):
                 raise ProviderError("smart_price_sources_unavailable")
@@ -484,6 +507,9 @@ class SmartService:
                 calls["routes"] -= int(hit and self.demo is None)
                 calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
             except ProviderError as error:
+                cached_failure = getattr(error, "cache_hit", False)
+                calls["routes"] -= int(cached_failure and self.demo is None)
+                calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(cached_failure)
                 if counter_name:
                     calls[counter_name] += getattr(error, "upstream_http_requests", 0)
                 raise
