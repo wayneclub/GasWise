@@ -18,7 +18,7 @@ export function PreferencesForm({
   advanced?: boolean
 }) {
   const { identity } = useVehicleIdentity()
-  const { t, locale } = useI18n()
+  const { t } = useI18n()
   const fuels: { value: FuelType; label: string }[] = [
     { value: 'regular', label: t('fuel.regular') },
     { value: 'midgrade', label: t('fuel.midgradeShort') },
@@ -26,9 +26,13 @@ export function PreferencesForm({
     { value: 'diesel', label: t('fuel.diesel') },
   ]
   return (
-    <div className="flex flex-col gap-7">
+    <div className="grid min-w-0 gap-6 lg:grid-cols-2 lg:items-start">
+      <section className="flex min-w-0 flex-col gap-6 rounded-box border border-line bg-surface p-4 sm:p-6" aria-label={t('prefs.car')}>
       <Field label={t('prefs.language')}>
-        <Segmented label={t('prefs.language')} value={locale} options={LOCALES} onChange={(value) => update({ locale: value })} />
+        <select aria-label={t('prefs.language')} value={prefs.locale ?? 'auto'} onChange={(event) => update({ locale: event.target.value === 'auto' ? null : LOCALES.find((item) => item.value === event.target.value)!.value })} className="h-11 w-full rounded-control border border-line bg-canvas px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent">
+          <option value="auto">{t('prefs.languageAuto')}</option>
+          {LOCALES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        </select>
       </Field>
 
       <Field label={t('prefs.car')} hint={t('prefs.carHint')}>
@@ -56,7 +60,8 @@ export function PreferencesForm({
           </Field>
         </div>
       )}
-
+      </section>
+      <section className="flex min-w-0 flex-col gap-6 rounded-box border border-line bg-surface p-4 sm:p-6" aria-label={t('prefs.gallons')}>
       <Field label={t('prefs.gallons')} hint={t('prefs.gallonsHint')}>
         <Stepper
           label={t('ui.gallons')}
@@ -114,6 +119,7 @@ export function PreferencesForm({
           <Segmented label={t('prefs.navApp')} value={prefs.navApp} options={NAV_APPS} onChange={(navApp) => update({ navApp })} />
         </Field>
       ) : null}
+      </section>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import type { MessageKey } from './en'
 
 export const es: Record<MessageKey, string> = {
+  'prefs.languageAuto': 'Idioma del navegador',
   'payment.estimated': 'Estimado',
   'payment.estimate': 'Tarjeta estimada +{adjustment}/gal · fuente {raw}',
 

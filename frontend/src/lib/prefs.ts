@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { FuelType } from '../api/types'
-import type { Locale } from '../i18n'
+import { LOCALES, type Locale } from '../i18n'
 
 export type Preference = 'money' | 'balanced' | 'time'
 export type NavApp = 'google' | 'apple' | 'waze'
@@ -64,7 +64,7 @@ export function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(KEY)
     const saved = raw ? JSON.parse(raw) as Partial<Prefs> : {}
-    return { ...DEFAULT_PREFS, ...saved, allowUnknownPayment: saved.paymentPolicyVersion === 2 ? saved.allowUnknownPayment ?? true : true, paymentPolicyVersion: 2, navApp: saved.navDefaultVersion === 2 ? saved.navApp ?? 'google' : 'google', navDefaultVersion: 2, tripMode: 'round_trip', destination: null }
+    return { ...DEFAULT_PREFS, ...saved, locale: LOCALES.some((item) => item.value === saved.locale) ? saved.locale! : null, allowUnknownPayment: saved.paymentPolicyVersion === 2 ? saved.allowUnknownPayment ?? true : true, paymentPolicyVersion: 2, navApp: saved.navDefaultVersion === 2 ? saved.navApp ?? 'google' : 'google', navDefaultVersion: 2, tripMode: 'round_trip', destination: null }
   } catch {
     return DEFAULT_PREFS
   }

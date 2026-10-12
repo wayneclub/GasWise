@@ -1,5 +1,6 @@
 /** Source of truth for UI copy. Other locales must provide every key (type-checked). */
 export const en = {
+  'prefs.languageAuto': 'Browser default',
   'payment.estimated': 'Estimated',
   'payment.estimate': 'Card estimate +{adjustment}/gal · source {raw}',
 

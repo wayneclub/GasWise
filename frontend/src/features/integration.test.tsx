@@ -23,6 +23,29 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); localStorage.clear() })
 const english = (component: React.ReactNode) => <I18nProvider locale="en">{component}</I18nProvider>
 
+it('follows browser language until a manual choice, persists it, and can return to automatic', () => {
+  localStorage.setItem('gaswise.prefs.v1', JSON.stringify({ onboarded: false }))
+  let languages = ['zh-CN', 'en-US']
+  vi.spyOn(navigator, 'languages', 'get').mockImplementation(() => languages)
+  const app = render(<App />)
+  expect(document.documentElement.lang).toBe('zh-CN')
+  expect(screen.getByRole('combobox', { name: '语言' })).toHaveValue('auto')
+  languages = ['es-MX']
+  fireEvent(window, new Event('languagechange'))
+  expect(document.documentElement.lang).toBe('es')
+  fireEvent.change(screen.getByRole('combobox', { name: 'Idioma' }), { target: { value: 'zh-CN' } })
+  languages = ['en-US']
+  fireEvent(window, new Event('languagechange'))
+  expect(document.documentElement.lang).toBe('zh-CN')
+  app.unmount()
+  render(<App />)
+  expect(document.documentElement.lang).toBe('zh-CN')
+  expect(screen.getByRole('combobox', { name: '语言' })).toHaveValue('zh-CN')
+  fireEvent.change(screen.getByRole('combobox', { name: '语言' }), { target: { value: 'auto' } })
+  expect(document.documentElement.lang).toBe('en')
+  expect(JSON.parse(localStorage.getItem('gaswise.prefs.v1')!).locale).toBeNull()
+})
+
 describe('service integration', () => {
   it('supports all payment conditions and defaults legacy preferences to Google Maps', async () => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))

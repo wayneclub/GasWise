@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Decide } from './features/decide/Decide'
 import { Parts } from './features/parts/Parts'
 import { Setup } from './features/setup/Setup'
-import { detectLocale, useI18n } from './i18n'
+import { useBrowserLocale, useI18n } from './i18n'
 import { I18nProvider } from './i18n/I18nProvider'
 import { usePrefs, type Prefs } from './lib/prefs'
 import { VehicleIdentityContext, type VehicleIdentity } from './lib/vehicleIdentity'
@@ -28,13 +28,14 @@ function ServiceTabs({ prefs, update }: { prefs: Prefs; update: (change: Partial
     </header>
     <div role="tabpanel" id="panel-fuel" aria-labelledby="tab-fuel" hidden={settingsOpen || tab !== 'fuel'}><Decide prefs={prefs} update={update} onSettings={() => setSettingsOpen(true)} /></div>
     <div role="tabpanel" id="panel-parts" aria-labelledby="tab-parts" hidden={settingsOpen || tab !== 'parts'}><Parts key={prefs.vehicle?.id ?? 'manual'} vehicle={prefs.vehicle} onChooseCar={() => setSettingsOpen(true)} /></div>
-    {settingsOpen ? <main aria-label={t('decide.settings')} className="mx-auto max-w-2xl px-4 py-6"><div className="mb-6 flex items-center justify-between"><h1 className="text-2xl font-semibold">{t('decide.settings')}</h1><button type="button" onClick={() => setSettingsOpen(false)} className="rounded-control border border-line px-4 py-2 text-sm">{t('settings.back')}</button></div><PreferencesForm prefs={prefs} update={update} advanced /></main> : null}
+    {settingsOpen ? <main aria-label={t('decide.settings')} className="mx-auto max-w-5xl px-4 py-6 lg:py-10"><div className="mb-6 flex items-center justify-between"><h1 className="text-2xl font-semibold">{t('decide.settings')}</h1><button type="button" onClick={() => setSettingsOpen(false)} className="rounded-control border border-line px-4 py-2 text-sm">{t('settings.back')}</button></div><PreferencesForm prefs={prefs} update={update} advanced /></main> : null}
   </>
 }
 export default function App() {
   const [prefs, update] = usePrefs()
+  const browserLocale = useBrowserLocale()
   const [identity, setIdentity] = useState<VehicleIdentity | null>(null)
-  return <I18nProvider locale={prefs.locale ?? detectLocale()}>
+  return <I18nProvider locale={prefs.locale ?? browserLocale}>
     <VehicleIdentityContext.Provider value={{ identity, setIdentity }}>
       {prefs.onboarded ? <ServiceTabs prefs={prefs} update={update} /> : <Setup prefs={prefs} update={update} />}
     </VehicleIdentityContext.Provider>

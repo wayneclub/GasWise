@@ -1,6 +1,7 @@
 import type { MessageKey } from './en'
 
 export const zhTW: Record<MessageKey, string> = {
+  'prefs.languageAuto': '跟隨瀏覽器語言',
   'payment.estimated': '估算',
   'payment.estimate': '刷卡估算 +{adjustment}/加侖 · 原報價 {raw}',
 

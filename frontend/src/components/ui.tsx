@@ -82,7 +82,7 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={active}
             onClick={() => onChange(option.value)}
-            className={`h-9 whitespace-nowrap rounded-[11px] px-2 text-sm font-medium transition ${focus} ${
+            className={`min-h-9 min-w-0 whitespace-normal rounded-[11px] px-2 py-1 text-sm font-medium leading-snug [overflow-wrap:anywhere] transition ${focus} ${
               active ? 'bg-surface text-ink shadow-soft' : 'text-muted hover:text-ink'
             }`}
           >
