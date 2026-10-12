@@ -15,6 +15,10 @@ STATES = set(
     "AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY".split()
 )
 FUELS = ("regular", "mid_grade", "premium", "diesel")
+PUBLIC_HEADERS = {
+    "User-Agent": "GasWise/0.5 fuel comparison (regional averages)",
+    "Accept": "text/html",
+}
 PERIODS = dict(
     zip(
         ("Current Avg.", "Yesterday Avg.", "Week Ago Avg.", "Month Ago Avg.", "Year Ago Avg."),
@@ -125,7 +129,9 @@ class AAAProvider:
     async def averages(self, state):
         url = f"https://gasprices.aaa.com/?state={state}"
         try:
-            response = await self.client.get(url)
+            response = await self.client.get(url, headers=PUBLIC_HEADERS)
+            if response.headers.get("cf-mitigated") == "challenge":
+                raise ProviderError("aaa_upstream_challenge")
             response.raise_for_status()
             published, regions = parse_page(response.text, state)
             county_status = "unavailable"
@@ -136,6 +142,7 @@ class AAAProvider:
                     county_response = await self.client.get(
                         "https://gasprices.aaa.com/index.php",
                         params={"premiumhtml5map_js_data": "true", "map_id": map_id[1]},
+                        headers=PUBLIC_HEADERS,
                     )
                     county_response.raise_for_status()
                     start = re.search(r"map_data\s*:\s*", county_response.text)

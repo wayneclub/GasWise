@@ -24,6 +24,8 @@ def test_precision_regions_and_dates():
 
 async def test_counties_and_http_failure():
     async def handler(request):
+        assert request.headers["user-agent"].startswith("GasWise/")
+        assert request.headers["accept"] == "text/html"
         if request.url.path == "/index.php":
             return httpx.Response(
                 200,
@@ -39,6 +41,16 @@ async def test_counties_and_http_failure():
         assert result.regions[-1].prices["current"]["regular"] is None
     async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(503))) as client:
         with pytest.raises(ProviderError, match="aaa_upstream_unavailable"):
+            await AAAProvider(client).averages("CA")
+
+
+async def test_cloudflare_challenge_is_distinct_from_origin_failure():
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(403, headers={"cf-mitigated": "challenge"})
+        )
+    ) as client:
+        with pytest.raises(ProviderError, match="aaa_upstream_challenge"):
             await AAAProvider(client).averages("CA")
 
 

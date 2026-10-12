@@ -40,6 +40,7 @@ uv run python ../scripts/smoke/smoke_public_specifications.py --help
 | Script | Purpose / requirements |
 | --- | --- |
 | `diagnostics/gasbuddy/probe_gasbuddy_browserless.py` | Compare clean HTTP transports; network and curl |
+| `diagnostics/source_reachability.py` | Matched local/server AAA and GasBuddy probes; safe response metadata only |
 | `diagnostics/gasbuddy/probe_gasbuddy_session.py` | Compare browser loading and session HTTP; Playwright and Chrome |
 | `diagnostics/waze/check_waze_browser.py` | Browser endpoint probe; Playwright and Chrome |
 | `diagnostics/waze/check_waze_fuel.py` | HTTP fuel endpoint/session probe; network |
