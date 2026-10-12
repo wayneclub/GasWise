@@ -39,7 +39,7 @@ export function NearbyStations({ result, navApp, onExpandRoutes, allowUnknownPay
     </div> : null}
     {coverage && coverage.eligible > coverage.routed && (result.snapshot.routes?.length ?? 0) < 100 && onExpandRoutes ? <Button variant="secondary" onClick={onExpandRoutes}>{t('coverage.moreRoutes')}</Button> : null}
     <ExcludedStations records={excluded} result={result} />
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-1">
       {[...stations].slice(0, visible).map(([key, s]) => <article key={key} className="rounded-box border border-line bg-surface p-4">
         <div className="flex items-start justify-between gap-3"><div className="flex min-w-0 flex-wrap items-center gap-1.5"><h3 className="font-medium">{s.name}</h3>{s.top_tier_brand ? <TopTierBadge brand={s.top_tier_brand} /> : null}</div><span className="shrink-0 text-sm num">{s.price_per_gallon ? perGallon(comparisonPrice({ ...s, price_per_gallon: s.price_per_gallon })) : t('coverage.noPrice')}</span></div>
         {s.comparison_price_per_gallon ? <span className="text-[10px] text-caution">{t('payment.estimated')}</span> : null}
