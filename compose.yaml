@@ -1,0 +1,34 @@
+name: gaswise
+services:
+  backend:
+    image: ghcr.io/wayneclub/gaswise-backend:${GASWISE_IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      GASWISE_API_TOKEN: ${GASWISE_API_TOKEN:?Set GASWISE_API_TOKEN in .env or the environment}
+      GASWISE_MODE: ${GASWISE_MODE:-demo}
+      GASWISE_TOP_TIER_REFRESH_ENABLED: ${GASWISE_TOP_TIER_REFRESH_ENABLED:-false}
+    expose:
+      - "8000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+  frontend:
+    image: ghcr.io/wayneclub/gaswise-frontend:${GASWISE_IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      GASWISE_API_TOKEN: ${GASWISE_API_TOKEN:?Set GASWISE_API_TOKEN in .env or the environment}
+      GASWISE_API_URL: http://backend:8000
+    ports:
+      - "127.0.0.1:${GASWISE_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped

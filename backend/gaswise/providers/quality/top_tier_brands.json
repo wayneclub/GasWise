@@ -1,0 +1,624 @@
+{
+  "program": "TOP TIER Detergent Gasoline",
+  "source_url": "https://www.toptiergas.com/gasoline-brands/",
+  "page_modified_at": "2026-08-27T13:31:16-04:00",
+  "fetched_at": "2026-10-11T19:42:27.177072Z",
+  "origin": "bundled",
+  "brands": [
+    {
+      "name": "44 VARIETY",
+      "countries": [
+        "Canada"
+      ]
+    },
+    {
+      "name": "76",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "AGUA CALIENTE FUEL",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "AMOCO",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "ARCO",
+      "countries": [
+        "Mexico",
+        "USA"
+      ]
+    },
+    {
+      "name": "Aloha",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Angel of the Winds Casino and Resort",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Aramco",
+      "countries": [
+        "Chile"
+      ]
+    },
+    {
+      "name": "BEAR CREEK",
+      "countries": [
+        "Canada"
+      ]
+    },
+    {
+      "name": "BKEJWANONG ENERGY & FUEL",
+      "countries": [
+        "Canada"
+      ]
+    },
+    {
+      "name": "BP",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Beacon",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Belmont Car Wash",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "CHUKCHANSI CROSSING FUEL STATION & TRAVEL CENTER",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "CHUMASH GAS STATION",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "CITGO",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "COPEC S.A.",
+      "countries": [
+        "Chile"
+      ]
+    },
+    {
+      "name": "Cenex",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Chevron",
+      "countries": [
+        "Canada",
+        "USA"
+      ]
+    },
+    {
+      "name": "Co-op Fuel",
+      "countries": [
+        "Canada"
+      ]
+    },
+    {
+      "name": "Conoco",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Costco / Kirkland Signature",
+      "countries": [
+        "Canada",
+        "Japan",
+        "Mexico",
+        "Puerto Rico",
+        "USA"
+      ]
+    },
+    {
+      "name": "CountryMark",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Coyote Valley",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "DASH IN",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "DSV",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Diamond Shamrock",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "ENERGY",
+      "countries": [
+        "Mexico"
+      ]
+    },
+    {
+      "name": "Eagle Feather Trading Post",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "EcoMaxx",
+      "countries": [
+        "Puerto Rico"
+      ]
+    },
+    {
+      "name": "Express Mart",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Exxon",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "FAST FUEL",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "FORT INDEPENDENCE TRAVEL PLAZA",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "FUEL DEPOT",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "FUEL UP!",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Feather Falls Mini Mart",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "G Premium and G Super",
+      "countries": [
+        "Mexico"
+      ]
+    },
+    {
+      "name": "GULF",
+      "countries": [
+        "Puerto Rico"
+      ]
+    },
+    {
+      "name": "Go Happy",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Gold Medal Gasoline",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "HFN",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "HORIZON FUEL CENTER",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Harmons Fuel Stop",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Hele",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Holiday",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "J&E Wendy",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "MAIDU MART",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "MORONGO TRAVEL CENTER",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "MOUNTAIN SKY TRAVEL CENTER",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Marathon",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Mega Saver",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Meijer Express",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Members Carwash and Fuel",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Mobil",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Nooksack Market",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Ohana Fuels",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "PAIUTE PALACE GAS STATION",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "PALA CASINO GAS STATION",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Pahvant Travel Plaza",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Pechanga Gas Station",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Penner Oil",
+      "countries": [
+        "Canada"
+      ]
+    },
+    {
+      "name": "Petrobras",
+      "countries": [
+        "Paraguay"
+      ]
+    },
+    {
+      "name": "Phillips 66",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Primax",
+      "countries": [
+        "Colombia",
+        "Peru"
+      ]
+    },
+    {
+      "name": "Puma Energy",
+      "countries": [
+        "Argentina",
+        "Belize",
+        "El Salvador",
+        "Guatemala",
+        "Honduras",
+        "Panama",
+        "Paraguay",
+        "Puerto Rico"
+      ]
+    },
+    {
+      "name": "QuikTrip",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Reeders",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "River Rock Tobacco & Fuel",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Rutters",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "SANTA ROSA PIT STOP",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "SANTA YSABEL ROADSIDE",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "SYCUAN MARKET",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Shamrock",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Shelees Travel Center",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Shell",
+      "countries": [
+        "Canada",
+        "Puerto Rico",
+        "USA"
+      ]
+    },
+    {
+      "name": "Shivwits Fuel Station",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Simonson Station Stores",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Sinclair",
+      "countries": [
+        "Canada",
+        "USA"
+      ]
+    },
+    {
+      "name": "Sunoco",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "TORRES MARTINEZ TRAVEL CENTER",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Terpel",
+      "countries": [
+        "Colombia"
+      ]
+    },
+    {
+      "name": "Texaco",
+      "countries": [
+        "Canada",
+        "Colombia",
+        "El Salvador",
+        "Guatemala",
+        "Honduras",
+        "Panama",
+        "USA"
+      ]
+    },
+    {
+      "name": "TotalGas",
+      "countries": [
+        "Mexico"
+      ]
+    },
+    {
+      "name": "Tulalip Market",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Ultra Top Fuel",
+      "countries": [
+        "Puerto Rico"
+      ]
+    },
+    {
+      "name": "Ultramar",
+      "countries": [
+        "Canada"
+      ]
+    },
+    {
+      "name": "Uncle Buddys Pumps",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Uno",
+      "countries": [
+        "El Salvador",
+        "Guatemala",
+        "Honduras",
+        "Nicaragua"
+      ]
+    },
+    {
+      "name": "Valero",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Viejas Pit Stop",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "WIN WIN",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "WOW",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Waterway Fuels",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Wintun Mini Mart",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "YPF",
+      "countries": [
+        "Argentina"
+      ]
+    },
+    {
+      "name": "YUHUBI NOBI GAS STATION & MARKET",
+      "countries": [
+        "USA"
+      ]
+    },
+    {
+      "name": "Yokut Gas Station",
+      "countries": [
+        "USA"
+      ]
+    }
+  ],
+  "note": "Licensing is brand-level: every outlet and octane grade of a licensed brand qualifies, with or without a pump decal. GasWise matches stations by brand name."
+}

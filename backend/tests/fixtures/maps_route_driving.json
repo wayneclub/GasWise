@@ -1,0 +1,154 @@
+{
+  "description": "Sanitized observed anonymous HTTP directions on 2026-10-10. Only echoed input coordinates and route summaries retained at original array paths; all identities, session/search tokens, steps and unrelated fields omitted. Not a full wire replay.",
+  "points": [
+    {
+      "lat": 34.03938,
+      "lng": -118.2663
+    },
+    {
+      "lat": 34.0522,
+      "lng": -118.2437
+    }
+  ],
+  "response": [
+    [
+      [
+        [
+          [
+            [
+              null,
+              null,
+              [
+                null,
+                null,
+                34.03938,
+                -118.2663
+              ]
+            ]
+          ]
+        ],
+        [
+          [
+            [
+              null,
+              null,
+              [
+                null,
+                null,
+                34.0522,
+                -118.24369999999999
+              ]
+            ]
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            0,
+            "Main St",
+            [
+              3155,
+              "2.0 miles",
+              1
+            ],
+            [
+              641,
+              "11 min"
+            ],
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            [
+              [
+                529,
+                "9 min"
+              ],
+              null,
+              3,
+              [
+                497,
+                "8 min"
+              ],
+              [
+                441,
+                764,
+                "7\u201313 min"
+              ],
+              [
+                596
+              ]
+            ]
+          ]
+        ],
+        [
+          [
+            0,
+            "CA-110 N",
+            [
+              6745,
+              "4.2 miles",
+              1
+            ],
+            [
+              682,
+              "11 min"
+            ],
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            [
+              [
+                483,
+                "8 min"
+              ],
+              null,
+              3,
+              [
+                476,
+                "8 min"
+              ],
+              [
+                435,
+                599,
+                "7\u201310 min"
+              ],
+              [
+                497
+              ]
+            ]
+          ]
+        ],
+        [
+          [
+            3,
+            null,
+            [
+              3807,
+              "2.4 miles",
+              1
+            ],
+            [
+              969,
+              "17 min",
+              1020
+            ],
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ]
+      ]
+    ]
+  ]
+}

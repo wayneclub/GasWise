@@ -20,7 +20,7 @@ eggs/
 .eggs/
 lib/
 lib64/
-parts/
+/parts/
 sdist/
 var/
 wheels/
@@ -86,3 +86,9 @@ Thumbs.db
 *~
 *.sublime-project
 *.sublime-workspace
+
+# Local research outputs and workspace-specific tools
+artifacts/
+.claude/
+.docker-secrets/
+compose.private.yaml

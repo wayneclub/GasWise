@@ -1,0 +1,83 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/geist';
+
+/*
+  GasWise tokens: warm ivory, light only (explicit product direction).
+  Neutrals are one warm family; sage marks savings; ink drives primary actions.
+  Amber is reserved for the semantic "limited confidence" state.
+  Radius rule: containers 20px, controls 14px, chips full.
+*/
+@theme {
+  --font-sans: 'Geist Variable', 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', ui-sans-serif, system-ui, sans-serif;
+
+  --color-canvas: #f3f0ea;
+  --color-surface: #fcfbf8;
+  --color-sunken: #ece8e0;
+  --color-line: #e3ddd2;
+  --color-ink: #23211e;
+  --color-muted: #6e6960;
+  --color-faint: #9a948a;
+  --color-accent: #4e7a5c;
+  --color-accent-soft: #e6ede3;
+  --color-accent-ink: #fcfbf8;
+  --color-caution: #85602a;
+  --color-caution-soft: #f5ead4;
+  --color-danger: #9c3b30;
+  --color-danger-soft: #f6e3de;
+
+  --radius-box: 20px;
+  --radius-control: 14px;
+
+  --shadow-raised: 0 1px 2px rgba(74, 62, 44, 0.05), 0 12px 32px -16px rgba(74, 62, 44, 0.18);
+  --shadow-soft: 0 1px 2px rgba(74, 62, 44, 0.06);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: 'ss01';
+  -webkit-font-smoothing: antialiased;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Skeleton shimmer is state feedback; it stops under reduced motion. */
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+.skeleton {
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--color-sunken) 25%, var(--color-line) 50%, var(--color-sunken) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+  * { transition-duration: 0ms !important; }
+}
+
+/* Ambient light, fixed and non-interactive so it never repaints with scroll. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 40rem at 100% -10%, rgba(255, 253, 248, 0.9), transparent 60%),
+    radial-gradient(50rem 36rem at -10% 110%, rgba(232, 224, 210, 0.55), transparent 60%);
+}

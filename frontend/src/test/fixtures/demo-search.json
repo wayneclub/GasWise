@@ -1,0 +1,682 @@
+{
+    "snapshot": {
+        "query": {
+            "gallons": "10",
+            "mpg": "22",
+            "fuel_cycles": [],
+            "time_value_per_hour": "15",
+            "payment_type": "credit",
+            "allow_unknown_payment": false,
+            "memberships": [],
+            "preferred_sources": [
+                "gasbuddy_web",
+                "gasbuddy",
+                "google_places"
+            ],
+            "strategy": "best_value",
+            "required_octane": null,
+            "octane_policy": "regional_estimate",
+            "max_price_age_minutes": 1440,
+            "stop_minutes": "5",
+            "max_results": 10,
+            "opening_policy": "exclude_closed",
+            "origin": {
+                "lat": 34.0522,
+                "lng": -118.2437
+            },
+            "destination": null,
+            "trip_mode": "round_trip",
+            "fuel_type": "premium",
+            "postal_code": null,
+            "current_state": null,
+            "vehicle_id": null,
+            "radius_meters": 8000.0
+        },
+        "stations": [
+            {
+                "id": "demo-0",
+                "canonical_id": null,
+                "details": {},
+                "octane_inference": null,
+                "name": "Chevron",
+                "location": {
+                    "lat": 34.0602,
+                    "lng": -118.2437
+                },
+                "address": null,
+                "price_per_gallon": "6.39",
+                "currency": "USD",
+                "unit": "US_gallon",
+                "fuel_type": "premium",
+                "octane": 91,
+                "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                "fetched_at": "2026-10-11T09:52:39.036331Z",
+                "source": "synthetic",
+                "payment_type": "credit",
+                "membership_required": null,
+                "attribution": [],
+                "open_now": null,
+                "business_status": null
+            },
+            {
+                "id": "demo-1",
+                "canonical_id": null,
+                "details": {},
+                "octane_inference": null,
+                "name": "Shell",
+                "location": {
+                    "lat": 34.0772,
+                    "lng": -118.2437
+                },
+                "address": null,
+                "price_per_gallon": "6.19",
+                "currency": "USD",
+                "unit": "US_gallon",
+                "fuel_type": "premium",
+                "octane": 91,
+                "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                "fetched_at": "2026-10-11T09:52:39.036331Z",
+                "source": "synthetic",
+                "payment_type": "credit",
+                "membership_required": null,
+                "attribution": [],
+                "open_now": null,
+                "business_status": null
+            },
+            {
+                "id": "demo-2",
+                "canonical_id": null,
+                "details": {},
+                "octane_inference": null,
+                "name": "Arco",
+                "location": {
+                    "lat": 34.102199999999996,
+                    "lng": -118.2437
+                },
+                "address": null,
+                "price_per_gallon": "5.99",
+                "currency": "USD",
+                "unit": "US_gallon",
+                "fuel_type": "premium",
+                "octane": 91,
+                "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                "fetched_at": "2026-10-11T09:52:39.036331Z",
+                "source": "synthetic",
+                "payment_type": "credit",
+                "membership_required": null,
+                "attribution": [],
+                "open_now": null,
+                "business_status": null
+            }
+        ],
+        "source_statuses": [
+            {
+                "source": "synthetic",
+                "status": "ok",
+                "quote_count": 3,
+                "detail": null
+            }
+        ],
+        "baseline": {
+            "distance_meters": 0.0,
+            "duration_seconds": 0.0,
+            "source": "no_trip",
+            "fetched_at": null,
+            "duration_basis": "provider_estimate",
+            "upstream_http_requests": 0
+        },
+        "routes": [
+            {
+                "via": {
+                    "lat": 34.0602,
+                    "lng": -118.2437
+                },
+                "route": {
+                    "distance_meters": 2223.898532892451,
+                    "duration_seconds": 222.38985328924508,
+                    "source": "synthetic_distance_estimate",
+                    "fetched_at": null,
+                    "duration_basis": "provider_estimate",
+                    "upstream_http_requests": 0
+                }
+            },
+            {
+                "via": {
+                    "lat": 34.102199999999996,
+                    "lng": -118.2437
+                },
+                "route": {
+                    "distance_meters": 13899.365830568977,
+                    "duration_seconds": 1389.9365830568977,
+                    "source": "synthetic_distance_estimate",
+                    "fetched_at": null,
+                    "duration_basis": "provider_estimate",
+                    "upstream_http_requests": 0
+                }
+            },
+            {
+                "via": {
+                    "lat": 34.0772,
+                    "lng": -118.2437
+                },
+                "route": {
+                    "distance_meters": 6949.682915284488,
+                    "duration_seconds": 694.9682915284488,
+                    "source": "synthetic_distance_estimate",
+                    "fetched_at": null,
+                    "duration_basis": "provider_estimate",
+                    "upstream_http_requests": 0
+                }
+            }
+        ],
+        "collected_at": "2026-10-11T09:52:39.037363Z",
+        "expires_at": "2026-10-11T10:02:39.037363Z",
+        "warnings": [
+            "Ranking covers only the routed shortlist, not all stations or the full route corridor."
+        ],
+        "unlocated_gasbuddy": [],
+        "inventory": [],
+        "vehicle": null
+    },
+    "signature": "242e9e50d54e9dd54a40a056ccad6a69de45fe6f98a9894fb99d8c79ee38c36e",
+    "ranking": {
+        "applied_octane_aki": null,
+        "octane_policy": "regional_estimate",
+        "generated_at": "2026-10-11T09:52:39.039903Z",
+        "mode": "demo",
+        "strategy": "best_value",
+        "baseline_route": {
+            "distance_meters": 0.0,
+            "duration_seconds": 0.0,
+            "source": "no_trip",
+            "fetched_at": null,
+            "duration_basis": "provider_estimate",
+            "upstream_http_requests": 0
+        },
+        "results": [
+            {
+                "station": {
+                    "id": "demo-0",
+                    "canonical_id": null,
+                    "details": {},
+                    "octane_inference": null,
+                    "name": "Chevron",
+                    "location": {
+                        "lat": 34.0602,
+                        "lng": -118.2437
+                    },
+                    "address": null,
+                    "price_per_gallon": "6.39",
+                    "currency": "USD",
+                    "unit": "US_gallon",
+                    "fuel_type": "premium",
+                    "octane": 91,
+                    "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                    "fetched_at": "2026-10-11T09:52:39.036331Z",
+                    "source": "synthetic",
+                    "payment_type": "credit",
+                    "membership_required": null,
+                    "attribution": [],
+                    "open_now": null,
+                    "business_status": null
+                },
+                "route": {
+                    "distance_meters": 2223.898532892451,
+                    "duration_seconds": 222.38985328924508,
+                    "source": "synthetic_distance_estimate",
+                    "fetched_at": null,
+                    "duration_basis": "provider_estimate",
+                    "upstream_http_requests": 0
+                },
+                "detour_miles": "1.382",
+                "extra_travel_minutes": "3.71",
+                "stop_minutes": "5",
+                "purchase_cost": "63.90",
+                "detour_fuel_cost": "0.40",
+                "actual_fuel_cost": "64.30",
+                "time_cost": "2.18",
+                "generalized_trip_cost": "66.48",
+                "price_age_minutes": 3.876666666666666e-05,
+                "freshness": "fresh",
+                "break_even_gallons_vs_nearest": null,
+                "price_comparison": {
+                    "station_key": "synthetic:demo-0",
+                    "selected_source": "synthetic",
+                    "selection_reason": "Known-time quotes within 30 minutes of newest; verified payment then user source preference breaks ties.",
+                    "evidence": [
+                        {
+                            "source": "synthetic",
+                            "provider_station_id": "demo-0",
+                            "price_per_gallon": "6.39",
+                            "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                            "payment_type": "credit",
+                            "octane": 91,
+                            "octane_inference": null,
+                            "eligible": true,
+                            "exclusion_reason": null,
+                            "comparable": true,
+                            "comparison_exclusion_reason": null
+                        }
+                    ],
+                    "eligible_source_count": 1,
+                    "price_spread": "0.00",
+                    "agreement": "single_source",
+                    "quality": "limited",
+                    "comparable_cost_min": "66.48",
+                    "comparable_cost_max": "66.48"
+                },
+                "break_even": {
+                    "reference_station_key": "synthetic:demo-0",
+                    "reference_station_id": "demo-0",
+                    "reference_station_name": "Chevron",
+                    "price_savings_per_gallon": "0.00",
+                    "additional_fuel_cost": "0.00",
+                    "additional_time_cost": "0.00",
+                    "fuel_only_gallons": null,
+                    "including_time_gallons": null,
+                    "fuel_savings_at_requested_gallons": "0.00",
+                    "generalized_savings_at_requested_gallons": "0.00",
+                    "worthwhile_fuel_only": false,
+                    "worthwhile_including_time": false
+                },
+                "detour_fuel_gallons": "0.06281211285446546147769751923",
+                "mpg_used": "22",
+                "fuel_consumption_basis": "user_mpg_estimate",
+                "route_fuel_gallons": "0.06281211285446546147769751923",
+                "baseline_fuel_gallons": "0E+2",
+                "fuel_model": {
+                    "model_id": "distance_fuel_balance_v1",
+                    "basis": "user_mpg_estimate",
+                    "mpg_used": "22",
+                    "calibration_cycles": 0,
+                    "calibration_miles": "0",
+                    "calibration_gallons": "0",
+                    "route_specific_efficiency": false,
+                    "assumptions": [
+                        "Same aggregate fuel consumption rate for baseline and candidate routes.",
+                        "Tank cycles must be non-overlapping, same-vehicle full-to-full intervals including all fuel added.",
+                        "Tank-average calibration does not measure this route's traffic, grade, weather or cold-start effects.",
+                        "No manufacturer certification or empirically validated prediction interval is claimed.",
+                        "EPA combined MPG is a vehicle baseline, not this route's measured consumption.",
+                        "Without a vehicle, explicit MPG or tank records, the legacy 20 MPG assumption is used."
+                    ],
+                    "vehicle": null
+                }
+            },
+            {
+                "station": {
+                    "id": "demo-1",
+                    "canonical_id": null,
+                    "details": {},
+                    "octane_inference": null,
+                    "name": "Shell",
+                    "location": {
+                        "lat": 34.0772,
+                        "lng": -118.2437
+                    },
+                    "address": null,
+                    "price_per_gallon": "6.19",
+                    "currency": "USD",
+                    "unit": "US_gallon",
+                    "fuel_type": "premium",
+                    "octane": 91,
+                    "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                    "fetched_at": "2026-10-11T09:52:39.036331Z",
+                    "source": "synthetic",
+                    "payment_type": "credit",
+                    "membership_required": null,
+                    "attribution": [],
+                    "open_now": null,
+                    "business_status": null
+                },
+                "route": {
+                    "distance_meters": 6949.682915284488,
+                    "duration_seconds": 694.9682915284488,
+                    "source": "synthetic_distance_estimate",
+                    "fetched_at": null,
+                    "duration_basis": "provider_estimate",
+                    "upstream_http_requests": 0
+                },
+                "detour_miles": "4.318",
+                "extra_travel_minutes": "11.58",
+                "stop_minutes": "5",
+                "purchase_cost": "61.90",
+                "detour_fuel_cost": "1.22",
+                "actual_fuel_cost": "63.12",
+                "time_cost": "4.15",
+                "generalized_trip_cost": "67.26",
+                "price_age_minutes": 3.876666666666666e-05,
+                "freshness": "fresh",
+                "break_even_gallons_vs_nearest": "13.91",
+                "price_comparison": {
+                    "station_key": "synthetic:demo-1",
+                    "selected_source": "synthetic",
+                    "selection_reason": "Known-time quotes within 30 minutes of newest; verified payment then user source preference breaks ties.",
+                    "evidence": [
+                        {
+                            "source": "synthetic",
+                            "provider_station_id": "demo-1",
+                            "price_per_gallon": "6.19",
+                            "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                            "payment_type": "credit",
+                            "octane": 91,
+                            "octane_inference": null,
+                            "eligible": true,
+                            "exclusion_reason": null,
+                            "comparable": true,
+                            "comparison_exclusion_reason": null
+                        }
+                    ],
+                    "eligible_source_count": 1,
+                    "price_spread": "0.00",
+                    "agreement": "single_source",
+                    "quality": "limited",
+                    "comparable_cost_min": "67.26",
+                    "comparable_cost_max": "67.26"
+                },
+                "break_even": {
+                    "reference_station_key": "synthetic:demo-0",
+                    "reference_station_id": "demo-0",
+                    "reference_station_name": "Chevron",
+                    "price_savings_per_gallon": "0.20",
+                    "additional_fuel_cost": "0.81",
+                    "additional_time_cost": "1.97",
+                    "fuel_only_gallons": "4.068262034438794885312954166",
+                    "including_time_gallons": "13.91364616442220571864628750",
+                    "fuel_savings_at_requested_gallons": "1.19",
+                    "generalized_savings_at_requested_gallons": "-0.78",
+                    "worthwhile_fuel_only": true,
+                    "worthwhile_including_time": false
+                },
+                "detour_fuel_gallons": "0.196287852670079689160755732",
+                "mpg_used": "22",
+                "fuel_consumption_basis": "user_mpg_estimate",
+                "route_fuel_gallons": "0.196287852670079689160755732",
+                "baseline_fuel_gallons": "0E+2",
+                "fuel_model": {
+                    "model_id": "distance_fuel_balance_v1",
+                    "basis": "user_mpg_estimate",
+                    "mpg_used": "22",
+                    "calibration_cycles": 0,
+                    "calibration_miles": "0",
+                    "calibration_gallons": "0",
+                    "route_specific_efficiency": false,
+                    "assumptions": [
+                        "Same aggregate fuel consumption rate for baseline and candidate routes.",
+                        "Tank cycles must be non-overlapping, same-vehicle full-to-full intervals including all fuel added.",
+                        "Tank-average calibration does not measure this route's traffic, grade, weather or cold-start effects.",
+                        "No manufacturer certification or empirically validated prediction interval is claimed.",
+                        "EPA combined MPG is a vehicle baseline, not this route's measured consumption.",
+                        "Without a vehicle, explicit MPG or tank records, the legacy 20 MPG assumption is used."
+                    ],
+                    "vehicle": null
+                }
+            },
+            {
+                "station": {
+                    "id": "demo-2",
+                    "canonical_id": null,
+                    "details": {},
+                    "octane_inference": null,
+                    "name": "Arco",
+                    "location": {
+                        "lat": 34.102199999999996,
+                        "lng": -118.2437
+                    },
+                    "address": null,
+                    "price_per_gallon": "5.99",
+                    "currency": "USD",
+                    "unit": "US_gallon",
+                    "fuel_type": "premium",
+                    "octane": 91,
+                    "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                    "fetched_at": "2026-10-11T09:52:39.036331Z",
+                    "source": "synthetic",
+                    "payment_type": "credit",
+                    "membership_required": null,
+                    "attribution": [],
+                    "open_now": null,
+                    "business_status": null
+                },
+                "route": {
+                    "distance_meters": 13899.365830568977,
+                    "duration_seconds": 1389.9365830568977,
+                    "source": "synthetic_distance_estimate",
+                    "fetched_at": null,
+                    "duration_basis": "provider_estimate",
+                    "upstream_http_requests": 0
+                },
+                "detour_miles": "8.637",
+                "extra_travel_minutes": "23.17",
+                "stop_minutes": "5",
+                "purchase_cost": "59.90",
+                "detour_fuel_cost": "2.35",
+                "actual_fuel_cost": "62.25",
+                "time_cost": "7.04",
+                "generalized_trip_cost": "69.29",
+                "price_age_minutes": 3.876666666666666e-05,
+                "freshness": "fresh",
+                "break_even_gallons_vs_nearest": "17.04",
+                "price_comparison": {
+                    "station_key": "synthetic:demo-2",
+                    "selected_source": "synthetic",
+                    "selection_reason": "Known-time quotes within 30 minutes of newest; verified payment then user source preference breaks ties.",
+                    "evidence": [
+                        {
+                            "source": "synthetic",
+                            "provider_station_id": "demo-2",
+                            "price_per_gallon": "5.99",
+                            "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                            "payment_type": "credit",
+                            "octane": 91,
+                            "octane_inference": null,
+                            "eligible": true,
+                            "exclusion_reason": null,
+                            "comparable": true,
+                            "comparison_exclusion_reason": null
+                        }
+                    ],
+                    "eligible_source_count": 1,
+                    "price_spread": "0.00",
+                    "agreement": "single_source",
+                    "quality": "limited",
+                    "comparable_cost_min": "69.29",
+                    "comparable_cost_max": "69.29"
+                },
+                "break_even": {
+                    "reference_station_key": "synthetic:demo-0",
+                    "reference_station_id": "demo-0",
+                    "reference_station_name": "Chevron",
+                    "price_savings_per_gallon": "0.40",
+                    "additional_fuel_cost": "1.95",
+                    "additional_time_cost": "4.86",
+                    "fuel_only_gallons": "4.8753976846188013662144892",
+                    "including_time_gallons": "17.03734278636518282454782253",
+                    "fuel_savings_at_requested_gallons": "2.05",
+                    "generalized_savings_at_requested_gallons": "-2.81",
+                    "worthwhile_fuel_only": true,
+                    "worthwhile_including_time": false
+                },
+                "detour_fuel_gallons": "0.3925757053401594065656565656",
+                "mpg_used": "22",
+                "fuel_consumption_basis": "user_mpg_estimate",
+                "route_fuel_gallons": "0.3925757053401594065656565656",
+                "baseline_fuel_gallons": "0E+2",
+                "fuel_model": {
+                    "model_id": "distance_fuel_balance_v1",
+                    "basis": "user_mpg_estimate",
+                    "mpg_used": "22",
+                    "calibration_cycles": 0,
+                    "calibration_miles": "0",
+                    "calibration_gallons": "0",
+                    "route_specific_efficiency": false,
+                    "assumptions": [
+                        "Same aggregate fuel consumption rate for baseline and candidate routes.",
+                        "Tank cycles must be non-overlapping, same-vehicle full-to-full intervals including all fuel added.",
+                        "Tank-average calibration does not measure this route's traffic, grade, weather or cold-start effects.",
+                        "No manufacturer certification or empirically validated prediction interval is claimed.",
+                        "EPA combined MPG is a vehicle baseline, not this route's measured consumption.",
+                        "Without a vehicle, explicit MPG or tank records, the legacy 20 MPG assumption is used."
+                    ],
+                    "vehicle": null
+                }
+            }
+        ],
+        "warnings": [
+            "Opening status is unknown for 3 eligible stations; confirm hours before driving.",
+            "Costs assume fixed purchased gallons and station price for detour fuel; exclude tolls, queues and vehicle wear.",
+            "Source agreement is a rule-based signal, not measured accuracy or proof of independent data feeds.",
+            "DEMO: recommendation prices and routes are synthetic; no live price is mixed into demo rankings.",
+            "Fuel uses aggregate MPG, not route-specific traffic/grade/weather simulation; traffic time affects time cost only.",
+            "Ranking covers only the routed shortlist, not all stations or the full route corridor.",
+            "Recalculated from the original snapshot; prices and traffic were not refreshed."
+        ],
+        "excluded_count": 0,
+        "source_statuses": [
+            {
+                "source": "synthetic",
+                "status": "ok",
+                "quote_count": 3,
+                "detail": null
+            }
+        ],
+        "decision": {
+            "recommended_station_id": "demo-0",
+            "status": "single_source",
+            "reason": "Comparable purchase conditions have only one source per station; price accuracy is not corroborated.",
+            "savings_vs_runner_up": "0.78"
+        },
+        "recommendations": {
+            "cheapest_overall": {
+                "station_key": "synthetic:demo-2",
+                "station": {
+                    "id": "demo-2",
+                    "canonical_id": null,
+                    "details": {},
+                    "octane_inference": null,
+                    "name": "Arco",
+                    "location": {
+                        "lat": 34.102199999999996,
+                        "lng": -118.2437
+                    },
+                    "address": null,
+                    "price_per_gallon": "5.99",
+                    "currency": "USD",
+                    "unit": "US_gallon",
+                    "fuel_type": "premium",
+                    "octane": 91,
+                    "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                    "fetched_at": "2026-10-11T09:52:39.036331Z",
+                    "source": "synthetic",
+                    "payment_type": "credit",
+                    "membership_required": null,
+                    "attribution": [],
+                    "open_now": null,
+                    "business_status": null
+                },
+                "actual_fuel_cost": "62.25",
+                "generalized_trip_cost": "69.29",
+                "extra_travel_minutes": "23.17",
+                "decision": {
+                    "recommended_station_id": "demo-2",
+                    "status": "single_source",
+                    "reason": "Comparable purchase conditions have only one source per station; price accuracy is not corroborated.",
+                    "savings_vs_runner_up": "0.87"
+                },
+                "unavailable_reason": null
+            },
+            "fastest_stop": {
+                "station_key": "synthetic:demo-0",
+                "station": {
+                    "id": "demo-0",
+                    "canonical_id": null,
+                    "details": {},
+                    "octane_inference": null,
+                    "name": "Chevron",
+                    "location": {
+                        "lat": 34.0602,
+                        "lng": -118.2437
+                    },
+                    "address": null,
+                    "price_per_gallon": "6.39",
+                    "currency": "USD",
+                    "unit": "US_gallon",
+                    "fuel_type": "premium",
+                    "octane": 91,
+                    "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                    "fetched_at": "2026-10-11T09:52:39.036331Z",
+                    "source": "synthetic",
+                    "payment_type": "credit",
+                    "membership_required": null,
+                    "attribution": [],
+                    "open_now": null,
+                    "business_status": null
+                },
+                "actual_fuel_cost": "64.30",
+                "generalized_trip_cost": "66.48",
+                "extra_travel_minutes": "3.71",
+                "decision": {
+                    "recommended_station_id": "demo-0",
+                    "status": "uncertain",
+                    "reason": "Fastest estimated route among candidates; queues and stop durations are not measured.",
+                    "savings_vs_runner_up": null
+                },
+                "unavailable_reason": null
+            },
+            "best_value": {
+                "station_key": "synthetic:demo-0",
+                "station": {
+                    "id": "demo-0",
+                    "canonical_id": null,
+                    "details": {},
+                    "octane_inference": null,
+                    "name": "Chevron",
+                    "location": {
+                        "lat": 34.0602,
+                        "lng": -118.2437
+                    },
+                    "address": null,
+                    "price_per_gallon": "6.39",
+                    "currency": "USD",
+                    "unit": "US_gallon",
+                    "fuel_type": "premium",
+                    "octane": 91,
+                    "price_updated_at": "2026-10-11T09:52:39.036331Z",
+                    "fetched_at": "2026-10-11T09:52:39.036331Z",
+                    "source": "synthetic",
+                    "payment_type": "credit",
+                    "membership_required": null,
+                    "attribution": [],
+                    "open_now": null,
+                    "business_status": null
+                },
+                "actual_fuel_cost": "64.30",
+                "generalized_trip_cost": "66.48",
+                "extra_travel_minutes": "3.71",
+                "decision": {
+                    "recommended_station_id": "demo-0",
+                    "status": "single_source",
+                    "reason": "Comparable purchase conditions have only one source per station; price accuracy is not corroborated.",
+                    "savings_vs_runner_up": "0.78"
+                },
+                "unavailable_reason": null
+            },
+            "on_my_route": {
+                "station_key": null,
+                "station": null,
+                "actual_fuel_cost": null,
+                "generalized_trip_cost": null,
+                "extra_travel_minutes": null,
+                "decision": null,
+                "unavailable_reason": "requires_on_route_trip"
+            }
+        },
+        "vehicle": null
+    },
+    "upstream_calls": {
+        "gasbuddy_search": 0,
+        "google_nearby": 0,
+        "google_text_search": 0,
+        "routes": 0
+    }
+}

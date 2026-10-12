@@ -1,0 +1,108 @@
+{
+  "description": "Sanitized observed anonymous HTTP directions on 2026-10-10. Only echoed input coordinates and route summaries retained at original array paths; all identities, session/search tokens, steps and unrelated fields omitted. Not a full wire replay.",
+  "points": [
+    {
+      "lat": 34.03938,
+      "lng": -118.2663
+    },
+    {
+      "lat": 34.042,
+      "lng": -118.27
+    },
+    {
+      "lat": 34.03938,
+      "lng": -118.2663
+    }
+  ],
+  "response": [
+    [
+      [
+        [
+          [
+            [
+              null,
+              null,
+              [
+                null,
+                null,
+                34.03938,
+                -118.2663
+              ]
+            ]
+          ]
+        ],
+        [
+          [
+            [
+              null,
+              null,
+              [
+                null,
+                null,
+                34.042,
+                -118.27
+              ]
+            ]
+          ]
+        ],
+        [
+          [
+            [
+              null,
+              null,
+              [
+                null,
+                null,
+                34.03938,
+                -118.2663
+              ]
+            ]
+          ]
+        ]
+      ],
+      [
+        [
+          [
+            0,
+            "S Grand Ave",
+            [
+              4505,
+              "2.8 miles",
+              1
+            ],
+            [
+              832,
+              "14 min"
+            ],
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            [
+              [
+                640,
+                "11 min"
+              ],
+              null,
+              3,
+              [
+                680,
+                "11 min"
+              ],
+              [
+                622,
+                879,
+                "10\u201315 min"
+              ],
+              [
+                742
+              ]
+            ]
+          ]
+        ]
+      ]
+    ]
+  ]
+}

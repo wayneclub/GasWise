@@ -1,0 +1,119 @@
+import type { FuelType } from '../../api/types'
+import { Field, Segmented, Stepper, TextInput, Toggle } from '../../components/ui'
+import { LOCALES, useI18n } from '../../i18n'
+import { gallons } from '../../lib/format'
+import { NAV_APPS } from '../../lib/navigation'
+import { useVehicleIdentity } from '../../lib/vehicleIdentity'
+import type { Prefs } from '../../lib/prefs'
+import { TripForm } from './TripForm'
+import { VehiclePicker } from './VehiclePicker'
+
+export function PreferencesForm({
+  prefs,
+  update,
+  advanced = false,
+}: {
+  prefs: Prefs
+  update: (change: Partial<Prefs>) => void
+  advanced?: boolean
+}) {
+  const { identity } = useVehicleIdentity()
+  const { t, locale } = useI18n()
+  const fuels: { value: FuelType; label: string }[] = [
+    { value: 'regular', label: t('fuel.regular') },
+    { value: 'midgrade', label: t('fuel.midgradeShort') },
+    { value: 'premium', label: t('fuel.premium') },
+    { value: 'diesel', label: t('fuel.diesel') },
+  ]
+  return (
+    <div className="flex flex-col gap-7">
+      <Field label={t('prefs.language')}>
+        <Segmented label={t('prefs.language')} value={locale} options={LOCALES} onChange={(value) => update({ locale: value })} />
+      </Field>
+
+      <Field label={t('prefs.car')} hint={t('prefs.carHint')}>
+        <VehiclePicker vehicle={prefs.vehicle} onChange={(vehicle) => update({ vehicle })} />
+        <p className="text-xs leading-relaxed text-muted">{identity ? t('vehicle.sharedReady') : t('vehicle.sharedMissing')}</p>
+        {identity ? <p className="font-mono text-xs text-muted">{identity.kind === 'vin' ? `VIN · •••••••••••••${identity.value.vin.slice(-4)}` : `${identity.value.state} · •••${identity.value.plate.slice(-2)}`}</p> : null}
+      </Field>
+
+      {prefs.vehicle ? null : (
+        <div className="grid gap-5 sm:grid-cols-[1fr_7rem]">
+          <Field label={t('prefs.fuel')}>
+            <Segmented label={t('prefs.fuel')} value={prefs.fuelType} options={fuels} onChange={(fuelType) => update({ fuelType })} />
+          </Field>
+          <Field label={t('prefs.mpg')}>
+            <TextInput
+              inputMode="decimal"
+              aria-label={t('prefs.mpgLabel')}
+              value={prefs.mpg ?? ''}
+              onChange={(event) => {
+                const value = event.target.value.replace(/[^\d.]/g, '')
+                update({ mpg: value && Number(value) > 0 ? String(Math.min(Number(value), 200)) : null })
+              }}
+              className="num max-w-32 sm:max-w-none"
+            />
+          </Field>
+        </div>
+      )}
+
+      <Field label={t('prefs.gallons')} hint={t('prefs.gallonsHint')}>
+        <Stepper
+          label={t('ui.gallons')}
+          value={prefs.gallons}
+          min={1}
+          max={30}
+          step={1}
+          format={(value) => gallons(value, t)}
+          onChange={(value) => update({ gallons: value })}
+        />
+      </Field>
+
+      <Field label={t('prefs.payment')} hint={prefs.payment === 'cash_or_credit' ? t('prefs.allHint') : undefined}>
+        <Segmented
+          label={t('prefs.payment')}
+          value={prefs.payment}
+          options={[
+            { value: 'cash_or_credit', label: t('prefs.all') },
+            { value: 'credit', label: t('prefs.card') },
+            { value: 'cash', label: t('prefs.cash') },
+          ]}
+          onChange={(payment) => update({ payment })}
+        />
+      </Field>
+
+      <Field label={t('prefs.priority')} hint={t('prefs.priorityHint')}>
+        <Segmented
+          label={t('prefs.priority')}
+          value={prefs.preference}
+          options={[
+            { value: 'money', label: t('prefs.money') },
+            { value: 'balanced', label: t('prefs.balanced') },
+            { value: 'time', label: t('prefs.time') },
+          ]}
+          onChange={(preference) => update({ preference })}
+        />
+      </Field>
+
+      <div className="flex flex-col gap-5 border-t border-line pt-6">
+        <Toggle label={t('prefs.costco')} description={t('prefs.costcoHint')} checked={prefs.costco} onChange={(costco) => update({ costco })} />
+        <Toggle label={t('prefs.preferTopTier')} description={t('prefs.preferTopTierHint')} checked={prefs.preferTopTier} onChange={(preferTopTier) => update({ preferTopTier })} />
+        {advanced ? (
+          <Toggle
+            label={t('prefs.unconfirmed')}
+            description={t('prefs.unconfirmedHint')}
+            checked={prefs.allowUnknownPayment}
+            onChange={(allowUnknownPayment) => update({ allowUnknownPayment })}
+          />
+        ) : null}
+      </div>
+
+      {advanced ? <TripForm prefs={prefs} update={update} /> : null}
+      {advanced ? (
+        <Field label={t('prefs.navApp')}>
+          <Segmented label={t('prefs.navApp')} value={prefs.navApp} options={NAV_APPS} onChange={(navApp) => update({ navApp })} />
+        </Field>
+      ) : null}
+    </div>
+  )
+}

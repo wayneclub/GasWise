@@ -26,11 +26,11 @@ Observed signed-out requests used `gbcsrf` rather than `Authorization: Bearer`. 
 
 ## Backend separation
 
-`providers/http_session.py` owns HTTP sessions and source payloads. `providers/gasbuddy_web.py` normalizes quotes and payment conditions. `comparison.py` owns source evidence and selection; `service.py` owns route costs and rankings. The frontend will only consume versioned HTTP/SSE contracts.
+`providers/gasbuddy/http_session.py` owns HTTP sessions and source payloads. `providers/gasbuddy/web.py` normalizes quotes and payment conditions. `domain/pricing/comparison.py` owns source evidence and selection; `services/pricing/search.py` owns route costs and rankings. The frontend will only consume versioned HTTP/SSE contracts.
 
 Sessions expire after `GASWISE_GASBUDDY_SESSION_SECONDS` (600 seconds by default), once an in-flight query completes. Idle eviction closes the cookie jar and removes the token. Search changes can reuse the same site session, while every API query requests new price/metadata data. Prices are not cached or archived. Rejection invalidates the session and returns an error without retrying; a later query can establish a fresh anonymous session normally.
 
-The provider requests the bounded first page of results. Missing/zero fuel prices are omitted. Credit requests never fall back to cash-only prices. For a cash user, an ordinary credit price can be used when no cash quote exists. Original `price_updated_at` remains distinct from retrieval time. Numeric octane is unverified; Premium is not a guaranteed 91-octane observation.
+The provider requests the bounded first page of results. Missing/zero fuel prices are omitted. Explicit credit and cash requests never substitute the other payment basis. Original `price_updated_at` remains distinct from retrieval time. Numeric octane is unverified; Premium is not a guaranteed 91-octane observation.
 
 ## API and local configuration
 
@@ -58,8 +58,8 @@ Website queries need a five-digit `postal_code`. No arbitrary source URL is acce
 From `backend`:
 
 ```sh
-uv run python ../scripts/check_live_gasbuddy.py --repeat 3
-uv run python ../scripts/check_no_browser_runtime.py
+uv run python ../scripts/smoke/check_live_gasbuddy.py --repeat 3
+uv run python ../scripts/smoke/check_no_browser_runtime.py
 ```
 
 The first checks the running HTTP service. The second creates an independent FastAPI lifespan with an empty cookie jar and explicitly forbids Playwright imports, proving a cold start needs no browser. Both scripts print statuses, timing and quote data without exposing credentials. The protocol diagnosis helper `probe_gasbuddy_browserless.py` is for development and uses optional development tools; it is not part of the production request path.
@@ -97,7 +97,7 @@ Provide `search` (city/region or ZIP), legacy `postal_code`, or GPS `origin`.
 City/ZIP lookups do not require GPS. Street-address geocoding is not guaranteed.
 Fuel: regular, midgrade, premium, diesel. Payment: cash, credit, cash_or_credit.
 The last option chooses the lower available quote per station and reports its actual
-payment basis. Cash retains credit fallback when no cash price is reported.
+payment basis. Explicit cash excludes credit-only stations, including Costco.
 Optional `brand_id` forwards GasBuddy's numeric ID; omitting it includes all brands.
 Brand names/IDs are exposed at `GET /v1/sources/gasbuddy/brands`. `max_price_age_minutes: null` means
 No Limit; a number excludes old, unknown or future-dated reports locally, based on

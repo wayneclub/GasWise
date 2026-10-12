@@ -1,0 +1,16 @@
+RECORD = {
+    "id": "123",
+    "year": "2020",
+    "make": "Fixture",
+    "model": "Car",
+    "trany": "Automatic",
+    "drive": "Front-Wheel Drive",
+    "displ": "2",
+    "cylinders": "4",
+    "fuelType1": "Premium Gasoline",
+    "fuelType2": "",
+    "atvType": "",
+    "city08": "25",
+    "highway08": "35",
+    "comb08": "30",
+}

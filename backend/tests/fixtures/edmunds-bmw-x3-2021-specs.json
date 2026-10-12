@@ -1,0 +1,376 @@
+{
+  "totalNumber": 4,
+  "$dataset": "#/makes/bmw/models/x3/submodels/suv/years/2021/styles/partial-features-specs",
+  "totalPages": 1,
+  "results": [
+    {
+      "id": 401866230,
+      "name": "sDrive30i 4dr SUV (2.0L 4cyl Turbo 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "rear wheel drive"
+            },
+            {
+              "name": "descent control"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.0 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "248 hp @ 5200 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "258 lb-ft @ 1450 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "premium unleaded (recommended)"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "25/29 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "27 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "430.0/498.8 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "17.2 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401866229,
+      "name": "xDrive30i 4dr SUV AWD (2.0L 4cyl Turbo 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "all wheel drive"
+            },
+            {
+              "name": "Center limited slip differential"
+            },
+            {
+              "name": "descent control"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.0 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "248 hp @ 5200 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "258 lb-ft @ 1450 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "premium unleaded (recommended)"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "23/29 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "25 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "395.6/498.8 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "17.2 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401866227,
+      "name": "xDrive30e 4dr SUV AWD (2.0L 4cyl Turbo gas/electric plug-in hybrid 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "all wheel drive"
+            },
+            {
+              "name": "descent control"
+            },
+            {
+              "name": "Center limited slip differential"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.0 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "plug-in hybrid"
+            },
+            {
+              "name": "Horsepower",
+              "value": "288 hp"
+            },
+            {
+              "name": "Torque",
+              "value": "310 lb-ft"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "premium unleaded (recommended)"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "21/27 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "24 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "277.2/356.4 mi."
+            },
+            {
+              "name": "EPA city/highway MPGe",
+              "value": "59/61 MPGe"
+            },
+            {
+              "name": "EPA combined MPGe",
+              "value": "60 MPGe"
+            },
+            {
+              "name": "EPA electricity range",
+              "value": "17 mi."
+            },
+            {
+              "name": "EPA kWh/100 mi",
+              "value": "56"
+            },
+            {
+              "name": "EPA time to charge battery (at 240V)",
+              "value": "3.0 hr."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "13.2 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": true
+      }
+    },
+    {
+      "id": 401866228,
+      "name": "M40i 4dr SUV AWD (3.0L 6cyl Turbo 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "all wheel drive"
+            },
+            {
+              "name": "Center limited slip differential"
+            },
+            {
+              "name": "descent control"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "3.0 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 6"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "382 hp @ 5800 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "365 lb-ft @ 1520 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "24"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "premium unleaded (recommended)"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "21/27 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "23 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "361.2/464.4 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "17.2 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    }
+  ]
+}

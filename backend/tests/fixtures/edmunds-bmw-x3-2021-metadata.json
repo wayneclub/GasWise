@@ -1,0 +1,36 @@
+{
+  "totalNumber": 1,
+  "totalPages": 1,
+  "results": [
+    {
+      "makeNiceId": "bmw",
+      "modelNiceId": "x3",
+      "styles": [
+        {
+          "id": 401866228
+        },
+        {
+          "id": 401866227
+        },
+        {
+          "id": 401866230
+        },
+        {
+          "id": 401866229
+        }
+      ],
+      "submodels": [
+        {
+          "niceId": "plug-in-hybrid"
+        },
+        {
+          "niceId": "suv"
+        },
+        {
+          "niceId": "m40i"
+        }
+      ],
+      "year": 2021
+    }
+  ]
+}

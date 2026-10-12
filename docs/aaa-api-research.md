@@ -10,7 +10,7 @@ No public official AAA fuel-price developer API documentation, API-key registrat
 - State averages: https://gasprices.aaa.com/state-gas-price-averages/
 - California and metro averages: https://gasprices.aaa.com/?state=CA
 
-GasWise already exposes `GET /v1/sources/aaa/averages?state=CA` with Bearer authentication. `backend/gaswise/providers/aaa.py` retrieves and parses public HTML. County regular averages use the page-observed `index.php?premiumhtml5map_js_data=true&map_id=...` resource; this is a website implementation detail, not a documented developer API. Do not hardcode map IDs or treat that endpoint as a supported API contract.
+GasWise already exposes `GET /v1/sources/aaa/averages?state=CA` with Bearer authentication. `backend/gaswise/providers/pricing/aaa.py` retrieves and parses public HTML. County regular averages use the page-observed `index.php?premiumhtml5map_js_data=true&map_id=...` resource; this is a website implementation detail, not a documented developer API. Do not hardcode map IDs or treat that endpoint as a supported API contract.
 
 Direct provider verification on 2026-10-09 returned source date 2026-10-09, 32 regions (one state and 31 metros), and `county_status=unavailable`. This confirms live state/metro retrieval only; it does not establish reliable county availability or deployed-service health.
 

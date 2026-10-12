@@ -1,0 +1,95 @@
+import { StarIcon, ShieldCheckIcon } from '@phosphor-icons/react'
+import type { RankedStation, Station } from '../../api/types'
+import { Button, LinkButton, Sheet } from '../../components/ui'
+import { useI18n } from '../../i18n'
+import { comparisonPrice, age, fuelKey, perGallon, sourceLabel, usd, miles, minutes } from '../../lib/format'
+import { navigationUrl } from '../../lib/navigation'
+import type { NavApp } from '../../lib/prefs'
+
+export type StationSummary = Pick<Station, 'name' | 'location'> & Partial<Station>
+import { reasonKey } from '../../lib/stationStatus'
+export const TOP_TIER_LIST_URL = 'https://www.toptiergas.com/gasoline-brands/'
+
+/** Brand-level license from the automaker-run TOP TIER program; not a government rating. */
+export function TopTierBadge({ brand, size: _size = 'sm' }: { brand: string; size?: 'sm' | 'lg' }) {
+  const { t } = useI18n()
+  return <span role="img" title={t('topTier.note', { brand })} aria-label={t('topTier.label', { brand })} className="inline-flex shrink-0 items-center gap-1 rounded-full border border-accent/20 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold tracking-wide text-accent">
+    <ShieldCheckIcon size={12}/><span>TOP TIER</span>
+  </span>
+}
+
+export function StationRating({ station }: { station: StationSummary }) {
+  const { t } = useI18n()
+  return <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
+    <span className="inline-flex items-center gap-1">
+      <StarIcon size={14} weight={station.rating == null ? 'regular' : 'fill'} className={station.rating == null ? 'text-faint' : 'text-caution'} />
+      {station.rating == null ? t('station.noRating') : station.review_count == null
+        ? t('station.ratingOnly', { rating: station.rating.toFixed(1) })
+        : t('station.rating', { rating: station.rating.toFixed(1), count: station.review_count })}
+    </span>
+    {station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}
+  </p>
+}
+export function StationDetails({ station, row, open, onClose, navApp, status, tripMode = 'round_trip' }: {
+  station: StationSummary; row?: RankedStation | null; open: boolean; onClose: () => void; navApp: NavApp; status?: string; tripMode?: 'round_trip' | 'on_route'
+}) {
+  const { t, locale } = useI18n()
+  const canonical = station.canonical_id?.startsWith('google_places:') ? station.canonical_id.slice(14) : null
+  const maps = new URL('https://www.google.com/maps/search/')
+  maps.searchParams.set('api', '1')
+  maps.searchParams.set('query', `${station.location.lat},${station.location.lng}`)
+  if (canonical) maps.searchParams.set('query_place_id', canonical)
+  const services = Array.isArray(station.details?.services) ? station.details.services as { id?: string; label?: string }[] : []
+  const phone = typeof station.details?.phone === 'string' ? station.details.phone : null
+  const hours = Array.isArray(station.details?.opening_hours) ? station.details.opening_hours as { days?: number[]; from?: string; to?: string; is_24_hours?: boolean }[] : []
+  let website: string | null = null
+  if (typeof station.details?.website === 'string') {
+    try { const url = new URL(station.details.website.startsWith('http') ? station.details.website : `https://${station.details.website}`); if (['http:', 'https:'].includes(url.protocol) && !url.username && !url.password) website = url.toString() } catch { /* unavailable */ }
+  }
+  return <Sheet open={open} onClose={onClose} title={t('station.details')}>
+    <div className="flex flex-col gap-4">
+      <div><h3 className="text-xl font-semibold">{station.name}</h3><p className="mt-1 text-sm text-muted">{station.address}</p></div>
+      <StationRating station={station} />
+      {station.rating != null ? <p className="text-xs text-faint">{t('station.ratingNote', { source: station.rating_source ?? 'Google Maps' })}</p> : null}
+      {station.top_tier_brand ? <div className="flex items-start gap-3 rounded-control bg-sunken p-3">
+        <TopTierBadge brand={station.top_tier_brand} size="lg" />
+        <p className="text-xs leading-snug text-muted">
+        {t('topTier.note', { brand: station.top_tier_brand })}{' '}
+        <a href={TOP_TIER_LIST_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">{t('topTier.source')}</a>
+        </p>
+      </div> : null}
+      {status && status !== 'routed' ? <p className="rounded-control bg-caution-soft p-3 text-sm text-caution">{t(reasonKey(status))}</p> : null}
+      <div className="rounded-control border border-line bg-surface p-4">
+        <p className="text-2xl font-semibold num">{station.price_per_gallon ? perGallon(station.price_per_gallon) : t('coverage.noPrice')} <span className="text-sm font-normal text-muted">{station.fuel_type ? t(fuelKey(station.fuel_type)) : ''}</span></p>
+        {station.price_per_gallon ? <>
+          {station.comparison_price_per_gallon && station.price_per_gallon ? <p className="mt-2 text-xs text-caution">{perGallon(comparisonPrice({ ...station, price_per_gallon: station.price_per_gallon }))} · {t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
+          <p className="mt-2 text-sm">{t('station.payment')}: {t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</p>
+          {station.membership_required ? <p className="mt-1 text-sm text-caution">{t('station.member', { name: station.membership_required })}</p> : null}
+          <p className="mt-2 text-xs text-muted">{t('station.source', { source: sourceLabel(station.source ?? '') })}</p>
+          <p className="text-xs text-muted">{t('age.updated', { age: age(station.price_updated_at, t) })}</p>
+        </> : null}
+      </div>
+      <p className="text-sm">{t('station.hours')}: {t(station.open_now === true ? 'hours.open' : station.open_now === false ? 'hours.closed' : 'hours.unknown')}</p>
+      {row ? <dl className="grid grid-cols-2 gap-2 border-t border-line pt-3 text-sm">
+        <dt>{t('breakdown.total')}</dt><dd className="text-right font-semibold num">{usd(row.actual_fuel_cost)}</dd>
+        <dt>{t('breakdown.detour', { distance: miles(row.detour_miles, t) })}</dt><dd className="text-right num">{usd(row.detour_fuel_cost)}</dd>
+        <dt>{t('pick.driveLabel')}</dt><dd className="text-right num">{tripMode === 'on_route' ? t('route.extraTime', { time: minutes(row.extra_travel_minutes, t) }) : t('pick.roundTrip', { time: minutes(row.extra_travel_minutes, t) })}</dd>
+      </dl> : null}
+      {row?.price_comparison?.evidence.length ? <div className="rounded-control bg-sunken p-3 text-sm">
+        {row.price_comparison.evidence.map((e, index) => <div key={`${e.source}:${e.payment_type}:${index}`} className="flex flex-wrap justify-between gap-2 border-b border-line py-2 last:border-0">
+          <span>{sourceLabel(e.source)} · {t(e.payment_type === 'cash' ? 'prefs.cash' : e.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</span>
+          <span className="num">{perGallon(e.price_per_gallon)}</span>
+          {!e.eligible && e.exclusion_reason ? <span className="w-full text-xs text-caution">{t(reasonKey(e.exclusion_reason))}</span> : null}
+        </div>)}
+      </div> : null}
+      {phone ? <p className="text-sm">{t('station.phone')}: <a className="underline" href={`tel:${phone.replace(/[^+\d]/g, '')}`}>{phone}</a></p> : null}
+      {website ? <a className="text-sm underline" href={website} target="_blank" rel="noreferrer">{t('station.website')}</a> : null}
+      {hours.length ? <div className="rounded-control bg-sunken p-3 text-sm"><h4 className="font-medium">{t('station.schedule')}</h4>
+        {hours.map((h, i) => <p key={i} className="mt-1 text-muted">{(h.days ?? []).map((d) => new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 0, 4 + d)))).join(', ')} · {h.is_24_hours ? t('station.allDay') : `${h.from}–${h.to}`}</p>)}
+      </div> : null}
+      {services.length ? <div><h4 className="text-sm font-medium">{t('station.amenities')}</h4><p className="mt-1 text-sm text-muted">{services.map((s) => s.id && ['RESTROOMS', 'PARKING_FOR_CUSTOMERS', 'CREDIT_CARDS', 'WHEELCHAIR_ACCESSIBLE', 'AIR_CONDITIONING', 'DELIVERIES', 'WIFI', 'DRIVE_THROUGH'].includes(s.id) ? t(`amenity.${s.id}` as import('../../i18n').MessageKey) : s.label ?? s.id).filter(Boolean).join(' · ')}</p></div> : null}
+      <LinkButton href={navigationUrl(navApp, station.location.lat, station.location.lng)}>{t('pick.navigate')}</LinkButton>
+      <Button variant="secondary" onClick={() => window.open(maps.toString(), '_blank', 'noopener,noreferrer')}>{t('station.maps')}</Button>
+    </div>
+  </Sheet>
+}

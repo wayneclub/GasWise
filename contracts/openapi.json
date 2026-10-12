@@ -43,6 +43,547 @@
         ]
       }
     },
+    "/v1/locations/resolve": {
+      "post": {
+        "summary": "Resolve Location",
+        "operationId": "resolve_location_v1_locations_resolve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationQuery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/parts/fitment": {
+      "post": {
+        "summary": "Parts Fitment",
+        "operationId": "parts_fitment_v1_parts_fitment_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartsResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/parts/search": {
+      "post": {
+        "summary": "Parts Search",
+        "operationId": "parts_search_v1_parts_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartsSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartsSearchResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/vehicles/plate": {
+      "post": {
+        "summary": "Resolve Plate",
+        "operationId": "resolve_plate_v1_vehicles_plate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlateResolution"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/vehicles/vin": {
+      "post": {
+        "summary": "Resolve Vin",
+        "operationId": "resolve_vin_v1_vehicles_vin_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VinResolution"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/vehicles/resolve": {
+      "post": {
+        "summary": "Resolve Vehicle",
+        "operationId": "resolve_vehicle_v1_vehicles_resolve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleResolution"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/vehicles/fuel-assessment": {
+      "post": {
+        "summary": "Fuel Assessment",
+        "operationId": "fuel_assessment_v1_vehicles_fuel_assessment_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FuelAssessmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FuelAssessment"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/vehicles/years": {
+      "get": {
+        "summary": "Vehicle Years",
+        "operationId": "vehicle_years_v1_vehicles_years_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleMenu"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/vehicles/makes": {
+      "get": {
+        "summary": "Vehicle Makes",
+        "operationId": "vehicle_makes_v1_vehicles_makes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 1984,
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleMenu"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/vehicles/models": {
+      "get": {
+        "summary": "Vehicle Models",
+        "operationId": "vehicle_models_v1_vehicles_models_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 1984,
+              "title": "Year"
+            }
+          },
+          {
+            "name": "make",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "title": "Make"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleMenu"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/vehicles/options": {
+      "get": {
+        "summary": "Vehicle Options",
+        "operationId": "vehicle_options_v1_vehicles_options_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 1984,
+              "title": "Year"
+            }
+          },
+          {
+            "name": "make",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "title": "Make"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "title": "Model"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleMenu"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/vehicles/{vehicle_id}": {
+      "get": {
+        "summary": "Vehicle Record",
+        "operationId": "vehicle_record_v1_vehicles__vehicle_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehicle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000000,
+              "minimum": 1,
+              "title": "Vehicle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleProfile-Output"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/sources": {
       "get": {
         "summary": "Price Sources",
@@ -119,7 +660,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Search"
+                "$ref": "#/components/schemas/Search-Input"
               }
             }
           },
@@ -174,6 +715,90 @@
                 "schema": {
                   "$ref": "#/components/schemas/GooglePrices"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/sources/google-maps-web/prices": {
+      "post": {
+        "summary": "Maps Web Prices",
+        "operationId": "maps_web_prices_v1_sources_google_maps_web_prices_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MapsWebSearch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MapsWebPrices"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/sources/waze/prices": {
+      "post": {
+        "summary": "Waze Prices",
+        "operationId": "waze_prices_v1_sources_waze_prices_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WazePriceSearch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -261,6 +886,135 @@
         ]
       }
     },
+    "/v1/smart/search": {
+      "post": {
+        "summary": "Smart Search",
+        "operationId": "smart_search_v1_smart_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmartSearch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmartResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/smart/routes": {
+      "post": {
+        "summary": "Smart Routes",
+        "operationId": "smart_routes_v1_smart_routes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmartRouteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmartResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/smart/rerank": {
+      "post": {
+        "summary": "Smart Rerank",
+        "operationId": "smart_rerank_v1_smart_rerank_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmartRerank"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmartResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/recommendations": {
       "post": {
         "summary": "Recommendations",
@@ -269,7 +1023,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Search"
+                "$ref": "#/components/schemas/Search-Input"
               }
             }
           },
@@ -312,7 +1066,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Search"
+                "$ref": "#/components/schemas/Search-Input"
               }
             }
           },
@@ -334,6 +1088,30 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/quality/top-tier": {
+      "get": {
+        "summary": "Top Tier Brands",
+        "description": "Current TOP TIER brand list and where it came from. Served from memory; no upstream call.",
+        "operationId": "top_tier_brands_v1_quality_top_tier_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopTierList"
                 }
               }
             }
@@ -412,6 +1190,89 @@
         ],
         "title": "AAASnapshot"
       },
+      "BreakEven": {
+        "properties": {
+          "reference_station_key": {
+            "type": "string",
+            "title": "Reference Station Key"
+          },
+          "reference_station_id": {
+            "type": "string",
+            "title": "Reference Station Id"
+          },
+          "reference_station_name": {
+            "type": "string",
+            "title": "Reference Station Name"
+          },
+          "price_savings_per_gallon": {
+            "type": "string",
+            "title": "Price Savings Per Gallon"
+          },
+          "additional_fuel_cost": {
+            "type": "string",
+            "title": "Additional Fuel Cost"
+          },
+          "additional_time_cost": {
+            "type": "string",
+            "title": "Additional Time Cost"
+          },
+          "fuel_only_gallons": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Only Gallons"
+          },
+          "including_time_gallons": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Including Time Gallons"
+          },
+          "fuel_savings_at_requested_gallons": {
+            "type": "string",
+            "title": "Fuel Savings At Requested Gallons"
+          },
+          "generalized_savings_at_requested_gallons": {
+            "type": "string",
+            "title": "Generalized Savings At Requested Gallons"
+          },
+          "worthwhile_fuel_only": {
+            "type": "boolean",
+            "title": "Worthwhile Fuel Only"
+          },
+          "worthwhile_including_time": {
+            "type": "boolean",
+            "title": "Worthwhile Including Time"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reference_station_key",
+          "reference_station_id",
+          "reference_station_name",
+          "price_savings_per_gallon",
+          "additional_fuel_cost",
+          "additional_time_cost",
+          "fuel_only_gallons",
+          "including_time_gallons",
+          "fuel_savings_at_requested_gallons",
+          "generalized_savings_at_requested_gallons",
+          "worthwhile_fuel_only",
+          "worthwhile_including_time"
+        ],
+        "title": "BreakEven"
+      },
       "Decision": {
         "properties": {
           "recommended_station_id": {
@@ -459,6 +1320,320 @@
           "reason"
         ],
         "title": "Decision"
+      },
+      "FuelAssessment": {
+        "properties": {
+          "vehicle": {
+            "$ref": "#/components/schemas/VehicleProfile-Output"
+          },
+          "target_octane_aki": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Octane Aki"
+          },
+          "target_basis": {
+            "type": "string",
+            "enum": [
+              "manufacturer_minimum",
+              "manufacturer_normal_recommendation",
+              "specification_estimate",
+              "unresolved"
+            ],
+            "title": "Target Basis"
+          },
+          "hertz_status": {
+            "type": "string",
+            "enum": [
+              "not_requested",
+              "matched",
+              "mismatch",
+              "unavailable"
+            ],
+            "title": "Hertz Status",
+            "default": "not_requested"
+          },
+          "hertz_recommended_grade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hertz Recommended Grade"
+          },
+          "source_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Urls"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "vehicle",
+          "target_basis"
+        ],
+        "title": "FuelAssessment"
+      },
+      "FuelAssessmentRequest": {
+        "properties": {
+          "vehicle_id": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Vehicle Id"
+          },
+          "hertz_listing_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hertz Listing Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "vehicle_id"
+        ],
+        "title": "FuelAssessmentRequest"
+      },
+      "FuelCycle-Input": {
+        "properties": {
+          "distance_miles": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 10000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Distance Miles"
+          },
+          "consumed_gallons": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 500.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Consumed Gallons"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "distance_miles",
+          "consumed_gallons"
+        ],
+        "title": "FuelCycle",
+        "description": "Same vehicle, non-overlapping full-to-full tank interval; not this stop's purchase."
+      },
+      "FuelCycle-Output": {
+        "properties": {
+          "distance_miles": {
+            "type": "string",
+            "title": "Distance Miles"
+          },
+          "consumed_gallons": {
+            "type": "string",
+            "title": "Consumed Gallons"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "distance_miles",
+          "consumed_gallons"
+        ],
+        "title": "FuelCycle",
+        "description": "Same vehicle, non-overlapping full-to-full tank interval; not this stop's purchase."
+      },
+      "FuelModelInfo": {
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "const": "distance_fuel_balance_v1",
+            "title": "Model Id",
+            "default": "distance_fuel_balance_v1"
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "user_mpg_estimate",
+              "full_tank_calibrated_estimate",
+              "epa_combined_estimate"
+            ],
+            "title": "Basis"
+          },
+          "mpg_used": {
+            "type": "string",
+            "title": "Mpg Used"
+          },
+          "calibration_cycles": {
+            "type": "integer",
+            "title": "Calibration Cycles",
+            "default": 0
+          },
+          "calibration_miles": {
+            "type": "string",
+            "title": "Calibration Miles",
+            "default": "0"
+          },
+          "calibration_gallons": {
+            "type": "string",
+            "title": "Calibration Gallons",
+            "default": "0"
+          },
+          "route_specific_efficiency": {
+            "type": "boolean",
+            "title": "Route Specific Efficiency",
+            "default": false
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          },
+          "vehicle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleProfile-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "basis",
+          "mpg_used",
+          "assumptions"
+        ],
+        "title": "FuelModelInfo"
+      },
+      "FuelSpecificationEvidence": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "fueleconomy_gov",
+              "edmunds",
+              "hertz"
+            ],
+            "title": "Source"
+          },
+          "source_group": {
+            "type": "string",
+            "title": "Source Group"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "matched",
+              "mismatch",
+              "unavailable",
+              "ambiguous"
+            ],
+            "title": "Status"
+          },
+          "fuel_grade": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "regular",
+                  "midgrade",
+                  "premium",
+                  "diesel"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Grade"
+          },
+          "requirement": {
+            "type": "string",
+            "enum": [
+              "recommended",
+              "required",
+              "unspecified"
+            ],
+            "title": "Requirement",
+            "default": "unspecified"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "observed_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Label"
+          },
+          "numeric_octane_aki": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numeric Octane Aki"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "source_group",
+          "status",
+          "source_url"
+        ],
+        "title": "FuelSpecificationEvidence"
       },
       "GasBuddyBrand": {
         "properties": {
@@ -577,7 +1752,7 @@
           },
           "prices": {
             "items": {
-              "$ref": "#/components/schemas/GasBuddyQuote"
+              "$ref": "#/components/schemas/GasBuddyQuote-Output"
             },
             "type": "array",
             "title": "Prices"
@@ -610,7 +1785,158 @@
         ],
         "title": "GasBuddyPrices"
       },
-      "GasBuddyQuote": {
+      "GasBuddyQuote-Input": {
+        "properties": {
+          "membership_required": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Membership Required"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          },
+          "street": {
+            "type": "string",
+            "title": "Street"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "region": {
+            "type": "string",
+            "title": "Region"
+          },
+          "postal_code": {
+            "type": "string",
+            "title": "Postal Code"
+          },
+          "price_per_gallon": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Price Per Gallon"
+          },
+          "currency": {
+            "type": "string",
+            "const": "USD",
+            "title": "Currency",
+            "default": "USD"
+          },
+          "unit": {
+            "type": "string",
+            "const": "US_gallon",
+            "title": "Unit",
+            "default": "US_gallon"
+          },
+          "fuel_type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "midgrade",
+              "premium",
+              "diesel"
+            ],
+            "title": "Fuel Type"
+          },
+          "octane": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Octane"
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit"
+            ],
+            "title": "Payment Type"
+          },
+          "price_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Updated At"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          },
+          "report_kind": {
+            "type": "string",
+            "enum": [
+              "datafeed",
+              "community",
+              "unknown"
+            ],
+            "title": "Report Kind"
+          },
+          "source": {
+            "type": "string",
+            "const": "gasbuddy_web",
+            "title": "Source",
+            "default": "gasbuddy_web"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "address",
+          "street",
+          "city",
+          "region",
+          "postal_code",
+          "price_per_gallon",
+          "fuel_type",
+          "payment_type",
+          "price_updated_at",
+          "fetched_at",
+          "report_kind",
+          "source_url"
+        ],
+        "title": "GasBuddyQuote"
+      },
+      "GasBuddyQuote-Output": {
         "properties": {
           "membership_required": {
             "anyOf": [
@@ -755,6 +2081,11 @@
       },
       "GasBuddySearch": {
         "properties": {
+          "include_payment_variants": {
+            "type": "boolean",
+            "title": "Include Payment Variants",
+            "default": false
+          },
           "search": {
             "anyOf": [
               {
@@ -838,7 +2169,7 @@
           },
           "max_results": {
             "type": "integer",
-            "maximum": 10.0,
+            "maximum": 100.0,
             "minimum": 1.0,
             "title": "Max Results",
             "default": 5
@@ -890,7 +2221,7 @@
         "properties": {
           "stations": {
             "items": {
-              "$ref": "#/components/schemas/Station"
+              "$ref": "#/components/schemas/Station-Output"
             },
             "type": "array",
             "title": "Stations"
@@ -933,6 +2264,1017 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "LocationCandidate": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Point"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "location"
+        ],
+        "title": "LocationCandidate"
+      },
+      "LocationQuery": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "LocationQuery"
+      },
+      "LocationResult": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/LocationCandidate"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "google_maps_web"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "candidates"
+        ],
+        "title": "LocationResult"
+      },
+      "MapsWebPrices": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "const": "google_maps_web",
+            "title": "Source",
+            "default": "google_maps_web"
+          },
+          "stations": {
+            "items": {
+              "$ref": "#/components/schemas/Station-Output"
+            },
+            "type": "array",
+            "title": "Stations"
+          },
+          "all_prices": {
+            "items": {
+              "$ref": "#/components/schemas/Station-Output"
+            },
+            "type": "array",
+            "title": "All Prices"
+          },
+          "inventory": {
+            "items": {
+              "$ref": "#/components/schemas/MapsWebStation"
+            },
+            "type": "array",
+            "title": "Inventory"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "authentication": {
+            "type": "string",
+            "enum": [
+              "anonymous",
+              "session"
+            ],
+            "title": "Authentication",
+            "default": "anonymous"
+          },
+          "detail_requests": {
+            "type": "integer",
+            "title": "Detail Requests",
+            "default": 0
+          },
+          "upstream_http_requests": {
+            "type": "integer",
+            "title": "Upstream Http Requests",
+            "default": 1
+          },
+          "official_api_requests": {
+            "type": "integer",
+            "title": "Official Api Requests",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "stations",
+          "inventory",
+          "warnings"
+        ],
+        "title": "MapsWebPrices"
+      },
+      "MapsWebSearch": {
+        "properties": {
+          "origin": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "fuel_type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "midgrade",
+              "premium",
+              "diesel"
+            ],
+            "title": "Fuel Type",
+            "default": "regular"
+          },
+          "radius_meters": {
+            "type": "number",
+            "maximum": 50000.0,
+            "minimum": 100.0,
+            "title": "Radius Meters",
+            "default": 5000
+          },
+          "max_results": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "default": 20
+          },
+          "detail_limit": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Detail Limit",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "origin"
+        ],
+        "title": "MapsWebSearch"
+      },
+      "MapsWebStation": {
+        "properties": {
+          "place_id": {
+            "type": "string",
+            "title": "Place Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 5.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating"
+          },
+          "review_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Count"
+          },
+          "rating_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating Source"
+          },
+          "distance_meters": {
+            "type": "number",
+            "title": "Distance Meters"
+          },
+          "available_fuel_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Available Fuel Types"
+          },
+          "open_now": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Now"
+          },
+          "business_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "operational",
+                  "temporarily_closed",
+                  "permanently_closed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Status"
+          },
+          "opening_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opening Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "place_id",
+          "name",
+          "location",
+          "distance_meters",
+          "available_fuel_types"
+        ],
+        "title": "MapsWebStation"
+      },
+      "PartCandidate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "brand": {
+            "type": "string",
+            "title": "Brand"
+          },
+          "part_number": {
+            "type": "string",
+            "title": "Part Number"
+          },
+          "product_url": {
+            "type": "string",
+            "title": "Product Url"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "compatible",
+              "incompatible",
+              "needs_confirmation"
+            ],
+            "title": "Status"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/PartsEvidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "brand",
+          "part_number",
+          "product_url",
+          "status",
+          "evidence"
+        ],
+        "title": "PartCandidate"
+      },
+      "PartsCrossCheck": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "supported",
+              "rejected",
+              "conflict",
+              "insufficient"
+            ],
+            "title": "Status",
+            "default": "insufficient"
+          },
+          "verified_sources": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "autozone",
+                "oreilly"
+              ]
+            },
+            "type": "array",
+            "title": "Verified Sources"
+          },
+          "source_statuses": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Source Statuses"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail",
+            "default": "No verified application for the requested product; retailer count is not a fitment requirement."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PartsCrossCheck"
+      },
+      "PartsEvidence": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "amazon",
+              "manufacturer",
+              "autozone",
+              "oreilly"
+            ],
+            "title": "Source"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "matched",
+              "incompatible",
+              "conditional",
+              "no_match",
+              "ambiguous",
+              "unavailable"
+            ],
+            "title": "Status"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "product_identity",
+              "catalog_application",
+              "engine_application",
+              "vehicle_fitment"
+            ],
+            "title": "Scope"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "part_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Number"
+          },
+          "catalog_product_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Product Id"
+          },
+          "conditions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Conditions"
+          },
+          "matched_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched Fields"
+          },
+          "application_descriptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Application Descriptions"
+          },
+          "product_relation": {
+            "type": "string",
+            "enum": [
+              "direct_product",
+              "interchange_candidate",
+              "verified_interchange"
+            ],
+            "title": "Product Relation",
+            "default": "direct_product"
+          },
+          "interchange_source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interchange Source Url"
+          },
+          "referenced_part_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referenced Part Number"
+          },
+          "replacement_candidates": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Replacement Candidates"
+          },
+          "lookup_stages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lookup Stages"
+          },
+          "provider_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "status",
+          "scope",
+          "source_url"
+        ],
+        "title": "PartsEvidence"
+      },
+      "PartsRequest": {
+        "properties": {
+          "amazon_url": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Amazon Url"
+          },
+          "vin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VinRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlateRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "part_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Number"
+          },
+          "oreilly_product_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oreilly Product Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amazon_url"
+        ],
+        "title": "PartsRequest"
+      },
+      "PartsResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "compatible",
+              "incompatible",
+              "needs_confirmation",
+              "conflict"
+            ],
+            "title": "Status"
+          },
+          "amazon_url": {
+            "type": "string",
+            "title": "Amazon Url"
+          },
+          "product_status": {
+            "type": "string",
+            "enum": [
+              "identified",
+              "unavailable",
+              "ambiguous",
+              "unsupported",
+              "user_supplied_unverified",
+              "conflict"
+            ],
+            "title": "Product Status"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "part_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Number"
+          },
+          "model_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Number"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "verification_scope": {
+            "type": "string",
+            "enum": [
+              "unresolved",
+              "catalog_application",
+              "engine_application",
+              "vehicle_fitment"
+            ],
+            "title": "Verification Scope",
+            "default": "unresolved"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/PartsEvidence"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "cross_check": {
+            "$ref": "#/components/schemas/PartsCrossCheck"
+          },
+          "missing_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Fields"
+          },
+          "vehicle": {
+            "$ref": "#/components/schemas/VinDecoded"
+          },
+          "source_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Urls"
+          },
+          "applications": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Applications"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "usage_decision": {
+            "type": "string",
+            "enum": [
+              "verified_fit",
+              "do_not_use",
+              "verification_required"
+            ],
+            "title": "Usage Decision",
+            "description": "Keep an unresolved lookup distinct from explicit rejection, but block both.",
+            "readOnly": true
+          },
+          "fitment_confirmed": {
+            "type": "boolean",
+            "title": "Fitment Confirmed",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "amazon_url",
+          "product_status",
+          "vehicle",
+          "usage_decision",
+          "fitment_confirmed"
+        ],
+        "title": "PartsResult"
+      },
+      "PartsSearchRequest": {
+        "properties": {
+          "keyword": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Keyword"
+          },
+          "vin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VinRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlateRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_results": {
+            "type": "integer",
+            "maximum": 6.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "default": 3
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "keyword"
+        ],
+        "title": "PartsSearchRequest"
+      },
+      "PartsSearchResult": {
+        "properties": {
+          "keyword": {
+            "type": "string",
+            "title": "Keyword"
+          },
+          "vehicle": {
+            "$ref": "#/components/schemas/VinDecoded"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PartCandidate"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "source": {
+            "type": "string",
+            "const": "autozone",
+            "title": "Source",
+            "default": "autozone"
+          },
+          "source_status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "no_match",
+              "unavailable",
+              "not_configured"
+            ],
+            "title": "Source Status"
+          },
+          "candidate_count": {
+            "type": "integer",
+            "title": "Candidate Count",
+            "default": 0
+          },
+          "partial": {
+            "type": "boolean",
+            "title": "Partial",
+            "default": true
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "keyword",
+          "vehicle",
+          "items",
+          "source_status"
+        ],
+        "title": "PartsSearchResult"
+      },
+      "PlateRequest": {
+        "properties": {
+          "plate": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 1,
+            "title": "Plate"
+          },
+          "state": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "State"
+          },
+          "vehicle_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehicle Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "plate",
+          "state"
+        ],
+        "title": "PlateRequest"
+      },
+      "PlateResolution": {
+        "properties": {
+          "plate_masked": {
+            "type": "string",
+            "title": "Plate Masked"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "vehicle_databases",
+              "autozone"
+            ],
+            "title": "Source",
+            "default": "vehicle_databases"
+          },
+          "source_make": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Make"
+          },
+          "source_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Model"
+          },
+          "source_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Year"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          },
+          "resolution": {
+            "$ref": "#/components/schemas/VinResolution"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "plate_masked",
+          "state",
+          "fetched_at",
+          "resolution"
+        ],
+        "title": "PlateResolution"
       },
       "Point": {
         "properties": {
@@ -1075,6 +3417,18 @@
             ],
             "title": "Octane"
           },
+          "octane_inference": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Octane Inference"
+          },
           "eligible": {
             "type": "boolean",
             "title": "Eligible"
@@ -1120,10 +3474,215 @@
         ],
         "title": "PriceEvidence"
       },
+      "RankOptions": {
+        "properties": {
+          "gallons": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Gallons",
+            "default": "10"
+          },
+          "mpg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 200.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mpg"
+          },
+          "fuel_cycles": {
+            "items": {
+              "$ref": "#/components/schemas/FuelCycle-Input"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Fuel Cycles"
+          },
+          "time_value_per_hour": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 500.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Time Value Per Hour",
+            "default": "0"
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit",
+              "cash_or_credit"
+            ],
+            "title": "Payment Type",
+            "default": "credit"
+          },
+          "allow_unknown_payment": {
+            "type": "boolean",
+            "title": "Allow Unknown Payment",
+            "default": false
+          },
+          "unknown_payment_credit_markup": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Unknown Payment Credit Markup",
+            "description": "User assumption added to unknown-payment quotes for credit or all-payment comparison. Not a verified station surcharge.",
+            "default": "0"
+          },
+          "memberships": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Memberships"
+          },
+          "preferred_sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Preferred Sources"
+          },
+          "strategy": {
+            "type": "string",
+            "enum": [
+              "cheapest_overall",
+              "fastest_stop",
+              "best_value",
+              "on_my_route"
+            ],
+            "title": "Strategy",
+            "default": "cheapest_overall"
+          },
+          "required_octane": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 87.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Octane",
+            "description": "Minimum accepted AKI; higher values qualify."
+          },
+          "octane_policy": {
+            "type": "string",
+            "enum": [
+              "verified_only",
+              "regional_estimate"
+            ],
+            "title": "Octane Policy",
+            "default": "regional_estimate"
+          },
+          "max_price_age_minutes": {
+            "type": "integer",
+            "maximum": 10080.0,
+            "minimum": 1.0,
+            "title": "Max Price Age Minutes",
+            "default": 1440
+          },
+          "stop_minutes": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 60.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Stop Minutes",
+            "default": "5"
+          },
+          "max_results": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "default": 5
+          },
+          "top_tier_only": {
+            "type": "boolean",
+            "title": "Top Tier Only",
+            "description": "Keep only stations matched to a TOP TIER licensed brand.",
+            "default": false
+          },
+          "prefer_top_tier": {
+            "type": "boolean",
+            "title": "Prefer Top Tier",
+            "description": "Best value may pick a TOP TIER station whose cost is within the margin of the cheapest.",
+            "default": true
+          },
+          "top_tier_margin_per_gallon": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Top Tier Margin Per Gallon",
+            "description": "USD per purchased gallon a TOP TIER pick may cost more.",
+            "default": "0.05"
+          },
+          "opening_policy": {
+            "type": "string",
+            "enum": [
+              "exclude_closed",
+              "require_open",
+              "ignore"
+            ],
+            "title": "Opening Policy",
+            "description": "exclude_closed keeps unknown hours; require_open also excludes unknown hours.",
+            "default": "exclude_closed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RankOptions"
+      },
       "RankedStation": {
         "properties": {
           "station": {
-            "$ref": "#/components/schemas/Station"
+            "$ref": "#/components/schemas/Station-Output"
           },
           "route": {
             "$ref": "#/components/schemas/Route"
@@ -1201,6 +3760,62 @@
                 "type": "null"
               }
             ]
+          },
+          "break_even": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BreakEven"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "detour_fuel_gallons": {
+            "type": "string",
+            "title": "Detour Fuel Gallons",
+            "default": "0"
+          },
+          "mpg_used": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mpg Used"
+          },
+          "fuel_consumption_basis": {
+            "type": "string",
+            "enum": [
+              "user_mpg_estimate",
+              "full_tank_calibrated_estimate",
+              "epa_combined_estimate"
+            ],
+            "title": "Fuel Consumption Basis",
+            "default": "user_mpg_estimate"
+          },
+          "route_fuel_gallons": {
+            "type": "string",
+            "title": "Route Fuel Gallons",
+            "default": "0"
+          },
+          "baseline_fuel_gallons": {
+            "type": "string",
+            "title": "Baseline Fuel Gallons",
+            "default": "0"
+          },
+          "fuel_model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FuelModelInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -1272,6 +3887,34 @@
           "source": {
             "type": "string",
             "title": "Source"
+          },
+          "fetched_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetched At"
+          },
+          "duration_basis": {
+            "type": "string",
+            "enum": [
+              "provider_estimate",
+              "maps_estimate",
+              "maps_traffic_estimate"
+            ],
+            "title": "Duration Basis",
+            "default": "provider_estimate"
+          },
+          "upstream_http_requests": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Upstream Http Requests",
+            "default": 0
           }
         },
         "additionalProperties": false,
@@ -1283,66 +3926,8 @@
         ],
         "title": "Route"
       },
-      "Search": {
+      "Search-Input": {
         "properties": {
-          "origin": {
-            "$ref": "#/components/schemas/Point"
-          },
-          "destination": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Point"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "trip_mode": {
-            "type": "string",
-            "enum": [
-              "round_trip",
-              "on_route"
-            ],
-            "title": "Trip Mode",
-            "default": "round_trip"
-          },
-          "fuel_type": {
-            "type": "string",
-            "enum": [
-              "regular",
-              "midgrade",
-              "premium",
-              "diesel"
-            ],
-            "title": "Fuel Type",
-            "default": "premium"
-          },
-          "postal_code": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^\\d{5}$"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Postal Code"
-          },
-          "required_octane": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "maximum": 100.0,
-                "minimum": 87.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Required Octane"
-          },
           "gallons": {
             "anyOf": [
               {
@@ -1366,10 +3951,20 @@
               },
               {
                 "type": "string"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Mpg",
-            "default": "20"
+            "title": "Mpg"
+          },
+          "fuel_cycles": {
+            "items": {
+              "$ref": "#/components/schemas/FuelCycle-Input"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Fuel Cycles"
           },
           "time_value_per_hour": {
             "anyOf": [
@@ -1385,36 +3980,35 @@
             "title": "Time Value Per Hour",
             "default": "0"
           },
-          "radius_meters": {
-            "type": "number",
-            "maximum": 50000.0,
-            "minimum": 100.0,
-            "title": "Radius Meters",
-            "default": 10000
-          },
-          "max_results": {
-            "type": "integer",
-            "maximum": 10.0,
-            "minimum": 1.0,
-            "title": "Max Results",
-            "default": 5
-          },
           "payment_type": {
             "type": "string",
             "enum": [
               "cash",
-              "credit"
+              "credit",
+              "cash_or_credit"
             ],
             "title": "Payment Type",
             "default": "credit"
           },
-          "preferred_sources": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "maxItems": 10,
-            "title": "Preferred Sources"
+          "allow_unknown_payment": {
+            "type": "boolean",
+            "title": "Allow Unknown Payment",
+            "default": false
+          },
+          "unknown_payment_credit_markup": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Unknown Payment Credit Markup",
+            "description": "User assumption added to unknown-payment quotes for credit or all-payment comparison. Not a verified station surcharge.",
+            "default": "0"
           },
           "memberships": {
             "items": {
@@ -1423,6 +4017,14 @@
             "type": "array",
             "maxItems": 10,
             "title": "Memberships"
+          },
+          "preferred_sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Preferred Sources"
           },
           "strategy": {
             "type": "string",
@@ -1434,6 +4036,29 @@
             ],
             "title": "Strategy",
             "default": "cheapest_overall"
+          },
+          "required_octane": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 87.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Octane",
+            "description": "Minimum accepted AKI; higher values qualify."
+          },
+          "octane_policy": {
+            "type": "string",
+            "enum": [
+              "verified_only",
+              "regional_estimate"
+            ],
+            "title": "Octane Policy",
+            "default": "regional_estimate"
           },
           "max_price_age_minutes": {
             "type": "integer",
@@ -1455,6 +4080,135 @@
             ],
             "title": "Stop Minutes",
             "default": "5"
+          },
+          "max_results": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "default": 5
+          },
+          "top_tier_only": {
+            "type": "boolean",
+            "title": "Top Tier Only",
+            "description": "Keep only stations matched to a TOP TIER licensed brand.",
+            "default": false
+          },
+          "prefer_top_tier": {
+            "type": "boolean",
+            "title": "Prefer Top Tier",
+            "description": "Best value may pick a TOP TIER station whose cost is within the margin of the cheapest.",
+            "default": true
+          },
+          "top_tier_margin_per_gallon": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Top Tier Margin Per Gallon",
+            "description": "USD per purchased gallon a TOP TIER pick may cost more.",
+            "default": "0.05"
+          },
+          "opening_policy": {
+            "type": "string",
+            "enum": [
+              "exclude_closed",
+              "require_open",
+              "ignore"
+            ],
+            "title": "Opening Policy",
+            "description": "exclude_closed keeps unknown hours; require_open also excludes unknown hours.",
+            "default": "exclude_closed"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Point"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trip_mode": {
+            "type": "string",
+            "enum": [
+              "round_trip",
+              "on_route"
+            ],
+            "title": "Trip Mode",
+            "default": "round_trip"
+          },
+          "fuel_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "regular",
+                  "midgrade",
+                  "premium",
+                  "diesel"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Type"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{5}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "current_state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current State",
+            "description": "US origin state fallback; station state takes precedence."
+          },
+          "vehicle_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehicle Id"
+          },
+          "radius_meters": {
+            "type": "number",
+            "maximum": 50000.0,
+            "minimum": 100.0,
+            "title": "Radius Meters",
+            "default": 10000
           }
         },
         "additionalProperties": false,
@@ -1464,8 +4218,328 @@
         ],
         "title": "Search"
       },
+      "Search-Output": {
+        "properties": {
+          "gallons": {
+            "type": "string",
+            "title": "Gallons",
+            "default": "10"
+          },
+          "mpg": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mpg"
+          },
+          "fuel_cycles": {
+            "items": {
+              "$ref": "#/components/schemas/FuelCycle-Output"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Fuel Cycles"
+          },
+          "time_value_per_hour": {
+            "type": "string",
+            "title": "Time Value Per Hour",
+            "default": "0"
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit",
+              "cash_or_credit"
+            ],
+            "title": "Payment Type",
+            "default": "credit"
+          },
+          "allow_unknown_payment": {
+            "type": "boolean",
+            "title": "Allow Unknown Payment",
+            "default": false
+          },
+          "unknown_payment_credit_markup": {
+            "type": "string",
+            "title": "Unknown Payment Credit Markup",
+            "description": "User assumption added to unknown-payment quotes for credit or all-payment comparison. Not a verified station surcharge.",
+            "default": "0"
+          },
+          "memberships": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Memberships"
+          },
+          "preferred_sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Preferred Sources"
+          },
+          "strategy": {
+            "type": "string",
+            "enum": [
+              "cheapest_overall",
+              "fastest_stop",
+              "best_value",
+              "on_my_route"
+            ],
+            "title": "Strategy",
+            "default": "cheapest_overall"
+          },
+          "required_octane": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 87.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Octane",
+            "description": "Minimum accepted AKI; higher values qualify."
+          },
+          "octane_policy": {
+            "type": "string",
+            "enum": [
+              "verified_only",
+              "regional_estimate"
+            ],
+            "title": "Octane Policy",
+            "default": "regional_estimate"
+          },
+          "max_price_age_minutes": {
+            "type": "integer",
+            "maximum": 10080.0,
+            "minimum": 1.0,
+            "title": "Max Price Age Minutes",
+            "default": 1440
+          },
+          "stop_minutes": {
+            "type": "string",
+            "title": "Stop Minutes",
+            "default": "5"
+          },
+          "max_results": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "default": 5
+          },
+          "top_tier_only": {
+            "type": "boolean",
+            "title": "Top Tier Only",
+            "description": "Keep only stations matched to a TOP TIER licensed brand.",
+            "default": false
+          },
+          "prefer_top_tier": {
+            "type": "boolean",
+            "title": "Prefer Top Tier",
+            "description": "Best value may pick a TOP TIER station whose cost is within the margin of the cheapest.",
+            "default": true
+          },
+          "top_tier_margin_per_gallon": {
+            "type": "string",
+            "title": "Top Tier Margin Per Gallon",
+            "description": "USD per purchased gallon a TOP TIER pick may cost more.",
+            "default": "0.05"
+          },
+          "opening_policy": {
+            "type": "string",
+            "enum": [
+              "exclude_closed",
+              "require_open",
+              "ignore"
+            ],
+            "title": "Opening Policy",
+            "description": "exclude_closed keeps unknown hours; require_open also excludes unknown hours.",
+            "default": "exclude_closed"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Point"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trip_mode": {
+            "type": "string",
+            "enum": [
+              "round_trip",
+              "on_route"
+            ],
+            "title": "Trip Mode",
+            "default": "round_trip"
+          },
+          "fuel_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "regular",
+                  "midgrade",
+                  "premium",
+                  "diesel"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Type"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{5}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "current_state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current State",
+            "description": "US origin state fallback; station state takes precedence."
+          },
+          "vehicle_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehicle Id"
+          },
+          "radius_meters": {
+            "type": "number",
+            "maximum": 50000.0,
+            "minimum": 100.0,
+            "title": "Radius Meters",
+            "default": 10000
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "origin"
+        ],
+        "title": "Search"
+      },
+      "SearchCoverage": {
+        "properties": {
+          "discovered": {
+            "type": "integer",
+            "title": "Discovered"
+          },
+          "priced": {
+            "type": "integer",
+            "title": "Priced"
+          },
+          "eligible": {
+            "type": "integer",
+            "title": "Eligible"
+          },
+          "routed": {
+            "type": "integer",
+            "title": "Routed"
+          },
+          "displayed": {
+            "type": "integer",
+            "title": "Displayed"
+          },
+          "exclusions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Exclusions"
+          },
+          "station_statuses": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Station Statuses"
+          },
+          "quote_indices": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Quote Indices"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "discovered",
+          "priced",
+          "eligible",
+          "routed",
+          "displayed",
+          "exclusions",
+          "station_statuses",
+          "quote_indices"
+        ],
+        "title": "SearchCoverage"
+      },
       "SearchResult": {
         "properties": {
+          "applied_octane_aki": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied Octane Aki"
+          },
+          "octane_policy": {
+            "type": "string",
+            "enum": [
+              "verified_only",
+              "regional_estimate"
+            ],
+            "title": "Octane Policy",
+            "default": "regional_estimate"
+          },
           "generated_at": {
             "type": "string",
             "format": "date-time",
@@ -1475,7 +4549,8 @@
             "type": "string",
             "enum": [
               "demo",
-              "google"
+              "google",
+              "prices_only"
             ],
             "title": "Mode"
           },
@@ -1520,6 +4595,23 @@
                 "type": "null"
               }
             ]
+          },
+          "recommendations": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StrategyRecommendation"
+            },
+            "type": "object",
+            "title": "Recommendations"
+          },
+          "vehicle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleProfile-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -1534,6 +4626,623 @@
           "excluded_count"
         ],
         "title": "SearchResult"
+      },
+      "SmartRerank": {
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/SmartSnapshot-Input"
+          },
+          "signature": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Signature"
+          },
+          "options": {
+            "$ref": "#/components/schemas/RankOptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "snapshot",
+          "signature",
+          "options"
+        ],
+        "title": "SmartRerank"
+      },
+      "SmartResult": {
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/SmartSnapshot-Output"
+          },
+          "signature": {
+            "type": "string",
+            "title": "Signature"
+          },
+          "ranking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "upstream_calls": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Upstream Calls"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/SearchCoverage",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "snapshot",
+          "signature",
+          "upstream_calls",
+          "coverage"
+        ],
+        "title": "SmartResult"
+      },
+      "SmartRouteRequest": {
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/SmartSnapshot-Input"
+          },
+          "signature": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Signature"
+          },
+          "route_limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Route Limit",
+            "default": 5
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "snapshot",
+          "signature"
+        ],
+        "title": "SmartRouteRequest"
+      },
+      "SmartSearch": {
+        "properties": {
+          "gallons": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Gallons",
+            "default": "10"
+          },
+          "mpg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 200.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mpg"
+          },
+          "fuel_cycles": {
+            "items": {
+              "$ref": "#/components/schemas/FuelCycle-Input"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Fuel Cycles"
+          },
+          "time_value_per_hour": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 500.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Time Value Per Hour",
+            "default": "0"
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit",
+              "cash_or_credit"
+            ],
+            "title": "Payment Type",
+            "default": "credit"
+          },
+          "allow_unknown_payment": {
+            "type": "boolean",
+            "title": "Allow Unknown Payment",
+            "default": false
+          },
+          "unknown_payment_credit_markup": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Unknown Payment Credit Markup",
+            "description": "User assumption added to unknown-payment quotes for credit or all-payment comparison. Not a verified station surcharge.",
+            "default": "0"
+          },
+          "memberships": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Memberships"
+          },
+          "preferred_sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Preferred Sources"
+          },
+          "strategy": {
+            "type": "string",
+            "enum": [
+              "cheapest_overall",
+              "fastest_stop",
+              "best_value",
+              "on_my_route"
+            ],
+            "title": "Strategy",
+            "default": "cheapest_overall"
+          },
+          "required_octane": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 87.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Octane",
+            "description": "Minimum accepted AKI; higher values qualify."
+          },
+          "octane_policy": {
+            "type": "string",
+            "enum": [
+              "verified_only",
+              "regional_estimate"
+            ],
+            "title": "Octane Policy",
+            "default": "regional_estimate"
+          },
+          "max_price_age_minutes": {
+            "type": "integer",
+            "maximum": 10080.0,
+            "minimum": 1.0,
+            "title": "Max Price Age Minutes",
+            "default": 1440
+          },
+          "stop_minutes": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 60.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Stop Minutes",
+            "default": "5"
+          },
+          "max_results": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "default": 5
+          },
+          "top_tier_only": {
+            "type": "boolean",
+            "title": "Top Tier Only",
+            "description": "Keep only stations matched to a TOP TIER licensed brand.",
+            "default": false
+          },
+          "prefer_top_tier": {
+            "type": "boolean",
+            "title": "Prefer Top Tier",
+            "description": "Best value may pick a TOP TIER station whose cost is within the margin of the cheapest.",
+            "default": true
+          },
+          "top_tier_margin_per_gallon": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Top Tier Margin Per Gallon",
+            "description": "USD per purchased gallon a TOP TIER pick may cost more.",
+            "default": "0.05"
+          },
+          "opening_policy": {
+            "type": "string",
+            "enum": [
+              "exclude_closed",
+              "require_open",
+              "ignore"
+            ],
+            "title": "Opening Policy",
+            "description": "exclude_closed keeps unknown hours; require_open also excludes unknown hours.",
+            "default": "exclude_closed"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Point"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trip_mode": {
+            "type": "string",
+            "enum": [
+              "round_trip",
+              "on_route"
+            ],
+            "title": "Trip Mode",
+            "default": "round_trip"
+          },
+          "fuel_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "regular",
+                  "midgrade",
+                  "premium",
+                  "diesel"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Type"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{5}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          },
+          "current_state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current State",
+            "description": "US origin state fallback; station state takes precedence."
+          },
+          "vehicle_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehicle Id"
+          },
+          "radius_meters": {
+            "type": "number",
+            "maximum": 50000.0,
+            "minimum": 100.0,
+            "title": "Radius Meters",
+            "default": 10000
+          },
+          "calculate_routes": {
+            "type": "boolean",
+            "title": "Calculate Routes",
+            "default": false
+          },
+          "route_limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Route Limit",
+            "default": 5
+          },
+          "discovery_tiles": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Discovery Tiles",
+            "default": 1
+          },
+          "maps_detail_limit": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Maps Detail Limit",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "origin"
+        ],
+        "title": "SmartSearch"
+      },
+      "SmartSnapshot-Input": {
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Search-Input"
+          },
+          "stations": {
+            "items": {
+              "$ref": "#/components/schemas/Station-Input"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "Stations"
+          },
+          "source_statuses": {
+            "items": {
+              "$ref": "#/components/schemas/SourceStatus"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Source Statuses"
+          },
+          "baseline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Route"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "routes": {
+            "items": {
+              "$ref": "#/components/schemas/SnapshotRoute"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Routes"
+          },
+          "collected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Collected At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Warnings"
+          },
+          "unlocated_gasbuddy": {
+            "items": {
+              "$ref": "#/components/schemas/GasBuddyQuote-Input"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Unlocated Gasbuddy"
+          },
+          "inventory": {
+            "items": {
+              "$ref": "#/components/schemas/MapsWebStation"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Inventory"
+          },
+          "vehicle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleProfile-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "query",
+          "stations",
+          "source_statuses",
+          "collected_at",
+          "expires_at"
+        ],
+        "title": "SmartSnapshot"
+      },
+      "SmartSnapshot-Output": {
+        "properties": {
+          "query": {
+            "$ref": "#/components/schemas/Search-Output"
+          },
+          "stations": {
+            "items": {
+              "$ref": "#/components/schemas/Station-Output"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "Stations"
+          },
+          "source_statuses": {
+            "items": {
+              "$ref": "#/components/schemas/SourceStatus"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Source Statuses"
+          },
+          "baseline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Route"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "routes": {
+            "items": {
+              "$ref": "#/components/schemas/SnapshotRoute"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Routes"
+          },
+          "collected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Collected At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Warnings"
+          },
+          "unlocated_gasbuddy": {
+            "items": {
+              "$ref": "#/components/schemas/GasBuddyQuote-Output"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Unlocated Gasbuddy"
+          },
+          "inventory": {
+            "items": {
+              "$ref": "#/components/schemas/MapsWebStation"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Inventory"
+          },
+          "vehicle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleProfile-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "query",
+          "stations",
+          "source_statuses",
+          "collected_at",
+          "expires_at"
+        ],
+        "title": "SmartSnapshot"
+      },
+      "SnapshotRoute": {
+        "properties": {
+          "via": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "route": {
+            "$ref": "#/components/schemas/Route"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "via",
+          "route"
+        ],
+        "title": "SnapshotRoute"
       },
       "SourceStatus": {
         "properties": {
@@ -1575,7 +5284,7 @@
         ],
         "title": "SourceStatus"
       },
-      "Station": {
+      "Station-Input": {
         "properties": {
           "id": {
             "type": "string",
@@ -1594,6 +5303,59 @@
               }
             ],
             "title": "Canonical Id"
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 5.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating"
+          },
+          "review_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Count"
+          },
+          "rating_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating Source"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          },
+          "octane_inference": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Octane Inference"
           },
           "name": {
             "type": "string",
@@ -1616,8 +5378,46 @@
             "title": "Address"
           },
           "price_per_gallon": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
             "title": "Price Per Gallon"
+          },
+          "comparison_price_per_gallon": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Price Per Gallon",
+            "description": "Estimated comparison price; original quote is preserved in price_per_gallon."
+          },
+          "payment_price_adjustment": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Payment Price Adjustment",
+            "default": "0"
           },
           "currency": {
             "type": "string",
@@ -1700,6 +5500,47 @@
             },
             "type": "array",
             "title": "Attribution"
+          },
+          "open_now": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Now",
+            "description": "Source-reported or source-hours status at fetched_at; null is unknown."
+          },
+          "business_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "operational",
+                  "temporarily_closed",
+                  "permanently_closed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Status"
+          },
+          "top_tier_brand": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Tier Brand",
+            "description": "Matched TOP TIER licensed brand (brand-level license)."
           }
         },
         "additionalProperties": false,
@@ -1714,6 +5555,470 @@
           "source"
         ],
         "title": "Station"
+      },
+      "Station-Output": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "canonical_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Id"
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 5.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating"
+          },
+          "review_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Count"
+          },
+          "rating_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating Source"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          },
+          "octane_inference": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Octane Inference"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "price_per_gallon": {
+            "type": "string",
+            "title": "Price Per Gallon"
+          },
+          "comparison_price_per_gallon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Price Per Gallon",
+            "description": "Estimated comparison price; original quote is preserved in price_per_gallon."
+          },
+          "payment_price_adjustment": {
+            "type": "string",
+            "title": "Payment Price Adjustment",
+            "default": "0"
+          },
+          "currency": {
+            "type": "string",
+            "const": "USD",
+            "title": "Currency",
+            "default": "USD"
+          },
+          "unit": {
+            "type": "string",
+            "const": "US_gallon",
+            "title": "Unit",
+            "default": "US_gallon"
+          },
+          "fuel_type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "midgrade",
+              "premium",
+              "diesel"
+            ],
+            "title": "Fuel Type"
+          },
+          "octane": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Octane"
+          },
+          "price_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Updated At"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit",
+              "unknown"
+            ],
+            "title": "Payment Type",
+            "default": "unknown"
+          },
+          "membership_required": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Membership Required"
+          },
+          "attribution": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Attribution"
+          },
+          "open_now": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Now",
+            "description": "Source-reported or source-hours status at fetched_at; null is unknown."
+          },
+          "business_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "operational",
+                  "temporarily_closed",
+                  "permanently_closed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Status"
+          },
+          "top_tier_brand": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Tier Brand",
+            "description": "Matched TOP TIER licensed brand (brand-level license)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "location",
+          "price_per_gallon",
+          "fuel_type",
+          "fetched_at",
+          "source"
+        ],
+        "title": "Station"
+      },
+      "StrategyRecommendation": {
+        "properties": {
+          "station_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Station Key"
+          },
+          "station": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Station-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actual_fuel_cost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Fuel Cost"
+          },
+          "generalized_trip_cost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generalized Trip Cost"
+          },
+          "extra_travel_minutes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Travel Minutes"
+          },
+          "top_tier_preferred_over": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TopTierPreference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Decision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "station_key",
+          "station",
+          "actual_fuel_cost",
+          "generalized_trip_cost",
+          "extra_travel_minutes",
+          "decision"
+        ],
+        "title": "StrategyRecommendation"
+      },
+      "TopTierBrand": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "countries": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 40,
+            "title": "Countries"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "countries"
+        ],
+        "title": "TopTierBrand"
+      },
+      "TopTierList": {
+        "properties": {
+          "program": {
+            "type": "string",
+            "const": "TOP TIER Detergent Gasoline",
+            "title": "Program",
+            "default": "TOP TIER Detergent Gasoline"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "page_modified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Modified At"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "bundled",
+              "cache",
+              "live"
+            ],
+            "title": "Origin"
+          },
+          "brands": {
+            "items": {
+              "$ref": "#/components/schemas/TopTierBrand"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Brands"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": "Licensing is brand-level: every outlet and octane grade of a licensed brand qualifies, with or without a pump decal. GasWise matches stations by brand name."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_url",
+          "fetched_at",
+          "origin",
+          "brands"
+        ],
+        "title": "TopTierList",
+        "description": "TOP TIER licensed retail brands: an automaker-run voluntary standard, not a government rating."
+      },
+      "TopTierPreference": {
+        "properties": {
+          "station_name": {
+            "type": "string",
+            "title": "Station Name"
+          },
+          "extra_cost": {
+            "type": "string",
+            "title": "Extra Cost"
+          },
+          "margin": {
+            "type": "string",
+            "title": "Margin"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "station_name",
+          "extra_cost",
+          "margin"
+        ],
+        "title": "TopTierPreference",
+        "description": "The cost-first winner that a TOP TIER station replaced, and what the preference costs."
       },
       "ValidationError": {
         "properties": {
@@ -1754,6 +6059,1085 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VehicleChoice": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "VehicleChoice"
+      },
+      "VehicleFuelRecommendation": {
+        "properties": {
+          "fuel_type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "midgrade",
+              "premium",
+              "diesel"
+            ],
+            "title": "Fuel Type"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "fueleconomy_gov",
+              "manufacturer_manual",
+              "specification_consensus",
+              "fuel_grade_policy"
+            ],
+            "title": "Source",
+            "default": "fueleconomy_gov"
+          },
+          "evidence": {
+            "type": "string",
+            "title": "Evidence"
+          },
+          "minimum_octane_aki": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Octane Aki"
+          },
+          "recommended_octane_aki": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Octane Aki"
+          },
+          "temporary_octane_aki": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporary Octane Aki"
+          },
+          "source_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Urls"
+          },
+          "octane_aki": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Octane Aki"
+          },
+          "manufacturer_requirement_verified": {
+            "type": "boolean",
+            "title": "Manufacturer Requirement Verified",
+            "default": false
+          },
+          "assessment_status": {
+            "type": "string",
+            "enum": [
+              "not_assessed",
+              "manufacturer_verified",
+              "agreement",
+              "single_source",
+              "conflict"
+            ],
+            "title": "Assessment Status",
+            "default": "not_assessed"
+          },
+          "specification_evidence": {
+            "items": {
+              "$ref": "#/components/schemas/FuelSpecificationEvidence"
+            },
+            "type": "array",
+            "title": "Specification Evidence"
+          },
+          "assessment_warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assessment Warnings"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": "EPA catalog fuel grade; exact minimum octane requires manufacturer or fuel-door evidence."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "fuel_type",
+          "evidence"
+        ],
+        "title": "VehicleFuelRecommendation"
+      },
+      "VehicleMenu": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/VehicleMenuItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "source": {
+            "type": "string",
+            "const": "fueleconomy_gov",
+            "title": "Source",
+            "default": "fueleconomy_gov"
+          },
+          "warning": {
+            "type": "string",
+            "title": "Warning",
+            "default": "Catalog may include unsupported EV, PHEV or alternative-fuel vehicles; validate the selected record."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "VehicleMenu"
+      },
+      "VehicleMenuItem": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "value"
+        ],
+        "title": "VehicleMenuItem"
+      },
+      "VehicleProfile-Input": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Id"
+          },
+          "year": {
+            "type": "integer",
+            "maximum": 2100.0,
+            "minimum": 1984.0,
+            "title": "Year"
+          },
+          "make": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Make"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Model"
+          },
+          "transmission": {
+            "type": "string",
+            "title": "Transmission"
+          },
+          "drive": {
+            "type": "string",
+            "title": "Drive"
+          },
+          "engine_liters": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Liters"
+          },
+          "cylinders": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cylinders"
+          },
+          "powertrain": {
+            "type": "string",
+            "enum": [
+              "gasoline",
+              "diesel",
+              "hybrid"
+            ],
+            "title": "Powertrain"
+          },
+          "fuel_type": {
+            "type": "string",
+            "title": "Fuel Type"
+          },
+          "city_mpg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 200.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "City Mpg"
+          },
+          "highway_mpg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 200.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Highway Mpg"
+          },
+          "combined_mpg": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 200.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Combined Mpg"
+          },
+          "source": {
+            "type": "string",
+            "const": "fueleconomy_gov",
+            "title": "Source",
+            "default": "fueleconomy_gov"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          },
+          "fuel_recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleFuelRecommendation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "year",
+          "make",
+          "model",
+          "transmission",
+          "drive",
+          "powertrain",
+          "fuel_type",
+          "city_mpg",
+          "highway_mpg",
+          "combined_mpg",
+          "fetched_at"
+        ],
+        "title": "VehicleProfile"
+      },
+      "VehicleProfile-Output": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Id"
+          },
+          "year": {
+            "type": "integer",
+            "maximum": 2100.0,
+            "minimum": 1984.0,
+            "title": "Year"
+          },
+          "make": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Make"
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Model"
+          },
+          "transmission": {
+            "type": "string",
+            "title": "Transmission"
+          },
+          "drive": {
+            "type": "string",
+            "title": "Drive"
+          },
+          "engine_liters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Liters"
+          },
+          "cylinders": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cylinders"
+          },
+          "powertrain": {
+            "type": "string",
+            "enum": [
+              "gasoline",
+              "diesel",
+              "hybrid"
+            ],
+            "title": "Powertrain"
+          },
+          "fuel_type": {
+            "type": "string",
+            "title": "Fuel Type"
+          },
+          "city_mpg": {
+            "type": "string",
+            "title": "City Mpg"
+          },
+          "highway_mpg": {
+            "type": "string",
+            "title": "Highway Mpg"
+          },
+          "combined_mpg": {
+            "type": "string",
+            "title": "Combined Mpg"
+          },
+          "source": {
+            "type": "string",
+            "const": "fueleconomy_gov",
+            "title": "Source",
+            "default": "fueleconomy_gov"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          },
+          "fuel_recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleFuelRecommendation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "year",
+          "make",
+          "model",
+          "transmission",
+          "drive",
+          "powertrain",
+          "fuel_type",
+          "city_mpg",
+          "highway_mpg",
+          "combined_mpg",
+          "fetched_at"
+        ],
+        "title": "VehicleProfile"
+      },
+      "VehicleResolution": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "needs_input",
+              "no_match",
+              "resolved"
+            ],
+            "title": "Status"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "make": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Make"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question"
+          },
+          "answer_field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer Field"
+          },
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/VehicleChoice"
+            },
+            "type": "array",
+            "title": "Choices"
+          },
+          "matched_models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched Models"
+          },
+          "vehicle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleProfile-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fuel_recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleFuelRecommendation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "selection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleResolveRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "missing_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Fields"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "VehicleResolution"
+      },
+      "VehicleResolveRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Text",
+            "default": ""
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2100.0,
+                "minimum": 1984.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "make": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Make"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "body_style": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "coupe",
+                  "convertible",
+                  "wagon",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body Style"
+          },
+          "drivetrain": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "standard",
+                  "4matic"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drivetrain"
+          },
+          "catalog_model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Model"
+          },
+          "option_vehicle_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Vehicle Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "VehicleResolveRequest"
+      },
+      "VinDecoded": {
+        "properties": {
+          "vin_masked": {
+            "type": "string",
+            "title": "Vin Masked"
+          },
+          "source": {
+            "type": "string",
+            "const": "nhtsa_vpic",
+            "title": "Source",
+            "default": "nhtsa_vpic"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          },
+          "check_digit_matches": {
+            "type": "boolean",
+            "title": "Check Digit Matches"
+          },
+          "error_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Error Codes"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "make": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Make"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "series": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Series"
+          },
+          "trim": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trim"
+          },
+          "body_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body Class"
+          },
+          "drive": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drive"
+          },
+          "engine_liters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Liters"
+          },
+          "engine_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Model"
+          },
+          "cylinders": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cylinders"
+          },
+          "fuel_primary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Primary"
+          },
+          "fuel_secondary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuel Secondary"
+          },
+          "transmission": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transmission"
+          },
+          "transmission_speeds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transmission Speeds"
+          },
+          "electrification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Electrification"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "vin_masked",
+          "fetched_at",
+          "check_digit_matches",
+          "error_codes"
+        ],
+        "title": "VinDecoded"
+      },
+      "VinRequest": {
+        "properties": {
+          "vin": {
+            "type": "string",
+            "maxLength": 17,
+            "minLength": 17,
+            "title": "Vin"
+          },
+          "model_year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2100.0,
+                "minimum": 1984.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Year"
+          },
+          "vehicle_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehicle Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "vin"
+        ],
+        "title": "VinRequest"
+      },
+      "VinResolution": {
+        "properties": {
+          "decoded": {
+            "$ref": "#/components/schemas/VinDecoded"
+          },
+          "fuel_status": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "epa_catalog",
+              "manufacturer_manual",
+              "specification_estimate"
+            ],
+            "title": "Fuel Status",
+            "default": "unknown"
+          },
+          "mpg_status": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "needs_confirmation",
+              "confirmed"
+            ],
+            "title": "Mpg Status",
+            "default": "unknown"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "decoded",
+              "needs_input",
+              "resolved",
+              "no_match",
+              "unsupported",
+              "partial"
+            ],
+            "title": "Status"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question"
+          },
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/VehicleChoice"
+            },
+            "type": "array",
+            "title": "Choices"
+          },
+          "vehicle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleProfile-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fuel_recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VehicleFuelRecommendation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "upstream_calls": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Upstream Calls"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "decoded",
+          "status"
+        ],
+        "title": "VinResolution"
+      },
+      "WazePriceSearch": {
+        "properties": {
+          "origin": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "radius_meters": {
+            "type": "number",
+            "maximum": 50000.0,
+            "minimum": 100.0,
+            "title": "Radius Meters",
+            "default": 5000
+          },
+          "max_results": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Max Results",
+            "default": 20
+          },
+          "venue_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "pattern": "^venues\\.[0-9.]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue Id"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{5}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "origin"
+        ],
+        "title": "WazePriceSearch"
       }
     },
     "securitySchemes": {

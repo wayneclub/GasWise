@@ -1,0 +1,1088 @@
+{
+  "totalNumber": 13,
+  "$dataset": "#/makes/toyota/models/camry/submodels/sedan/years/2021/styles/partial-features-specs",
+  "totalPages": 1,
+  "results": [
+    {
+      "id": 401845419,
+      "name": "LE 4dr Sedan (2.5L 4cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "front wheel drive"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "203 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "184 lb-ft @ 5000 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "28/39 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "32 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "442.4/616.2 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "15.8 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871897,
+      "name": "LE 4dr Sedan AWD (2.5L 4cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "all wheel drive"
+            },
+            {
+              "name": "Center limited slip differential"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "202 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "182 lb-ft @ 4400 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "25/34 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "29 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "360.0/489.6 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "14.4 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871906,
+      "name": "SE 4dr Sedan (2.5L 4cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "front wheel drive"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "203 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "184 lb-ft @ 5000 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "28/39 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "32 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "442.4/616.2 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "15.8 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871903,
+      "name": "SE Nightshade Edition 4dr Sedan (2.5L 4cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "front wheel drive"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "203 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "184 lb-ft @ 5000 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "28/39 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "32 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "442.4/616.2 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "15.8 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871901,
+      "name": "SE 4dr Sedan AWD (2.5L 4cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "all wheel drive"
+            },
+            {
+              "name": "Center limited slip differential"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "202 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "182 lb-ft @ 4400 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "25/34 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "29 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "360.0/489.6 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "14.4 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871896,
+      "name": "SE Nightshade Edition 4dr Sedan AWD (2.5L 4cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "all wheel drive"
+            },
+            {
+              "name": "Center limited slip differential"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "202 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "182 lb-ft @ 4400 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "25/34 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "29 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "360.0/489.6 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "14.4 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871905,
+      "name": "XLE 4dr Sedan (2.5L 4cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "front wheel drive"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "203 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "184 lb-ft @ 5000 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "27/38 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "31 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "426.6/600.4 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "15.8 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871899,
+      "name": "XSE 4dr Sedan (2.5L 4cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "front wheel drive"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "206 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "186 lb-ft @ 5000 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "27/38 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "31 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "426.6/600.4 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "15.8 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871902,
+      "name": "XLE 4dr Sedan AWD (2.5L 4cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "all wheel drive"
+            },
+            {
+              "name": "Center limited slip differential"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "202 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "182 lb-ft @ 4400 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "25/34 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "28 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "360.0/489.6 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "14.4 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871898,
+      "name": "XSE 4dr Sedan AWD (2.5L 4cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "all wheel drive"
+            },
+            {
+              "name": "Center limited slip differential"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "2.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 4"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "205 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "185 lb-ft @ 4600 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "16"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "25/34 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "28 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "360.0/489.6 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "14.4 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871907,
+      "name": "TRD 4dr Sedan (3.5L 6cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "front wheel drive"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "3.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "V6"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "301 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "267 lb-ft @ 4700 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "24"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "22/31 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "25 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "347.6/489.8 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "15.8 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871900,
+      "name": "XLE 4dr Sedan (3.5L 6cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "front wheel drive"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "3.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "V6"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "301 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "267 lb-ft @ 4700 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "24"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "22/33 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "26 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "347.6/521.4 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "15.8 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401871904,
+      "name": "XSE 4dr Sedan (3.5L 6cyl 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed shiftable automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "front wheel drive"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "3.5 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "V6"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "301 hp @ 6600 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "267 lb-ft @ 4700 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "24"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "regular unleaded"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "22/32 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "26 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "347.6/505.6 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "15.8 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    }
+  ]
+}

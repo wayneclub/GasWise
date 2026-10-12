@@ -1,0 +1,177 @@
+{
+  "totalNumber": 2,
+  "$dataset": "#/makes/bmw/models/m4/submodels/coupe/years/2021/styles/partial-features-specs",
+  "totalPages": 1,
+  "results": [
+    {
+      "id": 401865890,
+      "name": "2dr Coupe (3.0L 6cyl Turbo 6M)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "6-speed manual"
+            },
+            {
+              "name": "Drive type",
+              "value": "rear wheel drive"
+            },
+            {
+              "name": "Rear limited slip differential"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "3.0 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 6"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "473 hp @ 6250 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "406 lb-ft @ 2650 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "24"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "premium unleaded (required)"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "16/23 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "19 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "249.6/358.8 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "15.6 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    },
+    {
+      "id": 401889225,
+      "name": "Competition 2dr Coupe (3.0L 6cyl Turbo 8A)",
+      "features": {
+        "standard": {
+          "Drive Train": [
+            {
+              "name": "Transmission",
+              "value": "8-speed automatic"
+            },
+            {
+              "name": "Drive type",
+              "value": "rear wheel drive"
+            },
+            {
+              "name": "Rear limited slip differential"
+            }
+          ],
+          "Engine": [
+            {
+              "name": "Base engine size",
+              "value": "3.0 L"
+            },
+            {
+              "name": "Cylinders",
+              "value": "inline 6"
+            },
+            {
+              "name": "Base engine type",
+              "value": "gas"
+            },
+            {
+              "name": "Horsepower",
+              "value": "503 hp @ 6250 rpm"
+            },
+            {
+              "name": "Torque",
+              "value": "479 lb-ft @ 2750 rpm"
+            },
+            {
+              "name": "Valves",
+              "value": "24"
+            },
+            {
+              "name": "Cam type",
+              "value": "Double overhead cam (DOHC)"
+            },
+            {
+              "name": "Valve timing",
+              "value": "Variable"
+            },
+            {
+              "name": "direct injection"
+            }
+          ],
+          "Fuel": [
+            {
+              "name": "Fuel type",
+              "value": "premium unleaded (required)"
+            },
+            {
+              "name": "EPA city/highway MPG",
+              "value": "16/23 MPG"
+            },
+            {
+              "name": "EPA combined MPG",
+              "value": "19 MPG"
+            },
+            {
+              "name": "Range in miles (city/hwy)",
+              "value": "249.6/358.8 mi."
+            },
+            {
+              "name": "Fuel tank capacity",
+              "value": "15.6 gal."
+            }
+          ]
+        }
+      },
+      "styleAttributes": {
+        "truck": false,
+        "electric": false,
+        "pluginElectric": false
+      }
+    }
+  ]
+}

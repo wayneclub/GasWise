@@ -1,0 +1,24 @@
+{
+  "totalNumber": 1,
+  "totalPages": 1,
+  "results": [
+    {
+      "makeNiceId": "bmw",
+      "modelNiceId": "m4",
+      "styles": [
+        {
+          "id": 401865890
+        },
+        {
+          "id": 401889225
+        }
+      ],
+      "submodels": [
+        {
+          "niceId": "coupe"
+        }
+      ],
+      "year": 2021
+    }
+  ]
+}

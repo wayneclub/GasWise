@@ -1,0 +1,17 @@
+.git
+.github
+.claude
+.docker-secrets
+artifacts
+**/.env
+**/.env.*
+**/*session*.json
+**/*login*.bin
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/dist
+**/*.log
+**/.DS_Store
