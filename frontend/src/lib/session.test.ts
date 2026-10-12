@@ -20,6 +20,7 @@ describe('searchBody', () => {
     const body = searchBody({ ...DEFAULT_PREFS, preference: 'time', costco: true, payment: 'cash', gallons: 12 }, origin)
     expect(body).toMatchObject({
       time_value_per_hour: '15',
+      strategy: 'fastest_stop',
       memberships: ['costco'],
       payment_type: 'cash',
       gallons: '12',

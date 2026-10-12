@@ -19,6 +19,7 @@ export interface SessionError {
 
 function rankOptions(prefs: Prefs): Partial<RankOptions> {
   return {
+    strategy: prefs.preference === 'money' ? 'cheapest_overall' : prefs.preference === 'time' ? 'fastest_stop' : 'best_value',
     gallons: String(prefs.gallons),
     payment_type: prefs.payment,
     credit_cashback_percent: prefs.creditCashbackPercent || '0',
@@ -37,7 +38,6 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
     ...rankOptions(prefs),
     origin,
     radius_meters: (prefs.searchRadiusMiles ?? 5) * 1609.344,
-    strategy: 'best_value',
     max_results: 100,
     calculate_routes: true,
     route_limit: 100,
