@@ -14,6 +14,7 @@ class RankOptions(Model):
     fuel_cycles: list[FuelCycle] = Field(default_factory=list, max_length=30)
     time_value_per_hour: Decimal = Field(default=Decimal(0), ge=0, le=500)
     payment_type: Literal["cash", "credit", "cash_or_credit"] = "credit"
+    credit_cashback_percent: Decimal = Field(default=Decimal(0), ge=0, le=100, description="User-estimated credit-card reward percentage on the fuel purchase only. Cash receives no reward; eligibility and reward caps are not verified.")
     allow_unknown_payment: bool = False
     unknown_payment_credit_markup: Decimal = Field(default=Decimal(0), ge=0, le=1, description="User assumption added to unknown-payment quotes for credit or all-payment comparison. Not a verified station surcharge.")
     memberships: list[str] = Field(default_factory=list, max_length=10)
@@ -79,6 +80,8 @@ class RankedStation(Model):
     extra_travel_minutes: Decimal
     stop_minutes: Decimal
     purchase_cost: Decimal
+    credit_cashback_amount: Decimal = Decimal(0)
+    net_purchase_cost: Decimal | None = None
     detour_fuel_cost: Decimal
     actual_fuel_cost: Decimal
     time_cost: Decimal

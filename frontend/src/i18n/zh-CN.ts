@@ -1,6 +1,14 @@
 import type { MessageKey } from './en'
 
 export const zhCN: Record<MessageKey, string> = {
+  "prefs.cashback": "信用卡返现",
+  "prefs.cashbackHint": "仅按加油付款金额估算；请确认加油返现资格与上限。",
+  "prefs.cashbackCash": "现金付款不计信用卡返现。",
+  "prefs.cardFees": "刷卡会另收手续费吗？",
+  "prefs.cardFeesHint": "现金／刷卡单价和额外手续费不同。已知刷卡价直接使用；付款方式不明才使用每加仑加 $0.20 的假设。额外费用以各站公告为准，目前未验证，不会自动添加。",
+  "reward.netFill": "返现后加油",
+  "reward.explanation": "油泵付款 {purchase} · 预计返现 −{reward}，不是现场折扣。",
+  "reward.total": "预计返现后总成本",
   'prefs.languageAuto': '跟随浏览器语言',
   'payment.estimated': '估算',
   'payment.estimate': '刷卡估算 +{adjustment}/加仑 · 原报价 {raw}',

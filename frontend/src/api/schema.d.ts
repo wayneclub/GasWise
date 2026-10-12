@@ -1395,6 +1395,12 @@ export interface components {
              */
             payment_type: "cash" | "credit" | "cash_or_credit";
             /**
+             * Credit Cashback Percent
+             * @description User-estimated credit-card reward percentage on the fuel purchase only. Cash receives no reward; eligibility and reward caps are not verified.
+             * @default 0
+             */
+            credit_cashback_percent: number | string;
+            /**
              * Allow Unknown Payment
              * @default false
              */
@@ -1479,6 +1485,13 @@ export interface components {
             stop_minutes: string;
             /** Purchase Cost */
             purchase_cost: string;
+            /**
+             * Credit Cashback Amount
+             * @default 0
+             */
+            credit_cashback_amount: string;
+            /** Net Purchase Cost */
+            net_purchase_cost?: string | null;
             /** Detour Fuel Cost */
             detour_fuel_cost: string;
             /** Actual Fuel Cost */
@@ -1580,6 +1593,12 @@ export interface components {
              * @enum {string}
              */
             payment_type: "cash" | "credit" | "cash_or_credit";
+            /**
+             * Credit Cashback Percent
+             * @description User-estimated credit-card reward percentage on the fuel purchase only. Cash receives no reward; eligibility and reward caps are not verified.
+             * @default 0
+             */
+            credit_cashback_percent: number | string;
             /**
              * Allow Unknown Payment
              * @default false
@@ -1699,6 +1718,12 @@ export interface components {
              * @enum {string}
              */
             payment_type: "cash" | "credit" | "cash_or_credit";
+            /**
+             * Credit Cashback Percent
+             * @description User-estimated credit-card reward percentage on the fuel purchase only. Cash receives no reward; eligibility and reward caps are not verified.
+             * @default 0
+             */
+            credit_cashback_percent: string;
             /**
              * Allow Unknown Payment
              * @default false
@@ -1911,6 +1936,12 @@ export interface components {
              * @enum {string}
              */
             payment_type: "cash" | "credit" | "cash_or_credit";
+            /**
+             * Credit Cashback Percent
+             * @description User-estimated credit-card reward percentage on the fuel purchase only. Cash receives no reward; eligibility and reward caps are not verified.
+             * @default 0
+             */
+            credit_cashback_percent: number | string;
             /**
              * Allow Unknown Payment
              * @default false

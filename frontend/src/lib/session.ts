@@ -23,6 +23,7 @@ function rankOptions(prefs: Prefs): Partial<RankOptions> {
   return {
     gallons: String(prefs.gallons),
     payment_type: prefs.payment,
+    credit_cashback_percent: prefs.creditCashbackPercent || '0',
     memberships: prefs.costco ? ['costco'] : [],
     time_value_per_hour: String(TIME_VALUE[prefs.preference]),
     allow_unknown_payment: prefs.allowUnknownPayment,

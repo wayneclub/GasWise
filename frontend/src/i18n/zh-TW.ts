@@ -1,6 +1,14 @@
 import type { MessageKey } from './en'
 
 export const zhTW: Record<MessageKey, string> = {
+  "prefs.cashback": "信用卡回饋",
+  "prefs.cashbackHint": "只按加油付款額估算；請確認加油回饋資格與上限。",
+  "prefs.cashbackCash": "現金付款不計信用卡回饋。",
+  "prefs.cardFees": "刷卡會另收手續費嗎？",
+  "prefs.cardFeesHint": "現金／刷卡單價和額外手續費不同。已知刷卡價直接採用；付款不明才使用每加侖加 $0.20 的假設。額外費用依各站公告，目前未驗證，不會自動加收。",
+  "reward.netFill": "回饋後加油",
+  "reward.explanation": "油泵付款 {purchase} · 預估回饋 −{reward}，不是現場折扣。",
+  "reward.total": "預估回饋後總成本",
   'prefs.languageAuto': '跟隨瀏覽器語言',
   'payment.estimated': '估算',
   'payment.estimate': '刷卡估算 +{adjustment}/加侖 · 原報價 {raw}',

@@ -86,6 +86,19 @@ def comparison_price(station: Station) -> Decimal:
     return station.comparison_price_per_gallon or station.price_per_gallon
 
 
+def cashback_rate(station: Station, query: Search) -> Decimal:
+    # Keep raw payment provenance intact. Unknown quotes use the user's selected
+    # card assumption only when explicitly allowed; cash never earns card rewards.
+    uses_credit = station.payment_type == "credit" or (
+        station.payment_type == "unknown" and query.payment_type != "cash"
+    )
+    return query.credit_cashback_percent / 100 if uses_credit else Decimal(0)
+
+
+def net_purchase_price(station: Station, query: Search) -> Decimal:
+    return comparison_price(station) * (1 - cashback_rate(station, query))
+
+
 def select_prices(stations: list[Station], query: Search, now: datetime):
     groups: dict[str, list[Station]] = {}
     for station in stations:
@@ -154,9 +167,9 @@ def select_prices(stations: list[Station], query: Search, now: datetime):
                 record.id,
             )
 
-        # All-payment searches pick the lowest known price, retaining its actual payment basis.
+        # All-payment searches compare net purchase prices, retaining raw payment provenance.
         winner = (
-            min(cohort, key=lambda r: (r.payment_type == "unknown", comparison_price(r), preference(r)))
+            min(cohort, key=lambda r: (r.payment_type == "unknown", net_purchase_price(r, query), preference(r)))
             if query.payment_type == "cash_or_credit" else min(cohort, key=preference)
         )
         metadata = {}
@@ -191,6 +204,8 @@ def select_prices(stations: list[Station], query: Search, now: datetime):
             if newest
             else "Source time unknown; payment specificity then user preference breaks ties."
         )
+        if query.payment_type == "cash_or_credit" and query.credit_cashback_percent:
+            reason += " Eligible payment quotes compared after user-estimated card rewards."
         if winner.payment_type == "unknown":
             warnings.append(f"Payment basis is unknown for {key}; cash/credit price not verified.")
         if len(quotes) < len(eligible):

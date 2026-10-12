@@ -44,6 +44,7 @@ function Breakdown({ row, rows, gallons }: { row: RankedStation; rows: RankedSta
         <span className="num text-muted">{t('breakdown.detour', { distance: miles(row.detour_miles, t) })}</span>
         <span className="num">{usd(b.detourFuel)}</span>
       </div>
+      {Number(row.credit_cashback_amount ?? 0) > 0 ? <div className={`${line} text-accent`}><span>{t('prefs.cashback')}</span><span className="num">−{usd(row.credit_cashback_amount)}</span></div> : null}
       <div className={`${line} border-t border-line font-medium`}>
         <span>{t('breakdown.total')}</span>
         <span className="num">{usd(b.total)}</span>
@@ -75,9 +76,10 @@ function CostEquation({ row, tripMode }: { row: RankedStation; tripMode: 'round_
   const { t } = useI18n()
   const item = 'flex min-w-0 flex-col'
   return (
-    <div className="mt-4 flex items-center gap-2 rounded-control bg-sunken px-3 py-2.5 text-[12px] text-muted">
+    <div className="mt-4 rounded-control bg-sunken px-3 py-2.5 text-[12px] text-muted">
+      <div className="flex items-center gap-2">
       <GasPumpIcon size={16} className="shrink-0 text-ink" />
-      <span className={item}>{t('cost.fill')}<span className="num text-[14px] font-medium text-ink">{usd(row.purchase_cost)}</span><span className="num whitespace-nowrap text-[11px] text-faint">{gal(Math.round(Number(row.purchase_cost) / Number(comparisonPrice(row.station))), t)}</span></span>
+      <span className={item}>{t(Number(row.credit_cashback_amount ?? 0) > 0 ? 'reward.netFill' : 'cost.fill')}<span className="num text-[14px] font-medium text-ink">{usd(row.net_purchase_cost ?? row.purchase_cost)}</span><span className="num whitespace-nowrap text-[11px] text-faint">{gal(Math.round(Number(row.purchase_cost) / Number(comparisonPrice(row.station))), t)}</span></span>
       <PlusIcon size={12} className="shrink-0" />
       <CarIcon size={16} className="shrink-0 text-ink" />
       <span className={item}>
@@ -87,6 +89,8 @@ function CostEquation({ row, tripMode }: { row: RankedStation; tripMode: 'round_
       </span>
       <EqualsIcon size={12} className="shrink-0" />
       <span className={`${item} ml-auto text-right`}>{t('cost.total')}<span className="num text-[14px] font-semibold text-ink">{usd(row.actual_fuel_cost)}</span></span>
+      </div>
+      {Number(row.credit_cashback_amount ?? 0) > 0 ? <p className="mt-2 border-t border-line pt-2 text-accent">{t('reward.explanation', { purchase: usd(row.purchase_cost), reward: usd(row.credit_cashback_amount) })}</p> : null}
     </div>
   )
 }
@@ -189,7 +193,7 @@ export function HeroPick({
         </p>
         {pick.recommendation.actual_fuel_cost ? (
           <p className="text-right text-[13px] leading-tight text-muted">
-            {t('pick.totalFor', { gallons: gal(gallons, t) })}
+            {row && Number(row.credit_cashback_amount ?? 0) > 0 ? t('reward.total') : t('pick.totalFor', { gallons: gal(gallons, t) })}
             <span className="num mt-1 block text-[17px] font-medium text-ink">{usd(pick.recommendation.actual_fuel_cost)}</span>
           </p>
         ) : null}

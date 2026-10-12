@@ -21,6 +21,7 @@ export interface Prefs {
   mpg: string | null
   gallons: number
   payment: 'credit' | 'cash' | 'cash_or_credit'
+  creditCashbackPercent: string
   costco: boolean
   preference: Preference
   paymentPolicyVersion: number
@@ -42,6 +43,7 @@ export const DEFAULT_PREFS: Prefs = {
   mpg: '25',
   gallons: 10,
   payment: 'credit',
+  creditCashbackPercent: '0',
   costco: false,
   preference: 'balanced',
   allowUnknownPayment: true,
@@ -64,6 +66,8 @@ export function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(KEY)
     const saved = raw ? JSON.parse(raw) as Partial<Prefs> : {}
+    const reward = Number(saved.creditCashbackPercent ?? 0)
+    saved.creditCashbackPercent = Number.isFinite(reward) ? String(Math.min(100, Math.max(0, reward))) : '0'
     return { ...DEFAULT_PREFS, ...saved, locale: LOCALES.some((item) => item.value === saved.locale) ? saved.locale! : null, allowUnknownPayment: saved.paymentPolicyVersion === 2 ? saved.allowUnknownPayment ?? true : true, paymentPolicyVersion: 2, navApp: saved.navDefaultVersion === 2 ? saved.navApp ?? 'google' : 'google', navDefaultVersion: 2, tripMode: 'round_trip', destination: null }
   } catch {
     return DEFAULT_PREFS

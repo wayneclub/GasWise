@@ -3538,6 +3538,21 @@
             "title": "Payment Type",
             "default": "credit"
           },
+          "credit_cashback_percent": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Credit Cashback Percent",
+            "description": "User-estimated credit-card reward percentage on the fuel purchase only. Cash receives no reward; eligibility and reward caps are not verified.",
+            "default": "0"
+          },
           "allow_unknown_payment": {
             "type": "boolean",
             "title": "Allow Unknown Payment",
@@ -3702,6 +3717,22 @@
           "purchase_cost": {
             "type": "string",
             "title": "Purchase Cost"
+          },
+          "credit_cashback_amount": {
+            "type": "string",
+            "title": "Credit Cashback Amount",
+            "default": "0"
+          },
+          "net_purchase_cost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Purchase Cost"
           },
           "detour_fuel_cost": {
             "type": "string",
@@ -3990,6 +4021,21 @@
             "title": "Payment Type",
             "default": "credit"
           },
+          "credit_cashback_percent": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Credit Cashback Percent",
+            "description": "User-estimated credit-card reward percentage on the fuel purchase only. Cash receives no reward; eligibility and reward caps are not verified.",
+            "default": "0"
+          },
           "allow_unknown_payment": {
             "type": "boolean",
             "title": "Allow Unknown Payment",
@@ -4258,6 +4304,12 @@
             ],
             "title": "Payment Type",
             "default": "credit"
+          },
+          "credit_cashback_percent": {
+            "type": "string",
+            "title": "Credit Cashback Percent",
+            "description": "User-estimated credit-card reward percentage on the fuel purchase only. Cash receives no reward; eligibility and reward caps are not verified.",
+            "default": "0"
           },
           "allow_unknown_payment": {
             "type": "boolean",
@@ -4782,6 +4834,21 @@
             ],
             "title": "Payment Type",
             "default": "credit"
+          },
+          "credit_cashback_percent": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Credit Cashback Percent",
+            "description": "User-estimated credit-card reward percentage on the fuel purchase only. Cash receives no reward; eligibility and reward caps are not verified.",
+            "default": "0"
           },
           "allow_unknown_payment": {
             "type": "boolean",

@@ -72,6 +72,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
       <p className="text-sm">{t('station.hours')}: {t(station.open_now === true ? 'hours.open' : station.open_now === false ? 'hours.closed' : 'hours.unknown')}</p>
       {row ? <dl className="grid grid-cols-2 gap-2 border-t border-line pt-3 text-sm">
         <dt>{t('breakdown.total')}</dt><dd className="text-right font-semibold num">{usd(row.actual_fuel_cost)}</dd>
+        {Number(row.credit_cashback_amount ?? 0) > 0 ? <><dt>{t('cost.fill')}</dt><dd className="text-right num">{usd(row.purchase_cost)}</dd><dt>{t('prefs.cashback')}</dt><dd className="text-right num text-accent">−{usd(row.credit_cashback_amount)}</dd></> : null}
         <dt>{t('breakdown.detour', { distance: miles(row.detour_miles, t) })}</dt><dd className="text-right num">{usd(row.detour_fuel_cost)}</dd>
         <dt>{t('pick.driveLabel')}</dt><dd className="text-right num">{tripMode === 'on_route' ? t('route.extraTime', { time: minutes(row.extra_travel_minutes, t) }) : t('pick.roundTrip', { time: minutes(row.extra_travel_minutes, t) })}</dd>
       </dl> : null}

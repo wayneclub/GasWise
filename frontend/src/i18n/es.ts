@@ -1,6 +1,14 @@
 import type { MessageKey } from './en'
 
 export const es: Record<MessageKey, string> = {
+  "prefs.cashback": "Reembolso de tarjeta",
+  "prefs.cashbackHint": "Estimado solo sobre combustible. Comprueba elegibilidad y límites de tu tarjeta.",
+  "prefs.cashbackCash": "El efectivo no recibe reembolso de tarjeta.",
+  "prefs.cardFees": "¿Cargos extra por tarjeta?",
+  "prefs.cardFeesHint": "El precio en efectivo o con tarjeta no es un recargo separado. Se usa el precio de tarjeta conocido; solo las cotizaciones sin condición de pago usan el supuesto de $0.20/gal. Los cargos separados no están verificados ni se agregan automáticamente.",
+  "reward.netFill": "Combustible neto",
+  "reward.explanation": "Pago en surtidor {purchase} · reembolso estimado −{reward}; no es un descuento inmediato.",
+  "reward.total": "Costo estimado tras reembolso",
   'prefs.languageAuto': 'Idioma del navegador',
   'payment.estimated': 'Estimado',
   'payment.estimate': 'Tarjeta estimada +{adjustment}/gal · fuente {raw}',

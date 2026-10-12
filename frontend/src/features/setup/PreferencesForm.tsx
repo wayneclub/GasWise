@@ -87,6 +87,21 @@ export function PreferencesForm({
         />
       </Field>
 
+      <Field label={t('prefs.cashback')} hint={t(prefs.payment === 'cash' ? 'prefs.cashbackCash' : 'prefs.cashbackHint')}>
+        <div className="relative max-w-40">
+          <TextInput type="number" inputMode="decimal" min={0} max={100} step="0.1" aria-label={t('prefs.cashback')} disabled={prefs.payment === 'cash'} value={prefs.creditCashbackPercent} className="num pr-9" onChange={(event) => {
+            const value = event.target.value
+            if (value === '' || Number.isFinite(Number(value))) update({ creditCashbackPercent: value === '' ? '' : String(Math.max(0, Math.min(100, Number(value)))) })
+          }} />
+          <span className="pointer-events-none absolute right-3 top-3 text-sm text-muted">%</span>
+        </div>
+      </Field>
+      <details className="text-xs text-muted">
+        <summary className="cursor-pointer font-medium">{t('prefs.cardFees')}</summary>
+        <p className="mt-2 leading-relaxed">{t('prefs.cardFeesHint')}</p>
+        <p className="mt-2"><a className="underline" target="_blank" rel="noreferrer" href="https://usa.visa.com/content/dam/VCOM/global/support-legal/documents/merchant-surcharging-qa-for-web.pdf">Visa</a> · <a className="underline" target="_blank" rel="noreferrer" href="https://oag.ca.gov/consumers/general/credit-card-surcharges">California DOJ</a></p>
+      </details>
+
       <Field label={t('prefs.priority')} hint={t('prefs.priorityHint')}>
         <Segmented
           label={t('prefs.priority')}

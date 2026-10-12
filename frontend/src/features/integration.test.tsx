@@ -23,6 +23,20 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); localStorage.clear() })
 const english = (component: React.ReactNode) => <I18nProvider locale="en">{component}</I18nProvider>
 
+it('saves cashback and reranks held prices without a new search', async () => {
+  const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))
+  render(<App />)
+  await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+  fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
+  fireEvent.change(screen.getByRole('spinbutton', { name: 'Card cashback' }), { target: { value: '4.5' } })
+  await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2))
+  expect(fetch.mock.calls[1][0]).toBe('/api/v1/smart/rerank')
+  expect(JSON.parse(String(fetch.mock.calls[1][1]?.body)).options.credit_cashback_percent).toBe('4.5')
+  expect(JSON.parse(localStorage.getItem('gaswise.prefs.v1')!).creditCashbackPercent).toBe('4.5')
+  fireEvent.click(screen.getByRole('radio', { name: /^Cash$/ }))
+  expect(screen.getByRole('spinbutton', { name: 'Card cashback' })).toBeDisabled()
+})
+
 it('follows browser language until a manual choice, persists it, and can return to automatic', () => {
   localStorage.setItem('gaswise.prefs.v1', JSON.stringify({ onboarded: false }))
   let languages = ['zh-CN', 'en-US']

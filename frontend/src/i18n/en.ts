@@ -1,5 +1,13 @@
 /** Source of truth for UI copy. Other locales must provide every key (type-checked). */
 export const en = {
+  "prefs.cashback": "Card cashback",
+  "prefs.cashbackHint": "Estimated on fuel purchases only. Check your card’s gas eligibility and reward cap.",
+  "prefs.cashbackCash": "Cash purchases receive no card cashback.",
+  "prefs.cardFees": "Extra card fees?",
+  "prefs.cardFeesHint": "Cash and card pump prices differ from a separate surcharge. Known card prices are used directly; $0.20/gal is assumed only for unconfirmed payment quotes. Separate station fees are not verified or automatically added.",
+  "reward.netFill": "Fuel after cashback",
+  "reward.explanation": "Pay at pump {purchase} · estimated cashback −{reward}; not an immediate discount.",
+  "reward.total": "Estimated cost after cashback",
   'prefs.languageAuto': 'Browser default',
   'payment.estimated': 'Estimated',
   'payment.estimate': 'Card estimate +{adjustment}/gal · source {raw}',

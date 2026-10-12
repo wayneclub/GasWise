@@ -14,7 +14,13 @@ from gaswise.contracts.search import (
     TopTierPreference,
 )
 from gaswise.domain.ports import Provider, ProviderError
-from gaswise.domain.pricing.comparison import comparable_prices, comparison_price, select_prices
+from gaswise.domain.pricing.comparison import (
+    cashback_rate,
+    comparable_prices,
+    comparison_price,
+    net_purchase_price,
+    select_prices,
+)
 from gaswise.domain.pricing.fuel import fuel_model, route_fuel
 from gaswise.domain.pricing.top_tier import tag_top_tier
 from gaswise.domain.vehicles.fuel_policy import check_vehicle_fuel, resolve_fuel_query
@@ -108,19 +114,21 @@ class SearchService:
             )
             minutes = Decimal(str(max(0, route.duration_seconds - baseline.duration_seconds))) / 60
             purchase = comparison_price(station) * query.gallons
+            reward = purchase * cashback_rate(station, query)
+            net_purchase = purchase - reward
             trip_fuel = route_fuel(route, consumption)
             extra_fuel = max(Decimal(0), trip_fuel - baseline_fuel)
             detour = extra_fuel * comparison_price(station)
             time = (minutes + query.stop_minutes) / 60 * query.time_value_per_hour
             low, high, spread, agreement, quality, count = comparable_prices(selection, now)
-            multiplier = query.gallons + extra_fuel
+            multiplier = query.gallons * (1 - cashback_rate(station, query)) + extra_fuel
             offset = time if query.strategy == "best_value" else Decimal(0)
             # Preserve full precision for ordering and break-even decisions.
             costs[selection.key] = {
                 "detour": detour,
                 "time": time,
-                "actual": purchase + detour,
-                "generalized": purchase + detour + time,
+                "actual": net_purchase + detour,
+                "generalized": net_purchase + detour + time,
                 "upper": high * multiplier + time,
                 "minutes": minutes,
                 "lower_fuel": low * multiplier,
@@ -145,6 +153,8 @@ class SearchService:
                 extra_travel_minutes=minutes.quantize(Decimal("0.01")),
                 stop_minutes=query.stop_minutes,
                 purchase_cost=money(purchase),
+                credit_cashback_amount=money(reward),
+                net_purchase_cost=money(net_purchase),
                 detour_fuel_cost=money(detour),
                 detour_fuel_gallons=extra_fuel,
                 mpg_used=consumption.mpg_used,
@@ -152,9 +162,9 @@ class SearchService:
                 route_fuel_gallons=trip_fuel,
                 baseline_fuel_gallons=baseline_fuel,
                 fuel_model=consumption,
-                actual_fuel_cost=money(purchase + detour),
+                actual_fuel_cost=money(net_purchase + detour),
                 time_cost=money(time),
-                generalized_trip_cost=money(purchase + detour + time),
+                generalized_trip_cost=money(net_purchase + detour + time),
                 price_age_minutes=max(0, age) if age is not None else None,
                 freshness="unknown"
                 if age is None
@@ -182,7 +192,7 @@ class SearchService:
             )
             reference = costs[nearest.price_comparison.station_key]
             for result in results:
-                savings = comparison_price(nearest.station) - comparison_price(result.station)
+                savings = net_purchase_price(nearest.station, query) - net_purchase_price(result.station, query)
                 cost = costs[result.price_comparison.station_key]
                 overhead = cost["detour"] - reference["detour"]
                 time_overhead = cost["time"] - reference["time"]
