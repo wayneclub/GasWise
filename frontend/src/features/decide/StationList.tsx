@@ -1,3 +1,4 @@
+import { RegionalPrice } from './RegionalPrice'
 import { CaretDownIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
 import type { RankedStation } from '../../api/types'
@@ -38,7 +39,7 @@ export function StationList({ rows, navApp = 'google', tripMode = 'round_trip' }
             {rows.map((row) => (
               <tr key={`${row.station.source}:${row.station.id}`} className="align-top">
                 <td className="py-3 pl-5 pr-2">
-                  <div className="flex flex-wrap items-center gap-1.5"><button type="button" onClick={() => setSelected(row)} className="font-medium underline decoration-line underline-offset-4" aria-label={`${t('station.view')} ${row.station.name}`}>{row.station.name}</button>{row.station.top_tier_brand ? <TopTierBadge brand={row.station.top_tier_brand} /> : null}</div><StationRating station={row.station} />
+                  <div className="flex flex-wrap items-center gap-1.5"><button type="button" onClick={() => setSelected(row)} className="font-medium underline decoration-line underline-offset-4" aria-label={`${t('station.view')} ${row.station.name}`}>{row.station.name}</button>{row.station.top_tier_brand ? <TopTierBadge brand={row.station.top_tier_brand} /> : null}</div><StationRating station={row.station} /><RegionalPrice row={row}/>
                   <p className="num text-[12px] text-muted">
                     {t(tripMode === 'on_route' ? 'list.metaOnRoute' : 'list.meta', {
                       time: minutes(row.extra_travel_minutes, t),

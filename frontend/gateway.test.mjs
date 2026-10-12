@@ -28,7 +28,10 @@ test('serves the built app without service credentials', async () => {
   assert.equal(result.status, 200)
   assert.match(result.headers.get('content-type'), /text\/html/)
   assert.ok(!(await result.text()).includes('gateway-test-token'))
-  assert.match(result.headers.get('content-security-policy'), /connect-src 'self'/)
+  const csp = result.headers.get('content-security-policy')
+  assert.match(csp, /script-src 'self' https:\/\/static.cloudflareinsights.com;/)
+  assert.match(csp, /connect-src 'self' https:\/\/cloudflareinsights.com;/)
+  assert.doesNotMatch(csp, /unsafe-eval|script-src[^;]*unsafe-inline/)
 })
 test('injects server authentication and strips browser authorization', async () => {
   const result = await fetch(`${base}/api/v1/vehicles/resolve`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer browser-value' }, body: JSON.stringify({ text: 'test car' }) })

@@ -19,7 +19,7 @@ describe('searchBody', () => {
   it('maps priority and membership to ranking options', () => {
     const body = searchBody({ ...DEFAULT_PREFS, preference: 'time', costco: true, payment: 'cash', gallons: 12 }, origin)
     expect(body).toMatchObject({
-      time_value_per_hour: '30',
+      time_value_per_hour: '15',
       memberships: ['costco'],
       payment_type: 'cash',
       gallons: '12',

@@ -590,7 +590,7 @@ async def test_discovery_stops_on_rate_limit_and_preserves_completed_viewport(mo
     result = await SmartService(b'test', 'google', maps_web=maps).search(SmartSearch(origin=Point(lat=34, lng=-118), discovery_tiles=5))
     assert maps.calls == result.upstream_calls['google_maps_web_search'] == 2
     assert len(result.snapshot.inventory) == 1
-    assert any('Discovery stopped after 1 completed viewports' in warning for warning in result.snapshot.warnings)
+    assert any('Discovery stopped for viewport' in warning for warning in result.snapshot.warnings)
 
 
 async def test_unknown_payment_credit_estimate_preserves_raw_quote_and_does_not_compound():

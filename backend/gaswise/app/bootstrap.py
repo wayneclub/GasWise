@@ -10,9 +10,9 @@ from gaswise.app.settings import Settings
 from gaswise.providers.gasbuddy.feed import GasBuddyFeedProvider
 from gaswise.providers.gasbuddy.http_session import GasBuddyHTTPSession
 from gaswise.providers.gasbuddy.web import GasBuddyWebProvider
+from gaswise.providers.geocoding import LocationProvider
 from gaswise.providers.google.maps_web import MapsWebProvider
 from gaswise.providers.google.places import GoogleProvider
-from gaswise.providers.geocoding import LocationProvider
 from gaswise.providers.google.routes import MapsWebRouteProvider
 from gaswise.providers.http.parts import PartsHTTP
 from gaswise.providers.http.public import PublicHTTP
@@ -201,6 +201,7 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             demo=provider or DemoProvider() if settings.mode == "demo" else None,
             vehicles=vehicles,
             top_tier=top_tier,
+            aaa=aaa,
         )
         stack.push_async_callback(smart.close)
         yield Services(

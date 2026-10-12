@@ -31,7 +31,7 @@ function json(response, status, detail) {
 const server = createServer(async (request, response) => {
   response.setHeader('X-Content-Type-Options', 'nosniff')
   response.setHeader('Referrer-Policy', 'no-referrer')
-  response.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'")
+  response.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'")
   try {
     const url = new URL(request.url || '/', 'http://localhost')
     if (url.pathname.startsWith('/api/')) {

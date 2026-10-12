@@ -45,3 +45,26 @@ def test_warehouse_names_keep_membership_gate():
     assert membership_for_name("Costco Gasoline") == "costco"
     assert membership_for_name("Sam's Club Fuel Center") == "sams_club"
     assert membership_for_name("Shell") is None
+
+
+def test_located_missing_state_crosswalk_is_unique_nearby_and_never_name_only():
+    from types import SimpleNamespace
+
+    from gaswise.contracts.common import Point
+    from gaswise.domain.pricing.identity import located_inventory_match
+    point = Point(lat=34.0277, lng=-118.2759)
+    row = SimpleNamespace(name='Mobil', address='2620 S Figueroa St, Los Angeles, CA 90007', location=point)
+    quote = SimpleNamespace(name='Mobil', address='2620 S Figueroa St Los Angeles 90007', location=point)
+    assert located_inventory_match([row], quote) is row
+    assert located_inventory_match([row,row], quote) is None
+    quote.location = Point(lat=34.0287, lng=-118.2759)
+    assert located_inventory_match([row], quote) is None
+    quote.location = point
+    quote.address = '2620 S Figueroa St, Los Angeles, NV 90007'
+    assert located_inventory_match([row], quote) is None
+    quote.address = '2620 N Figueroa St Los Angeles 90007'
+    assert located_inventory_match([row], quote) is None
+    quote.address = '2620 Figueroa St Los Angeles 90007'
+    assert located_inventory_match([row], quote) is row
+    quote.name = 'Shell'
+    assert located_inventory_match([row], quote) is None

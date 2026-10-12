@@ -1,5 +1,19 @@
 /** Source of truth for UI copy. Other locales must provide every key (type-checked). */
 export const en = {
+  "board.title": "Top 3 stations",
+  "board.money": "Lowest cost",
+  "board.balanced": "Best balance",
+  "board.time": "Fastest",
+  "board.value": "Your time value ($/hour)",
+  "board.radius": "Search radius",
+  "board.benchmark": "vs AAA {region}",
+  "board.date": "{scope} average · {date}",
+  "board.metro": "Metro",
+  "board.state": "State",
+  "board.context": "Daily average · before rewards; payment basis may differ.",
+  "board.none": "No comparable open stations",
+  "board.score": "Including time",
+
   "cache.sourceUnavailable": "{source}: temporarily unavailable",
   "cache.failed": "Update failed · showing the previous snapshot",
 
@@ -86,7 +100,7 @@ export const en = {
   'prefs.card': 'Card',
   'prefs.cash': 'Cash',
   'prefs.priority': 'Priority',
-  'prefs.priorityHint': 'Save money leads with the lowest total cost, Save time with the quickest stop. Balanced counts extra driving at $15 per hour; that shapes the ranking, not what you pay.',
+  'prefs.priorityHint': 'Save money leads with the lowest total cost, Save time with the quickest stop. Balanced counts extra driving at ${value} per hour; that shapes the ranking, not what you pay.',
   'prefs.money': 'Save money',
   'prefs.balanced': 'Balanced',
   'prefs.time': 'Save time',

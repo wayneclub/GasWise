@@ -1,6 +1,20 @@
 import type { MessageKey } from './en'
 
 export const es: Record<MessageKey, string> = {
+  "board.title": "Las 3 mejores estaciones",
+  "board.money": "Precio",
+  "board.balanced": "Equilibrio",
+  "board.time": "Tiempo",
+  "board.value": "Valor de tu tiempo ($/hora)",
+  "board.radius": "Radio de búsqueda",
+  "board.benchmark": "vs AAA {region}",
+  "board.date": "Promedio {scope} · {date}",
+  "board.metro": "metropolitano",
+  "board.state": "estatal",
+  "board.context": "Promedio diario · antes de recompensas; la forma de pago puede diferir.",
+  "board.none": "No hay estaciones abiertas comparables",
+  "board.score": "Con costo de tiempo",
+
   "cache.sourceUnavailable": "{source}: no disponible temporalmente",
   "cache.failed": "Falló la actualización · se muestra la instantánea anterior",
 
@@ -86,7 +100,7 @@ export const es: Record<MessageKey, string> = {
   'prefs.card': 'Tarjeta',
   'prefs.cash': 'Efectivo',
   'prefs.priority': 'Prioridad',
-  'prefs.priorityHint': 'Ahorrar dinero muestra primero el menor costo total y Ahorrar tiempo la parada más rápida. Equilibrado cuenta el manejo extra a $15 por hora; afecta el orden, no lo que pagas.',
+  'prefs.priorityHint': 'Ahorrar dinero muestra primero el menor costo total y Ahorrar tiempo la parada más rápida. Equilibrado cuenta el manejo extra a ${value} por hora; afecta el orden, no lo que pagas.',
   'prefs.money': 'Ahorrar dinero',
   'prefs.balanced': 'Equilibrado',
   'prefs.time': 'Ahorrar tiempo',

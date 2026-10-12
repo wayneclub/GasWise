@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Literal
 
@@ -73,8 +73,20 @@ class Search(RankOptions):
         return self
 
 
+class RegionalBenchmark(Model):
+    state: str
+    region: str
+    scope: Literal["state", "metro"]
+    fuel_type: str
+    price_per_gallon: Decimal
+    price_as_of: date
+    retrieved_at: datetime
+    source_url: str
+
+
 class RankedStation(Model):
     station: Station
+    regional_benchmark: RegionalBenchmark | None = None
     route: Route
     detour_miles: Decimal
     extra_travel_minutes: Decimal
@@ -160,6 +172,7 @@ class SearchResult(Model):
     source_statuses: list["SourceStatus"] = Field(default_factory=list)
     decision: "Decision | None" = None
     recommendations: dict[str, StrategyRecommendation] = Field(default_factory=dict)
+    leaderboards: dict[str, list[RankedStation]] = Field(default_factory=dict)
     vehicle: VehicleProfile | None = None
 
 

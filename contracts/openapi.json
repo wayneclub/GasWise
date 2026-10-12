@@ -3720,6 +3720,16 @@
           "station": {
             "$ref": "#/components/schemas/Station-Output"
           },
+          "regional_benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegionalBenchmark-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "route": {
             "$ref": "#/components/schemas/Route"
           },
@@ -3923,6 +3933,123 @@
           "prices"
         ],
         "title": "RegionAverage"
+      },
+      "RegionalBenchmark-Input": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "region": {
+            "type": "string",
+            "title": "Region"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "state",
+              "metro"
+            ],
+            "title": "Scope"
+          },
+          "fuel_type": {
+            "type": "string",
+            "title": "Fuel Type"
+          },
+          "price_per_gallon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Price Per Gallon"
+          },
+          "price_as_of": {
+            "type": "string",
+            "format": "date",
+            "title": "Price As Of"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retrieved At"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "region",
+          "scope",
+          "fuel_type",
+          "price_per_gallon",
+          "price_as_of",
+          "retrieved_at",
+          "source_url"
+        ],
+        "title": "RegionalBenchmark"
+      },
+      "RegionalBenchmark-Output": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "region": {
+            "type": "string",
+            "title": "Region"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "state",
+              "metro"
+            ],
+            "title": "Scope"
+          },
+          "fuel_type": {
+            "type": "string",
+            "title": "Fuel Type"
+          },
+          "price_per_gallon": {
+            "type": "string",
+            "title": "Price Per Gallon"
+          },
+          "price_as_of": {
+            "type": "string",
+            "format": "date",
+            "title": "Price As Of"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retrieved At"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "region",
+          "scope",
+          "fuel_type",
+          "price_per_gallon",
+          "price_as_of",
+          "retrieved_at",
+          "source_url"
+        ],
+        "title": "RegionalBenchmark"
       },
       "Route": {
         "properties": {
@@ -4676,6 +4803,16 @@
             "type": "object",
             "title": "Recommendations"
           },
+          "leaderboards": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/RankedStation"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Leaderboards"
+          },
           "vehicle": {
             "anyOf": [
               {
@@ -4726,6 +4863,13 @@
       },
       "SmartResult": {
         "properties": {
+          "timings_ms": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Timings Ms"
+          },
           "cache_hits": {
             "type": "integer",
             "minimum": 0.0,
@@ -5232,6 +5376,14 @@
                 "type": "null"
               }
             ]
+          },
+          "regional_averages": {
+            "items": {
+              "$ref": "#/components/schemas/RegionalBenchmark-Input"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Regional Averages"
           }
         },
         "additionalProperties": false,
@@ -5327,6 +5479,14 @@
                 "type": "null"
               }
             ]
+          },
+          "regional_averages": {
+            "items": {
+              "$ref": "#/components/schemas/RegionalBenchmark-Output"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Regional Averages"
           }
         },
         "additionalProperties": false,

@@ -8,10 +8,11 @@ import { assess, PRIORITY_STRATEGY, picks, tradeoff } from '../../lib/recommend'
 import { messageId } from '../../lib/errorMessages'
 import { useFuelSession } from '../../lib/session'
 import { LocationSearch } from '../setup/LocationSearch'
-import { AlternativePick, HeroPick } from './PickCards'
+import { HeroPick } from './PickCards'
 import { EmptyState, ErrorState, PickSkeleton } from './States'
 import { NearbyStations } from './NearbyStations'
 import { StationList } from './StationList'
+import { Leaderboards } from './Leaderboards'
 
 const DOWNTOWN_LA = { lat: 34.0522, lng: -118.2437 }
 
@@ -38,7 +39,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
   const primary = PRIORITY_STRATEGY[prefs.preference]
   const cards = result ? picks(result, primary) : []
   const assessment = result ? assess(result, primary) : null
-  const [hero, ...others] = cards
+  const [hero] = cards
   const rows = result?.ranking?.results ?? []
   const sources = result?.snapshot.source_statuses.filter((s) => s.status === 'ok') ?? []
 
@@ -63,7 +64,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
                 format={(value) => gallons(value, t)}
                 onChange={(value) => update({ gallons: value })}
               />
-              <div className="min-w-[10rem] flex-1">
+              <div className="min-w-[14rem] flex-1">
                 <Segmented
                   label={t('prefs.priority')}
                   value={prefs.preference}
@@ -75,6 +76,16 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
                   onChange={(preference) => update({ preference })}
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-xs text-muted">
+              <label className="flex flex-col gap-1.5">{t('board.radius')}
+                <select aria-label={t('board.radius')} value={prefs.searchRadiusMiles ?? 5} onChange={e => update({searchRadiusMiles:Number(e.target.value)})} className="h-9 rounded-control border border-line bg-surface px-3 text-ink">
+                  {[2,5,10,20].map(m => <option key={m} value={m}>{m} mi</option>)}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1.5">{t('board.value')}
+                <input type="number" min={0} max={500} step={5} aria-label={t('board.value')} value={prefs.timeValuePerHour ?? 15} onChange={e => update({timeValuePerHour:Math.min(500,Math.max(0,Number(e.target.value)))})} className="num h-9 min-w-0 rounded-control border border-line bg-surface px-3 text-ink" />
+              </label>
             </div>
           </section>
 
@@ -135,15 +146,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
 
         {(phase === 'ready' || phase === 'locating') && result ? (
           <div className="flex flex-col gap-4">
-            {others.length ? (
-              <section aria-label={t('decide.otherOptions')} className="rounded-box border border-line bg-surface px-5 shadow-raised">
-                <ul className="divide-y divide-line">
-                  {others.map((pick) => (
-                    <AlternativePick key={`${pick.station.source}:${pick.station.id}`} pick={pick} navApp={prefs.navApp} tripMode={prefs.tripMode} />
-                  ))}
-                </ul>
-              </section>
-            ) : null}
+            <Leaderboards result={result} primary={primary} navApp={prefs.navApp} tripMode={prefs.tripMode} />
             <StationList rows={rows} navApp={prefs.navApp} tripMode={prefs.tripMode} />
             <NearbyStations allowUnknownPayment={prefs.allowUnknownPayment} onUnknownPayment={(value) => update({ allowUnknownPayment: value })} result={result} navApp={prefs.navApp} onExpandRoutes={() => void session.expandRoutes()} />
             <footer className="px-1 text-[12px] leading-relaxed text-faint">

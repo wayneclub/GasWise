@@ -264,6 +264,7 @@ class SearchService:
             return ordered, None
 
         recommendations = {}
+        leaderboards = {}
         for strategy, key in keys.items():
             available = query.trip_mode == "on_route" or strategy != "on_my_route"
             ordered = sorted(results, key=key) if available else []
@@ -278,6 +279,7 @@ class SearchService:
                 row.price_comparison.comparable_cost_min = money(cost_of(row)["lower_fuel"] + delta)
                 row.price_comparison.comparable_cost_max = money(cost_of(row)["upper_fuel"] + delta)
                 ordered[index] = row
+            leaderboards[strategy] = ordered[:3]
             winner = ordered[0] if ordered else None
             recommendations[strategy] = StrategyRecommendation(
                 station_key=winner.price_comparison.station_key if winner else None,
@@ -310,6 +312,7 @@ class SearchService:
             source_statuses=statuses,
             decision=decision,
             recommendations=recommendations,
+            leaderboards=leaderboards,
             vehicle=vehicle,
         )
 

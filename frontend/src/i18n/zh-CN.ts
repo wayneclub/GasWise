@@ -1,6 +1,20 @@
 import type { MessageKey } from './en'
 
 export const zhCN: Record<MessageKey, string> = {
+  "board.title": "加油站前三名",
+  "board.money": "最省钱",
+  "board.balanced": "最划算",
+  "board.time": "最快到达",
+  "board.value": "你的时间成本（美元／小时）",
+  "board.radius": "搜索半径",
+  "board.benchmark": "较 AAA {region} 均价",
+  "board.date": "{scope}均价 · {date}",
+  "board.metro": "都市区",
+  "board.state": "州",
+  "board.context": "每日均价 · 返现前比较；付款基准可能不同。",
+  "board.none": "没有可比较的营业中加油站",
+  "board.score": "含时间成本",
+
   "cache.sourceUnavailable": "{source}：暂时无法获取",
   "cache.failed": "更新失败 · 显示上次获取的报价",
 
@@ -86,7 +100,7 @@ export const zhCN: Record<MessageKey, string> = {
   'prefs.card': '信用卡',
   'prefs.cash': '现金',
   'prefs.priority': '优先考量',
-  'prefs.priorityHint': '「省钱」优先显示总花费最低，「省时」优先显示最快到达。「平衡」把多开的时间以每小时 $15 计入排序，不影响实际付款。',
+  'prefs.priorityHint': '「省钱」优先显示总花费最低，「省时」优先显示最快到达。「平衡」把多开的时间以每小时 ${value} 计入排序，不影响实际付款。',
   'prefs.money': '省钱',
   'prefs.balanced': '平衡',
   'prefs.time': '省时间',

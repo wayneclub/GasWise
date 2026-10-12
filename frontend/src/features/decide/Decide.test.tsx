@@ -63,7 +63,7 @@ describe('Decide', () => {
     expect(await screen.findByRole('heading', { name: 'Chevron', level: 2 })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('radio', { name: 'Money' }))
     expect(await screen.findByRole('heading', { name: 'Arco', level: 2 })).toBeInTheDocument()
-    expect(screen.getByText('Lowest cost')).toBeInTheDocument()
+    expect(screen.getAllByText('Lowest cost').length).toBeGreaterThan(0)
     expect(screen.getByText('Save $2.05')).toBeInTheDocument()
     expect(screen.getByText('vs Chevron (quickest)')).toBeInTheDocument()
     expect(screen.getByText('Adds 19 min')).toBeInTheDocument()

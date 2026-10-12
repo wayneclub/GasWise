@@ -1491,6 +1491,7 @@ export interface components {
         /** RankedStation */
         RankedStation: {
             station: components["schemas"]["Station-Output"];
+            regional_benchmark?: components["schemas"]["RegionalBenchmark-Output"] | null;
             route: components["schemas"]["Route"];
             /** Detour Miles */
             detour_miles: string;
@@ -1563,6 +1564,62 @@ export interface components {
                     [key: string]: string | null;
                 };
             };
+        };
+        /** RegionalBenchmark */
+        "RegionalBenchmark-Input": {
+            /** State */
+            state: string;
+            /** Region */
+            region: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "state" | "metro";
+            /** Fuel Type */
+            fuel_type: string;
+            /** Price Per Gallon */
+            price_per_gallon: number | string;
+            /**
+             * Price As Of
+             * Format: date
+             */
+            price_as_of: string;
+            /**
+             * Retrieved At
+             * Format: date-time
+             */
+            retrieved_at: string;
+            /** Source Url */
+            source_url: string;
+        };
+        /** RegionalBenchmark */
+        "RegionalBenchmark-Output": {
+            /** State */
+            state: string;
+            /** Region */
+            region: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "state" | "metro";
+            /** Fuel Type */
+            fuel_type: string;
+            /** Price Per Gallon */
+            price_per_gallon: string;
+            /**
+             * Price As Of
+             * Format: date
+             */
+            price_as_of: string;
+            /**
+             * Retrieved At
+             * Format: date-time
+             */
+            retrieved_at: string;
+            /** Source Url */
+            source_url: string;
         };
         /** Route */
         Route: {
@@ -1897,6 +1954,10 @@ export interface components {
             recommendations?: {
                 [key: string]: components["schemas"]["StrategyRecommendation"];
             };
+            /** Leaderboards */
+            leaderboards?: {
+                [key: string]: components["schemas"]["RankedStation"][];
+            };
             vehicle?: components["schemas"]["VehicleProfile-Output"] | null;
         };
         /** SmartRerank */
@@ -1908,6 +1969,10 @@ export interface components {
         };
         /** SmartResult */
         SmartResult: {
+            /** Timings Ms */
+            timings_ms?: {
+                [key: string]: number;
+            };
             /**
              * Cache Hits
              * @default 0
@@ -2121,6 +2186,8 @@ export interface components {
             /** Inventory */
             inventory?: components["schemas"]["MapsWebStation"][];
             vehicle?: components["schemas"]["VehicleProfile-Input"] | null;
+            /** Regional Averages */
+            regional_averages?: components["schemas"]["RegionalBenchmark-Input"][];
         };
         /** SmartSnapshot */
         "SmartSnapshot-Output": {
@@ -2149,6 +2216,8 @@ export interface components {
             /** Inventory */
             inventory?: components["schemas"]["MapsWebStation"][];
             vehicle?: components["schemas"]["VehicleProfile-Output"] | null;
+            /** Regional Averages */
+            regional_averages?: components["schemas"]["RegionalBenchmark-Output"][];
         };
         /** SnapshotRoute */
         SnapshotRoute: {

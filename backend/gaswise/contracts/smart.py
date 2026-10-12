@@ -2,7 +2,7 @@ from pydantic import AwareDatetime, Field, computed_field
 
 from gaswise.contracts.common import Model, Point, Route, SourceStatus, Station
 from gaswise.contracts.search import RankOptions as RankOptions
-from gaswise.contracts.search import Search, SearchResult
+from gaswise.contracts.search import RegionalBenchmark, Search, SearchResult
 from gaswise.contracts.sources import GasBuddyQuote, MapsWebStation
 from gaswise.contracts.vehicles import VehicleProfile
 
@@ -34,6 +34,7 @@ class SmartSnapshot(Model):
     unlocated_gasbuddy: list[GasBuddyQuote] = Field(default_factory=list, max_length=100)
     inventory: list[MapsWebStation] = Field(default_factory=list, max_length=100)
     vehicle: VehicleProfile | None = None
+    regional_averages: list[RegionalBenchmark] = Field(default_factory=list, max_length=200)
 
 
 class SearchCoverage(Model):
@@ -48,6 +49,7 @@ class SearchCoverage(Model):
 
 
 class SmartResult(Model):
+    timings_ms: dict[str, float] = Field(default_factory=dict)
     cache_hits: int = Field(default=0, ge=0)
     snapshot: SmartSnapshot
     signature: str

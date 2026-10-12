@@ -102,7 +102,7 @@ export function PreferencesForm({
         <p className="mt-2"><a className="underline" target="_blank" rel="noreferrer" href="https://usa.visa.com/content/dam/VCOM/global/support-legal/documents/merchant-surcharging-qa-for-web.pdf">Visa</a> · <a className="underline" target="_blank" rel="noreferrer" href="https://oag.ca.gov/consumers/general/credit-card-surcharges">California DOJ</a></p>
       </details>
 
-      <Field label={t('prefs.priority')} hint={t('prefs.priorityHint')}>
+      <Field label={t('prefs.priority')} hint={t('prefs.priorityHint',{value:prefs.timeValuePerHour ?? 15})}>
         <Segmented
           label={t('prefs.priority')}
           value={prefs.preference}
@@ -114,6 +114,17 @@ export function PreferencesForm({
           onChange={(preference) => update({ preference })}
         />
       </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={t('board.value')}>
+          <TextInput type="number" min={0} max={500} step={5} aria-label={t('board.value')} value={prefs.timeValuePerHour ?? 15} onChange={e => update({timeValuePerHour:Math.min(500,Math.max(0,Number(e.target.value)))})} />
+        </Field>
+        <Field label={t('board.radius')}>
+          <select aria-label={t('board.radius')} value={prefs.searchRadiusMiles ?? 5} onChange={e => update({searchRadiusMiles:Number(e.target.value)})} className="h-11 rounded-control border border-line bg-surface px-3">
+            {[2,5,10,20].map(m=><option key={m} value={m}>{m} mi</option>)}
+          </select>
+        </Field>
+      </div>
+
 
       <div className="flex flex-col gap-5 border-t border-line pt-6">
         <Toggle label={t('prefs.costco')} description={t('prefs.costcoHint')} checked={prefs.costco} onChange={(costco) => update({ costco })} />

@@ -1,3 +1,4 @@
+import { RegionalPrice } from './RegionalPrice'
 import {
   CarIcon,
   CaretDownIcon,
@@ -174,6 +175,7 @@ export function HeroPick({
       </h2>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div>
       {station.address ? <p className="mt-0.5 truncate text-[14px] text-muted">{station.address}</p> : null}
       <div className="mt-2"><StationRating station={station} /></div>
+      {row ? <RegionalPrice row={row}/> : null}
       {station.comparison_price_per_gallon ? <p className="mt-1 text-xs text-caution">{t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
       <p className="mt-1 text-xs text-muted">{sourceLabel(station.source)} · {t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}{station.membership_required ? ` · ${t('station.member', { name: station.membership_required })}` : ''}</p>
       {row?.price_comparison ? <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">{(['cash','credit'] as const).map(payment => {

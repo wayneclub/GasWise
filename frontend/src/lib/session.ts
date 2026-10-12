@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, api } from '../api/client'
 import type { RankOptions, SmartResult, SmartSearchBody } from '../api/types'
-import { type Prefs, TIME_VALUE } from './prefs'
+import { type Prefs } from './prefs'
 
 export interface Origin {
   lat: number
@@ -17,15 +17,13 @@ export interface SessionError {
   at: number
 }
 
-const SEARCH_RADIUS_METERS = 8000
-
 function rankOptions(prefs: Prefs): Partial<RankOptions> {
   return {
     gallons: String(prefs.gallons),
     payment_type: prefs.payment,
     credit_cashback_percent: prefs.creditCashbackPercent || '0',
     memberships: prefs.costco ? ['costco'] : [],
-    time_value_per_hour: String(TIME_VALUE[prefs.preference]),
+    time_value_per_hour: String(prefs.timeValuePerHour ?? 15),
     allow_unknown_payment: prefs.allowUnknownPayment,
     unknown_payment_credit_markup: '0.20',
     prefer_top_tier: prefs.preferTopTier,
@@ -38,7 +36,7 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
   return {
     ...rankOptions(prefs),
     origin,
-    radius_meters: SEARCH_RADIUS_METERS,
+    radius_meters: (prefs.searchRadiusMiles ?? 5) * 1609.344,
     strategy: 'best_value',
     max_results: 100,
     calculate_routes: true,
@@ -103,7 +101,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
 
   // Ranking choices rerank the held snapshot. Vehicle or fuel changes need new prices.
   const rankKey = JSON.stringify(rankOptions(prefs))
-  const searchKey = JSON.stringify([prefs.vehicle?.id ?? null, prefs.fuelType, prefs.mpg, prefs.tripMode, prefs.destination])
+  const searchKey = JSON.stringify([prefs.vehicle?.id ?? null, prefs.fuelType, prefs.mpg, prefs.tripMode, prefs.destination, prefs.searchRadiusMiles])
   const lastRankKey = useRef(rankKey)
   const lastSearchKey = useRef(searchKey)
 

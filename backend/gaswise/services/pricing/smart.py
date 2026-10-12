@@ -7,11 +7,12 @@ import hmac
 import json
 import math
 from datetime import UTC, datetime, timedelta
+from time import perf_counter
 
 from gaswise.contracts.common import Point, Route, SourceStatus, Station
 from gaswise.contracts.search import Search
 from gaswise.contracts.smart import SmartResult, SmartSnapshot, SnapshotRoute
-from gaswise.contracts.sources import GasBuddySearch, GooglePriceSearch, MapsWebSearch
+from gaswise.contracts.sources import GooglePriceSearch, MapsWebSearch
 from gaswise.domain.ports import PriceSnapshot, ProviderError
 from gaswise.domain.pricing.comparison import (
     comparison_price,
@@ -20,10 +21,12 @@ from gaswise.domain.pricing.comparison import (
     merged_opening,
     select_prices,
 )
-from gaswise.domain.pricing.identity import inventory_match
+from gaswise.domain.pricing.identity import inventory_match, located_inventory_match
 from gaswise.domain.pricing.top_tier import tag_top_tier
 from gaswise.domain.vehicles.fuel_policy import check_vehicle_fuel, resolve_fuel_query
 from gaswise.services.pricing.cache import TTLCache
+from gaswise.services.pricing.discovery import acquire, acquired
+from gaswise.services.pricing.regional import address_region, benchmarks, match_benchmark
 from gaswise.services.pricing.search import SearchService
 
 
@@ -79,6 +82,7 @@ class SmartService:
         maps_web=None,
         vehicles=None,
         top_tier=None,
+        aaa=None,
     ):
         self.secret, self.mode = secret, mode
         self.gasbuddy, self.google, self.router, self.demo = gasbuddy, google, router, demo
@@ -86,10 +90,14 @@ class SmartService:
         self.maps_web = maps_web
         self.vehicles = vehicles
         self.top_tier = top_tier
+        self.aaa = aaa
         self.inflight = {}
         self.waiters = {}
+        self.source_slots = {"gasbuddy": asyncio.Semaphore(1), "maps": asyncio.Semaphore(2), "waze": asyncio.Semaphore(2), "aaa": asyncio.Semaphore(1)}
+        self.route_slots = asyncio.Semaphore(4)
         self.cache = TTLCache()
         self.failures = TTLCache(capacity=64)
+        self.source_failures = TTLCache(capacity=16)
 
     def sign(self, snapshot):
         # Clients return the snapshot through their own JSON stack, so sign a canonical form.
@@ -99,6 +107,8 @@ class SmartService:
         return await self.coalesce("search:" + query.model_dump_json(), lambda: self.collect(query))
 
     async def cached(self, key, operation, seconds=90, refresh=False):
+        source = key.split(":", 1)[0]
+        source_slot = self.source_slots.get(source)
         # Keys are digests: exact origin/query identity without plaintext coordinates.
         key = "cache:" + hashlib.sha256(key.encode()).hexdigest()
         if not refresh:
@@ -112,10 +122,24 @@ class SmartService:
                 return value, True
         shared = key in self.inflight
 
+        async def guarded_operation():
+            failure = self.source_failures.get(source)
+            if failure:
+                error = ProviderError(failure)
+                error.cache_hit = True
+                raise error
+            return await operation()
+
         async def load():
             try:
-                value = await operation()
+                if source_slot is None:
+                    value = await guarded_operation()
+                else:
+                    async with source_slot:
+                        value = await guarded_operation()
             except ProviderError as error:
+                if "rate_limited" in str(error):
+                    self.source_failures.put(source, str(error), 30)
                 self.failures.put(key, str(error), 30)
                 raise
             self.failures.entries.pop(key, None)
@@ -126,7 +150,7 @@ class SmartService:
             value = await self.coalesce(key, load)
         except ProviderError as error:
             owned = copy.copy(error)
-            owned.cache_hit = shared
+            owned.cache_hit = shared or getattr(error, "cache_hit", False)
             if shared:
                 owned.upstream_http_requests = 0
             raise owned from None
@@ -166,8 +190,11 @@ class SmartService:
         self.inflight.clear()
         self.cache.clear()
         self.failures.clear()
+        self.source_failures.clear()
+        self.failures.clear()
 
     async def collect(self, query):
+        started = perf_counter()
         if query.calculate_routes and self.router is None and self.demo is None:
             # Fail before collecting any price or Places data.
             raise ProviderError("smart_routing_not_configured")
@@ -194,19 +221,11 @@ class SmartService:
             stations = await self.demo.stations(search.model_copy(update={"max_results": 10}))
             statuses.append(SourceStatus(source="synthetic", status="ok", quote_count=len(stations)))
         else:
+            acquisitions = await acquire(self, search, query)
             if self.gasbuddy is not None:
                 try:
                     # Do not apply ranking choices at acquisition time.
-                    gb_query = GasBuddySearch(
-                            max_pages=query.gasbuddy_page_limit,
-                            origin=search.origin,
-                            postal_code=search.postal_code,
-                            fuel_type=search.fuel_type,
-                            payment_type="cash_or_credit",
-                            include_payment_variants=True,
-                            max_results=100,
-                        )
-                    raw, hit = await self.cached("gasbuddy:" + gb_query.model_dump_json(), lambda: self.gasbuddy.prices(gb_query), refresh=query.force_refresh)
+                    raw, hit = acquired(acquisitions, "gasbuddy")
                     calls["gasbuddy_search"] += int(not hit)
                     calls["gasbuddy_pages"] = raw.page_requests if not hit else 0
                     calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
@@ -229,29 +248,15 @@ class SmartService:
                     inventory_by_id, quotes_by_id = {}, {}
                     detail_requests = 0
                     for index, (north, east) in enumerate(offsets):
-                        if index:
-                            await asyncio.sleep(1)
-                        offset = search.radius_meters * 0.45
-                        centre = Point(
-                            lat=max(-89, min(89, search.origin.lat + north * offset / 111320)),
-                            lng=((search.origin.lng + east * offset / (111320 * max(0.1, math.cos(math.radians(search.origin.lat)))) + 180) % 360) - 180,
-                        )
                         try:
-                            tile_query = MapsWebSearch(
-                                origin=centre, fuel_type=search.fuel_type,
-                                radius_meters=search.radius_meters, max_results=100,
-                                detail_limit=query.maps_detail_limit if index == 0 else 0,
-                            )
-                            tile, hit = await self.cached("maps:" + tile_query.model_dump_json(), lambda: self.maps_web.prices(tile_query), refresh=query.force_refresh)
+                            tile, hit = acquired(acquisitions, f"maps:{index}")
                             calls["google_maps_web_search"] += int(not hit)
                             calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
                         except ProviderError as error:
                             calls["google_maps_web_search"] += int(not getattr(error, "cache_hit", False))
                             calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(getattr(error, "cache_hit", False))
-                            if not inventory_by_id:
-                                raise
-                            warnings.append(f"Discovery stopped after {index} completed viewports: {error}")
-                            break
+                            warnings.append(f"Discovery stopped for viewport {index + 1}: {error}")
+                            continue
                         detail_requests += tile.detail_requests if not hit else 0
                         for item in tile.inventory:
                             if distance_meters(search.origin, item.location) <= search.radius_meters:
@@ -262,6 +267,8 @@ class SmartService:
                                 key = (item.source, item.id, item.payment_type)
                                 old = quotes_by_id.get(key)
                                 quotes_by_id[key] = item.model_copy(update=merged_opening(old, item)) if old else item
+                    if not inventory_by_id:
+                        raise ProviderError("google_maps_web_discovery_unavailable")
                     # A small, explicit address lookup budget recovers stations omitted
                     # from generic Maps viewports. Require the same full US address.
                     calls["google_maps_web_station_lookup"] = 0
@@ -427,23 +434,18 @@ class SmartService:
             if self.waze is not None:
                 calls["waze_search"] = 0
                 try:
-                    waze_query = GooglePriceSearch(
-                            origin=search.origin,
-                            fuel_type=search.fuel_type,
-                            radius_meters=search.radius_meters,
-                            max_results=20,
-                        )
-                    quotes, hit = await self.cached("waze:" + waze_query.model_dump_json(), lambda: self.waze.stations(waze_query), refresh=query.force_refresh)
+                    quotes, hit = acquired(acquisitions, "waze")
                     calls["waze_search"] += int(not hit)
                     calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
                     for quote in quotes:
-                        matched = inventory_match(maps_inventory, quote.address, quote.location)
+                        matched = located_inventory_match(maps_inventory, quote)
                         if matched is not None:
                             quote = quote.model_copy(
                                 update={
                                     "canonical_id": f"google_places:{matched.place_id}",
                                     "location": matched.location,
                                     **merged_opening(quote, matched),
+                                    "details": {**quote.details, "regional_address": matched.address},
                                     "rating": matched.rating if matched.rating is not None else quote.rating,
                                     "review_count": matched.review_count if matched.rating is not None else quote.review_count,
                                     "rating_source": matched.rating_source if matched.rating is not None else quote.rating_source,
@@ -483,11 +485,31 @@ class SmartService:
             inventory=maps_inventory,
             vehicle=vehicle,
         )
+        async def averages():
+            if self.aaa is None:
+                return
+            states = sorted({state for st in stations if (state := address_region(st.address)[1])})[:3]
+            for state in states:
+                try:
+                    data, hit = await self.cached("aaa:" + state, lambda: self.aaa.averages(state), seconds=21600)
+                    calls["aaa_averages"] = calls.get("aaa_averages", 0) + int(not hit)
+                    calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
+                    snapshot.regional_averages.extend(benchmarks(data, search.fuel_type))
+                except ProviderError as error:
+                    hit = getattr(error, "cache_hit", False)
+                    calls["aaa_averages"] = calls.get("aaa_averages", 0) + int(not hit)
+                    calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
+                    snapshot.warnings.append("AAA regional average unavailable for " + state)
+
+        discovery_done = perf_counter()
         if query.calculate_routes:
-            await self.collect_routes(snapshot, query.route_limit, calls)
+            await asyncio.gather(self.collect_routes(snapshot, query.route_limit, calls), averages())
+        else:
+            await averages()
+        routes_done = perf_counter()
         signature = self.sign(snapshot)
         ranking = await self.rank(snapshot, search) if query.calculate_routes else None
-        return SmartResult(snapshot=snapshot, signature=signature, ranking=ranking, cache_hits=calls.pop("_cache_hits", 0), upstream_calls=calls)
+        return SmartResult(snapshot=snapshot, signature=signature, ranking=ranking, cache_hits=calls.pop("_cache_hits", 0), upstream_calls=calls, timings_ms={"discovery": round((discovery_done-started)*1000, 1), "routes_and_averages": round((routes_done-discovery_done)*1000, 1), "ranking": round((perf_counter()-routes_done)*1000, 1), "total": round((perf_counter()-started)*1000, 1)})
 
     async def collect_routes(self, snapshot, route_limit, calls):
         search = snapshot.query
@@ -534,15 +556,21 @@ class SmartService:
                 if len(chosen) < route_limit:
                     chosen.setdefault(point_key(st.location), st)
         existing = {point_key(row.via) for row in snapshot.routes}
-        for st in chosen.values():
-            if point_key(st.location) in existing or len(snapshot.routes) >= route_limit:
-                continue
-            calls["routes"] += int(self.demo is None)
-            try:
-                route = await fetch_route(st.location)
-                snapshot.routes.append(SnapshotRoute(via=st.location, route=route))
-            except ProviderError:
-                snapshot.warnings.append(f"Route unavailable for {st.id}; no automatic retry.")
+        pending = [st for st in chosen.values() if point_key(st.location) not in existing]
+        pending = pending[:max(0, route_limit - len(snapshot.routes))]
+
+        async def bounded_route(st):
+            async with self.route_slots:
+                calls["routes"] += int(self.demo is None)
+                try:
+                    return SnapshotRoute(via=st.location, route=await fetch_route(st.location))
+                except ProviderError:
+                    snapshot.warnings.append(f"Route unavailable for {st.id}; no automatic retry.")
+                    return None
+
+        # Bound upstream concurrency across users, preserve deterministic input order.
+        routed = await asyncio.gather(*(bounded_route(st) for st in pending))
+        snapshot.routes.extend(row for row in routed if row is not None)
         if len(snapshot.routes) < len(unique):
             snapshot.warnings.append("Some eligible stations lack routes; ranking coverage is partial.")
 
@@ -580,6 +608,8 @@ class SmartService:
             SnapshotProvider(snapshot), self.mode, vehicle_profile=snapshot.vehicle
         ).search(query)
         result.source_statuses = snapshot.source_statuses
+        for row in [*result.results, *(row for board in result.leaderboards.values() for row in board)]:
+            row.regional_benchmark = match_benchmark(row.station, snapshot.regional_averages)
         result.warnings.extend(snapshot.warnings)
         if query.payment_type != snapshot.query.payment_type:
             result.warnings.append(
