@@ -1,0 +1,34 @@
+name: gaswise-production
+services:
+  backend:
+    image: ghcr.io/wayneclub/gaswise-backend:${GASWISE_IMAGE_TAG:?Set an immutable image tag}
+    container_name: gaswise-backend
+    env_file: .env
+    volumes:
+      - ./credentials:/run/gaswise
+    networks: [app]
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+    mem_limit: 384m
+    logging:
+      options: {max-size: 10m, max-file: "3"}
+  frontend:
+    image: ghcr.io/wayneclub/gaswise-frontend:${GASWISE_IMAGE_TAG:?Set an immutable image tag}
+    container_name: gaswise-frontend
+    environment:
+      GASWISE_API_TOKEN: ${GASWISE_API_TOKEN:?Set the private service token}
+      GASWISE_API_URL: http://gaswise-backend:8000
+    networks: [app, npm_network]
+    depends_on:
+      backend: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+    mem_limit: 128m
+    logging:
+      options: {max-size: 10m, max-file: "3"}
+networks:
+  app: {}
+  npm_network:
+    external: true
