@@ -472,7 +472,9 @@ async def test_signature_survives_browser_json_round_trip():
     snapshot["stations"][0]["details"] = {"rating": 3.0, "b": 1, "10": "x", "2": "y"}
     signed = SmartSnapshot.model_validate(snapshot)
     signature = service.sign(signed)
-    browser = json.loads(json.dumps(snapshot).replace("3.0", "3"))
+    # Normalize numeric fields explicitly: replacing text in serialized JSON can
+    # corrupt timestamps containing seconds such as "43.012345".
+    browser = json.loads(json.dumps(snapshot))
     browser["stations"][0]["details"] = {"2": "y", "10": "x", "rating": 3, "b": 1}
     browser["query"]["radius_meters"] = int(browser["query"]["radius_meters"])
     result = await service.rerank(
