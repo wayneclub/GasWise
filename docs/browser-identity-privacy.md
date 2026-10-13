@@ -4,8 +4,9 @@ VIN / plate identifiers remain on the user's browser. GasWise temporarily
 processes a lookup and forwards it to the selected vehicle-data provider, but
 has no identifier database, persistent identifier cache, or identifier logging.
 Vehicle identity lookups use JSON POST through the app gateway. The configured
-AutoZone and NHTSA flows use upstream POST. Optional Vehicle Databases uses its
-provider-required URL format; do not enable HTTP request logging for that client.
+NHTSA flow uses upstream POST. AutoZone and optional Vehicle Databases use
+their provider-required URL parameters; do not enable HTTP request logging for
+these clients. GasWise does not retain those request URLs.
 Third-party services have their own retention policies; GasWise cannot control
 their retention after an explicitly requested lookup.
 
