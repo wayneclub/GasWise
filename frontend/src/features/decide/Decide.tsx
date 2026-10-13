@@ -58,8 +58,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
               <Stepper label={t('ui.gallons')} value={prefs.gallons} min={1} max={30} step={1} format={(value)=>gallons(value,t)} onChange={(gallons)=>update({gallons})} className="w-full" />
               <span className="text-xs font-medium text-muted">{t('prefs.payment')}</span>
               <Segmented label={t('prefs.payment')} value={prefs.payment} options={[{value:'cash_or_credit',label:t('prefs.all')},{value:'cash',label:t('prefs.cash')},{value:'credit',label:t('prefs.card')}]} onChange={(payment) => update({payment})} />
-              <span className="text-xs font-medium text-muted">{t('prefs.priority')}</span>
-              <Segmented label={t('prefs.priority')} value={prefs.preference} options={[{value:'money',label:t('prefs.moneyShort')},{value:'balanced',label:t('prefs.balanced')},{value:'time',label:t('prefs.timeShort')}]} onChange={(preference)=>update({preference})} />
+
             </div>
             <details className="mt-4 border-t border-line pt-3 text-xs text-muted">
               <summary className="cursor-pointer py-1">{t('board.radius')} {prefs.searchRadiusMiles ?? 5} mi · {t('fill.timeValue')} ${prefs.timeValuePerHour ?? 15}/h</summary>
@@ -133,7 +132,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
 
         {(phase === 'ready' || phase === 'locating') && result ? (
           <div className="flex flex-col gap-4">
-            <Leaderboards result={result} primary={primary} navApp={prefs.navApp} tripMode={prefs.tripMode} />
+            <Leaderboards result={result} primary={primary} onStrategyChange={strategy=>update({preference:strategy==='cheapest_overall'?'money':strategy==='fastest_stop'?'time':'balanced'})} navApp={prefs.navApp} tripMode={prefs.tripMode} />
             <StationList rows={rows} navApp={prefs.navApp} tripMode={prefs.tripMode} />
             <NearbyStations allowUnknownPayment={prefs.allowUnknownPayment} onUnknownPayment={(value) => update({ allowUnknownPayment: value })} result={result} navApp={prefs.navApp} onExpandRoutes={() => void session.expandRoutes()} />
             <footer className="px-1 text-[12px] leading-relaxed text-faint"><div className="mb-2 flex flex-wrap items-center gap-2">{result.snapshot.source_statuses.map(s=><SourcePill key={s.source} source={s.source} unavailable={s.status!=='ok'}/>)}<span>{age(result.snapshot.collected_at,t)}</span></div><details><summary className="cursor-pointer">{t('coverage.why')}</summary>

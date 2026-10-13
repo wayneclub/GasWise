@@ -1,4 +1,4 @@
-import { SourcePill } from './SourcePill'
+import { SourcePill, StationSources } from './SourcePill'
 import { StarIcon, ShieldCheckIcon } from '@phosphor-icons/react'
 import type { RankedStation, Station } from '../../api/types'
 import { Button, LinkButton, Sheet } from '../../components/ui'
@@ -64,7 +64,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
           {station.comparison_price_per_gallon && station.price_per_gallon ? <p className="mt-2 text-xs text-caution">{perGallon(comparisonPrice({ ...station, price_per_gallon: station.price_per_gallon }))} · {t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
           <p className="mt-2 text-sm">{t('station.payment')}: {t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</p>
           {station.membership_required ? <p className="mt-1 text-sm text-caution">{t('station.member', { name: station.membership_required })}</p> : null}
-          <div className="mt-2"><SourcePill source={station.source ?? ''}/></div>
+          <div className="mt-2"><StationSources source={station.source ?? ''} row={row}/></div>
           <p className="text-xs text-muted">{t('age.updated', { age: age(station.price_updated_at, t) })}</p>
         </> : null}
       </div>

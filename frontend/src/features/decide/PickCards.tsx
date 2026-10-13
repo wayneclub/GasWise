@@ -1,4 +1,4 @@
-import { SourcePill } from './SourcePill'
+import { StationSources } from './SourcePill'
 import { RegionalPrice } from './RegionalPrice'
 import {
   CarIcon,
@@ -135,7 +135,7 @@ function Comparison({ pick, row, trade, tripMode }: { pick: Pick; row: RankedSta
           <span className={`num ${time ? 'text-[12px] text-muted' : 'text-[17px] font-semibold text-ink'}`}>{drive}</span>
         </div>
       </div>
-      {trade ? <p className="mt-2 text-[12px] text-muted">{t('compare.rate', { rate: usd(trade.perHour) })}</p> : null}
+
     </div>
   )
 }
@@ -168,7 +168,7 @@ export function HeroPick({
       <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-1.5 text-[13px] font-medium text-muted">
           <Icon size={16} weight="fill" className="shrink-0 text-accent" />
-          {pickLabel(pick.keys[0], assessment, t)}
+          {trade ? `${t(trade.heroIsCheaper ? 'compare.save' : 'compare.more',{amount:usd(trade.saved)})} · ${t(trade.heroIsCheaper ? 'compare.vsQuickest' : 'compare.vsCheapest',{name:trade.name})} · ${t(trade.heroIsCheaper ? 'compare.adds' : 'compare.saves',{minutes:minutes(trade.minutes,t)})}` : pickLabel(pick.keys[0], assessment, t)}
         </p>
       </div>
 
@@ -179,7 +179,7 @@ export function HeroPick({
       <div className="mt-2"><StationRating station={station} /></div>
       {row ? <RegionalPrice row={row}/> : null}
       {station.comparison_price_per_gallon ? <p className="mt-1 text-xs text-caution">{t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
-      <div className="mt-2 flex flex-wrap items-center gap-2"><SourcePill source={station.source}/><p className="text-xs text-muted">{t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}{station.membership_required ? ` · ${t('station.member', { name: station.membership_required })}` : ''}</p></div>
+      <div className="mt-2 flex flex-wrap items-center gap-2"><StationSources source={station.source} row={row}/><p className="text-xs text-muted">{t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}{station.membership_required ? ` · ${t('station.member', { name: station.membership_required })}` : ''}</p></div>
       {row?.price_comparison && ['cash','credit'].every(payment=>row.price_comparison!.evidence.some(e=>e.payment_type===payment && e.source===station.source && e.price_updated_at && Date.now()-new Date(e.price_updated_at).getTime()<=24*60*60*1000)) ? <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">{(['cash','credit'] as const).map(payment => {
         const quote = row.price_comparison?.evidence.filter(e => e.payment_type === payment && e.source === station.source && e.price_updated_at && Date.now()-new Date(e.price_updated_at).getTime() <= 24*60*60*1000).sort((a,b)=>new Date(b.price_updated_at!).getTime()-new Date(a.price_updated_at!).getTime())[0]
         return quote ? <span key={payment} className="rounded-full border border-line px-2 py-0.5">{t(payment === 'cash'?'prefs.cash':'prefs.card')} {perGallon(quote.price_per_gallon)}</span> : null
@@ -189,12 +189,12 @@ export function HeroPick({
       {row?.route.source === "straight_line_estimate" ? <p className="mt-2 text-xs text-caution">{t("coverage.estimated_route")}</p> : null}
       <div className="mt-5 flex items-end justify-between gap-4">
         <p>
-          <span className="num text-[44px] font-semibold leading-none tracking-[-0.03em]">{perGallon(comparisonPrice(station))}</span>
-          <span className="ml-1 text-[14px] text-muted">{t('pick.perGallon')}</span>
+          <span className="num text-[44px] font-semibold leading-none tracking-[-0.03em]">{pick.keys[0]==='fastest_stop' ? minutes(pick.recommendation.extra_travel_minutes,t) : usd(pick.keys[0]==='best_value' && row ? row.price_comparison?.comparable_cost_max ?? row.generalized_trip_cost : pick.recommendation.actual_fuel_cost)}</span>
+          <span className="ml-1 text-[14px] text-muted">{pick.keys[0]==='best_value' ? t('board.score') : pick.keys[0]==='fastest_stop' ? t(tripMode==='round_trip'?'cost.trip':'cost.tripRoute') : t('cost.total')}</span>
         </p>
         {pick.recommendation.actual_fuel_cost ? (
           <p className="text-right text-[13px] leading-tight text-muted">
-            {row && Number(row.credit_cashback_amount ?? 0) > 0 ? t('reward.total') : t('pick.totalFor', { gallons: gal(gallons, t) })}
+            {t('pick.totalFor', { gallons: gal(gallons, t) })} · {perGallon(comparisonPrice(station))}/gal
             <span className="num mt-1 block text-[17px] font-medium text-ink">{usd(pick.recommendation.actual_fuel_cost)}</span>
           </p>
         ) : null}
@@ -252,7 +252,7 @@ export function HeroPick({
             <CaretDownIcon size={14} className={`transition ${open ? 'rotate-180' : ''}`} />
           </button>
           {open ? (
-            <div className="col-span-2 mt-2 rounded-control bg-sunken px-4 py-3"><CostEquation row={row} tripMode={tripMode}/>      {pick.keys.length > 1 ? (
+            <div className="col-span-2 mt-2 rounded-control bg-sunken px-4 py-3"><CostEquation row={row} tripMode={tripMode}/>{trade ? <p className="mt-2 text-xs text-muted">{t('compare.rate', {rate:usd(trade.perHour)})}</p> : null}      {pick.keys.length > 1 ? (
         <p className="mt-2 flex flex-wrap gap-1.5">
           {pick.keys.slice(1).map((key) => (
             <span key={key} className="rounded-full bg-sunken px-2.5 py-0.5 text-[12px] text-muted">
