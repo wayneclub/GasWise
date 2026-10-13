@@ -5895,7 +5895,7 @@
               "type": "object"
             },
             "type": "array",
-            "maxItems": 240,
+            "maxItems": 12,
             "title": "Payment History"
           },
           "comparison_price_min": {
@@ -6218,7 +6218,7 @@
               "type": "object"
             },
             "type": "array",
-            "maxItems": 240,
+            "maxItems": 12,
             "title": "Payment History"
           },
           "comparison_price_min": {

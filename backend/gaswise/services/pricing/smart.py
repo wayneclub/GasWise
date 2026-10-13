@@ -23,6 +23,7 @@ from gaswise.domain.pricing.comparison import (
     select_prices,
 )
 from gaswise.domain.pricing.identity import inventory_match, located_inventory_match, site_match
+from gaswise.domain.pricing.payment import snapshot_history
 from gaswise.domain.pricing.route_estimates import estimate_route
 from gaswise.domain.pricing.top_tier import tag_top_tier
 from gaswise.domain.vehicles.fuel_policy import check_vehicle_fuel, resolve_fuel_query
@@ -544,7 +545,7 @@ class SmartService:
             if hasattr(self.shared_cache, "payment_history"):
                 try:
                     history = await self.shared_cache.payment_history(stations)
-                    stations = [s.model_copy(update={"payment_history": history.get(s.canonical_id, [])}) for s in stations]
+                    stations = [s.model_copy(update={"payment_history": snapshot_history(s, history.get(s.canonical_id, [])) if s.payment_type == "unknown" else []}) for s in stations]
                 except ProviderError:
                     warnings.append("Station payment history unavailable; no history estimate used.")
         now = datetime.now(UTC)

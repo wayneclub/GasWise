@@ -55,3 +55,31 @@ def infer_payment(station: Station, records: list[Station], history: list[Statio
         result["history_days"] = len(values)
         result["reasons"].append("Stable raw cash/card pairs on independent observation days; future surcharge may change.")
     return result
+
+
+def snapshot_history(station, rows):
+    """Six daily raw pairs per unknown quote; keep signed rerank requests bounded."""
+    from pydantic import ValidationError
+    valid = []
+    for row in rows:
+        try:
+            record = Station.model_validate(row)
+        except (ValidationError, ValueError, TypeError):
+            continue
+        if (record.fuel_type, record.octane, record.membership_required, record.currency, record.unit) != (
+            station.fuel_type, station.octane, station.membership_required, station.currency, station.unit
+        ) or record.price_updated_at is None:
+            continue
+        valid.append(record)
+    pairs = {}
+    for cash in sorted(valid, key=lambda r: r.price_updated_at, reverse=True):
+        if cash.payment_type != "cash" or cash.price_updated_at.date() in pairs:
+            continue
+        credits = [r for r in valid if r.payment_type == "credit" and r.source == cash.source and r.id == cash.id
+                   and abs((r.price_updated_at-cash.price_updated_at).total_seconds()) <= 1800]
+        if credits:
+            credit = min(credits, key=lambda r: abs((r.price_updated_at-cash.price_updated_at).total_seconds()))
+            pairs[cash.price_updated_at.date()] = [cash.model_dump(mode="json", exclude={"payment_history"}), credit.model_dump(mode="json", exclude={"payment_history"})]
+        if len(pairs) == 6:
+            break
+    return [r for pair in pairs.values() for r in pair]
