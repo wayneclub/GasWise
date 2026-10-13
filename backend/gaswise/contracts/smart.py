@@ -13,7 +13,8 @@ class SmartSearch(Search):
     station_lookup_limit: int = Field(default=0, ge=0, le=5)
     calculate_routes: bool = False
     route_limit: int = Field(default=5, ge=1, le=100)
-    discovery_tiles: int = Field(default=1, ge=1, le=5)
+    # Maximum Maps discovery requests: one whole-area request, then waves of nearest unproven points.
+    discovery_tiles: int = Field(default=1, ge=1, le=40)
     maps_detail_limit: int = Field(default=0, ge=0, le=5)
 
 
@@ -24,7 +25,7 @@ class SnapshotRoute(Model):
 
 class SmartSnapshot(Model):
     query: Search
-    stations: list[Station] = Field(max_length=500)
+    stations: list[Station] = Field(max_length=1000)
     source_statuses: list[SourceStatus] = Field(max_length=30)
     baseline: Route | None = None
     routes: list[SnapshotRoute] = Field(default_factory=list, max_length=100)
@@ -32,7 +33,9 @@ class SmartSnapshot(Model):
     expires_at: AwareDatetime
     warnings: list[str] = Field(default_factory=list, max_length=100)
     unlocated_gasbuddy: list[GasBuddyQuote] = Field(default_factory=list, max_length=100)
-    inventory: list[MapsWebStation] = Field(default_factory=list, max_length=100)
+    # Share of the search area that Maps discovery proved complete; null when Maps was not used.
+    discovery_area_covered: float | None = Field(default=None, ge=0, le=1)
+    inventory: list[MapsWebStation] = Field(default_factory=list, max_length=250)
     vehicle: VehicleProfile | None = None
     regional_averages: list[RegionalBenchmark] = Field(default_factory=list, max_length=200)
 

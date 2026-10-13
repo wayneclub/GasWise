@@ -15,7 +15,7 @@ from pathlib import Path
 import httpx
 
 from gaswise.contracts.common import Point, Station
-from gaswise.contracts.sources import MapsWebPrices, MapsWebSearch, MapsWebStation
+from gaswise.contracts.sources import MAPS_WEB_PAGE_SIZE, MapsWebPrices, MapsWebSearch, MapsWebStation
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.identity import membership_for_name
 
@@ -172,7 +172,7 @@ class MapsWebProvider:
         headers = self.headers()  # Validate credentials before making any request.
         pb = (
             f"!4m12!1m3!1d{query.radius_meters * 5}!2d{query.origin.lng}!3d{query.origin.lat}"
-            "!2m3!1f0!2f0!3f0!3m2!1i1280!2i720!4f13.1!7i20!10b1" + FEATURES
+            f"!2m3!1f0!2f0!3f0!3m2!1i1280!2i720!4f13.1!7i{MAPS_WEB_PAGE_SIZE}!10b1" + FEATURES
         )
         data = await self.get_data(
             "/search", {"tbm": "map", "hl": "en", "gl": "us", "pb": pb, "q": query.search_text}, headers
@@ -235,8 +235,16 @@ class MapsWebProvider:
         now = datetime.now(UTC)
         inventory, quotes, all_quotes, seen = [], [], [], set()
         found = False
+        candidates, reach = set(), None
         for row in records(data):
             found = True
+            try:
+                if isinstance(row[78], str) and isinstance(row[9], list):
+                    candidates.add(row[78])
+                    meters = distance(query.origin, Point(lat=row[9][2], lng=row[9][3]))
+                    reach = meters if reach is None else max(reach, meters)
+            except (ValueError, TypeError, IndexError):
+                pass
             try:
                 if (
                     row[243] != "US"
@@ -356,4 +364,11 @@ class MapsWebProvider:
         ]
         if not quotes:
             warnings.append(f"No {query.fuel_type} price was supplied for the returned candidates.")
-        return MapsWebPrices(stations=quotes, all_prices=all_quotes, inventory=inventory, warnings=warnings)
+        return MapsWebPrices(
+            stations=quotes,
+            all_prices=all_quotes,
+            inventory=inventory,
+            warnings=warnings,
+            candidate_count=len(candidates),
+            candidate_reach_meters=reach,
+        )

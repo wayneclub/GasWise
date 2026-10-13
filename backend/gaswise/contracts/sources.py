@@ -25,6 +25,9 @@ class GooglePrices(Model):
     )
 
 
+MAPS_WEB_PAGE_SIZE = 20  # Places per website search response; a full page may omit nearby places.
+
+
 class MapsWebSearch(GooglePriceSearch):
     search_text: str = Field(default="gas stations", min_length=1, max_length=200)
     max_results: int = Field(default=20, ge=1, le=100)
@@ -57,6 +60,10 @@ class MapsWebPrices(Model):
     detail_requests: int = 0
     upstream_http_requests: int = 1
     official_api_requests: int = 0
+    # Coverage evidence: places the response listed (any category, before the radius filter)
+    # and the farthest of them. A full page proves only the disk out to that reach.
+    candidate_count: int = 0
+    candidate_reach_meters: float | None = None
 
 
 class WazePriceSearch(Model):

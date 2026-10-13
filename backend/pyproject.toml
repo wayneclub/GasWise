@@ -8,6 +8,7 @@ dependencies = [
     "httpx[http2]>=0.28,<1",
     "pydantic-settings>=2.8,<3",
     "curl-cffi>=0.16.3,<0.17",
+    "h3>=4.5,<5",
 ]
 [project.optional-dependencies]
 browser = ["playwright>=1.55,<2"]

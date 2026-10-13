@@ -286,7 +286,7 @@ it('opens settings as a page and preserves the fuel session on return', async ()
   expect(screen.getByRole('heading', { name: 'Chevron', level: 2 })).toBeInTheDocument()
   expect(fetch).toHaveBeenCalledTimes(1)
   const body = JSON.parse(String(fetch.mock.calls[0][1]?.body))
-  expect(body).toMatchObject({ opening_policy: 'require_open', discovery_tiles: 5, route_limit: 100, max_results: 100, allow_unknown_payment: true, unknown_payment_credit_markup: '0.20' })
+  expect(body).toMatchObject({ opening_policy: 'require_open', discovery_tiles: 20, route_limit: 100, max_results: 100, allow_unknown_payment: true, unknown_payment_credit_markup: '0.20' })
 })
 
  it('places compact TOP TIER next to the name and reports quote age rather than collection freshness', () => {

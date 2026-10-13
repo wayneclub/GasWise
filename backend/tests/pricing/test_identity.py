@@ -100,7 +100,7 @@ def test_site_match_resolves_station_and_store_listed_at_one_site():
 
 def test_site_match_never_matches_by_proximity_or_brand_alone():
     quote = located_quote("Shell", "1516 S Main St, Los Angeles, CA 90015", 34, -118)
-    other_number = place("a", "Shell", "1520 S Main St, Los Angeles, CA 90015", 34, -118)
+    other_number = place("a", "Shell", "1520 S Main St, Los Angeles, CA 90015", 34.00036, -118)  # 40m: a neighbour
     other_street = place("b", "Shell", "1516 Olive St, Los Angeles, CA 90015", 34, -118)
     far = place("c", "Shell", "1516 Main St, Los Angeles, CA 90015", 34.001, -118)
     assert site_match([other_number, other_street, far], quote) is None
@@ -118,3 +118,14 @@ def test_site_match_without_street_address_needs_exact_name_close_by():
     assert site_match([summit], slogan) is summit
     assert site_match([summit], located_quote("Summit", slogan.address, 32.75508, -117.2100)) is None
     assert site_match([summit], located_quote("Summit Gasoline", slogan.address, 32.7556, -117.2100)) is None
+
+
+def test_site_match_accepts_same_brand_corner_numbered_differently_only_when_unique():
+    google = place("cahuenga", "Chevron", "1934 N Cahuenga Blvd, Los Angeles, CA 90068", 34.10370, -118.32900)
+    quote = located_quote("Chevron", "1912 N Cahuenga Blvd, Hollywood, CA 90068-7318", 34.10380, -118.32900)
+    assert site_match([google], quote) is google
+    other_brand = place("arco", "ARCO", "5007 Sunset Blvd, Los Angeles, CA 90027", 34.0981, -118.3020)
+    assert site_match([other_brand], located_quote("USA Gasoline", "5025 W Sunset Blvd, Los Angeles, CA 90027", 34.09846, -118.3020)) is None
+    twin = place("twin", "Chevron", "1950 N Cahuenga Blvd, Los Angeles, CA 90068", 34.10385, -118.32905)
+    assert site_match([google, twin], quote) is None
+    assert site_match([place("far", "Chevron", "1934 N Cahuenga Blvd", 34.1042, -118.3290)], quote) is None  # 44m

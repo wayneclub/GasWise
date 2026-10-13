@@ -128,18 +128,23 @@ def site_match(inventory, quote, meters=60, site_meters=40):
         return rows[0] if len(rows) == 1 else None
     if not street:
         return None
-    rows = []
+    brand = next(iter(re.findall(r"[a-z0-9]+", quote.name.lower())), "")
+    rows, same_brand = [], []
     for row in inventory:
         other_number, other_street = street_parts(row.address)
-        if (
-            other_number == number
-            and street & other_street
-            and distance_meters(row.location, quote.location) <= meters
-        ):
+        if not street & other_street:
+            continue
+        gap = distance_meters(row.location, quote.location)
+        if other_number == number and gap <= meters:
             rows.append(row)
-    if not rows or any(distance_meters(a.location, b.location) > site_meters for a in rows for b in rows):
+        elif brand and brand in row.name.lower() and gap <= 25:
+            same_brand.append(row)
+    if not rows:
+        # Sources number one corner forecourt differently (Chevron 1912 vs 1934 N Cahuenga, 11m):
+        # the same brand on the same street within 25m, and only one such place, is that station.
+        return same_brand[0] if len(same_brand) == 1 else None
+    if any(distance_meters(a.location, b.location) > site_meters for a in rows for b in rows):
         return None
-    brand = next(iter(re.findall(r"[a-z0-9]+", quote.name.lower())), "")
     return min(
         rows,
         key=lambda row: (brand not in row.name.lower(), distance_meters(row.location, quote.location)),

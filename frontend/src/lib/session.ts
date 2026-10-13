@@ -41,7 +41,7 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
     max_results: 100,
     calculate_routes: true,
     route_limit: 100,
-    discovery_tiles: 5,
+    discovery_tiles: 20,
     gasbuddy_page_limit: 3,
     station_lookup_limit: 5,
     trip_mode: prefs.tripMode,

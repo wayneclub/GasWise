@@ -551,7 +551,8 @@ async def test_expanded_discovery_compares_every_known_open_eligible_station(mon
                 opened = False if i == 0 else None if i == 1 else True
                 inventory.append(MapsWebStation(place_id=str(i), name=f'Station {i}', location=point, distance_meters=i * 111, available_fuel_types=['premium'], open_now=opened))
                 stations.append(Station(id=str(i), canonical_id=f'google_places:{i}', name=f'Station {i}', location=point, fuel_type='premium', octane=91, payment_type='credit', price_per_gallon='6', price_updated_at=now, fetched_at=now, source='google_maps_web', open_now=opened))
-            return MapsWebPrices(inventory=inventory, stations=stations, all_prices=[], warnings=[])
+            # Full pages that reach only 150m: each request proves a small disk, so discovery continues.
+            return MapsWebPrices(inventory=inventory, stations=stations, all_prices=[], warnings=[], candidate_count=20, candidate_reach_meters=150)
 
     class Router:
         calls = 0
@@ -584,7 +585,8 @@ async def test_discovery_stops_on_rate_limit_and_preserves_completed_viewport(mo
             if self.calls:
                 self.calls += 1
                 raise ProviderError('google_maps_web_rate_limited')
-            return await super().prices(query)
+            page = await super().prices(query)
+            return page.model_copy(update={'candidate_count': 20, 'candidate_reach_meters': 100})
 
     maps = LimitedMaps()
     result = await SmartService(b'test', 'google', maps_web=maps).search(SmartSearch(origin=Point(lat=34, lng=-118), discovery_tiles=5))

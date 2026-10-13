@@ -133,7 +133,7 @@ class SmartService:
         self.aaa = aaa
         self.inflight = {}
         self.waiters = {}
-        self.source_slots = {"gasbuddy": asyncio.Semaphore(1), "maps": asyncio.Semaphore(2), "waze": asyncio.Semaphore(2), "aaa": asyncio.Semaphore(1)}
+        self.source_slots = {"gasbuddy": asyncio.Semaphore(1), "maps": asyncio.Semaphore(6), "waze": asyncio.Semaphore(2), "aaa": asyncio.Semaphore(1)}
         self.route_slots = asyncio.Semaphore(4)
         self.cache = TTLCache()
         self.failures = TTLCache(capacity=64)
@@ -257,6 +257,9 @@ class SmartService:
             warnings.extend(vehicle.fuel_recommendation.assessment_warnings)
         raw = None
         maps_inventory = []
+        # Crosswalks use every discovered place; the snapshot keeps only the nearest ones.
+        matching_inventory = []
+        discovery_area_covered = None
         if self.demo is not None:
             stations = await self.demo.stations(search.model_copy(update={"max_results": 10}))
             statuses.append(SourceStatus(source="synthetic", status="ok", quote_count=len(stations)))
@@ -282,21 +285,21 @@ class SmartService:
                 calls["google_maps_web_search"] = 0
                 calls["google_maps_web_details"] = 0
                 try:
-                    # Sample the centre and four overlapping viewports. Each website
-                    # response is bounded; this improves coverage, not exhaustiveness.
-                    offsets = [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)][:query.discovery_tiles]
+                    # Each website response is one bounded page; discovery reports how much
+                    # of the area those pages proved complete, never claims exhaustiveness.
+                    outcomes, discovery_area_covered = acquired(acquisitions, "maps")
                     inventory_by_id, quotes_by_id = {}, {}
                     detail_requests = 0
-                    for index, (north, east) in enumerate(offsets):
-                        try:
-                            tile, hit = acquired(acquisitions, f"maps:{index}")
-                            calls["google_maps_web_search"] += int(not hit)
-                            calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
-                        except ProviderError as error:
+                    for index, outcome in enumerate(outcomes):
+                        if isinstance(outcome, ProviderError):
+                            error = outcome
                             calls["google_maps_web_search"] += int(not getattr(error, "cache_hit", False))
                             calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(getattr(error, "cache_hit", False))
                             warnings.append(f"Discovery stopped for viewport {index + 1}: {error}")
                             continue
+                        tile, hit = outcome
+                        calls["google_maps_web_search"] += int(not hit)
+                        calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
                         detail_requests += tile.detail_requests if not hit else 0
                         for item in tile.inventory:
                             if distance_meters(search.origin, item.location) <= search_limit_meters(search):
@@ -309,6 +312,11 @@ class SmartService:
                                 quotes_by_id[key] = item.model_copy(update=merged_opening(old, item)) if old else item
                     if not inventory_by_id:
                         raise ProviderError("google_maps_web_discovery_unavailable")
+                    if discovery_area_covered < 0.995:
+                        warnings.append(
+                            f"Maps discovery proved {discovery_area_covered:.0%} of the search area within its "
+                            "request budget; stations farther out may be missing."
+                        )
                     # A small, explicit address lookup budget recovers stations omitted
                     # from generic Maps viewports. Require the same full US address.
                     calls["google_maps_web_station_lookup"] = 0
@@ -339,11 +347,12 @@ class SmartService:
                                 warnings.append("Station address lookup stopped: " + str(error))
                                 break
                     data = tile.model_copy(update={
-                        "inventory": sorted(inventory_by_id.values(), key=lambda item: distance_meters(search.origin, item.location))[:100],
+                        "inventory": sorted(inventory_by_id.values(), key=lambda item: distance_meters(search.origin, item.location))[:250],
                         "stations": list(quotes_by_id.values()),
                         "detail_requests": detail_requests,
                     })
                     maps_inventory = data.inventory
+                    matching_inventory = list(inventory_by_id.values())
                     stations.extend(data.stations)
                     warnings.extend(data.warnings)
                     calls["google_maps_web_details"] = data.detail_requests
@@ -356,7 +365,7 @@ class SmartService:
                     )
                 if raw is not None:
                     for quote in raw.prices:
-                        matched = site_match(maps_inventory, quote)
+                        matched = site_match(matching_inventory, quote)
                         if matched is None and quote.location is None:
                             unlocated.append(quote)
                             continue
@@ -464,7 +473,7 @@ class SmartService:
                     calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
                     gasbuddy_sites = [s for s in stations if (s.canonical_id or "").startswith("gasbuddy:")]
                     for quote in quotes:
-                        matched = located_inventory_match(maps_inventory, quote)
+                        matched = located_inventory_match(matching_inventory, quote)
                         if matched is None and (site := site_match(gasbuddy_sites, quote)) is not None:
                             quote = quote.model_copy(update={"canonical_id": site.canonical_id})
                         if matched is not None:
@@ -510,6 +519,7 @@ class SmartService:
             expires_at=now + timedelta(minutes=10),
             warnings=warnings,
             unlocated_gasbuddy=unlocated[:100],
+            discovery_area_covered=discovery_area_covered,
             inventory=maps_inventory,
             vehicle=vehicle,
         )
