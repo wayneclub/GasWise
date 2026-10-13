@@ -84,3 +84,41 @@ inventory station. Unpriced inventory is retained internally for closure matchin
 and honest coverage diagnostics; it is not a recommendation or a displayed card.
 These observations are a bounded sample, not proof that all upstream responses
 always have the same shape or that every station is covered.
+
+## Reusable transport and package investigation
+
+The shared `providers/http/curl_client.py` transport now handles bounded async
+GET/POST reads, host allowlists, standard/browser TLS profiles, and explicitly
+owned in-memory guest sessions. AAA uses standard libcurl. GasBuddy's optional
+`GASWISE_GASBUDDY_HTTP_CLIENT=curl` or `curl_chrome` modes reuse the same transport
+with guest cookies/CSRF owned by its existing expiring session worker. The
+production default remains `httpx`: the alternatives have not restored AWS
+GasBuddy, and no automatic retries or challenge-script execution are introduced.
+
+Fresh AWS evidence on 2026-10-12:
+
+- Shared standard transport: AAA publication 2026-10-12, 90 rows, counties available.
+- `curl_cffi` Chrome profile: GasBuddy HTTP 403, `cf-mitigated: challenge`, no homepage token.
+- Shared Chrome transport through the actual GasBuddy session worker:
+  `gasbuddy_http_bootstrap_challenge`.
+- PyPI `cloudscraper`: HTTP 403 challenge, no homepage token.
+- Official GitHub `VeNoMouS/cloudscraper` commit
+  `9ea528a8675f1bebd49ff853d142e94988a95178`: installed in an isolated disposable
+  AWS container without mounted credentials; request did not complete within a
+  45-second process deadline (exit 124). No successful homepage/API proof.
+
+Package documentation describes capabilities, not universal acceptance by a
+site's private WAF policy. These results do not prove the exact deciding rule.
+GasBuddy direct AWS remains unavailable. A reliable restoration requires a
+source-supported access path or a rule exception from the source operator; do
+not label an unverified solver/alternate region as a working fix. No Mac relay,
+rotating proxy, third-party CAPTCHA account, or paid subscription was installed.
+
+Primary project references: [curl_cffi](https://github.com/lexiforest/curl_cffi),
+[cloudscraper](https://github.com/VeNoMouS/cloudscraper).
+
+A second isolated run of the same GitHub commit identified version **3.0.0**,
+allowed a 60-second process deadline with a 15-second per-request timeout,
+and also ended at the process deadline (exit 124) before returning a successful
+source response. The first test was not assumed to establish universal failure;
+the second still provides no successful source or GraphQL proof.

@@ -7,7 +7,7 @@ import { Setup } from './features/setup/Setup'
 import { useBrowserLocale, useI18n } from './i18n'
 import { I18nProvider } from './i18n/I18nProvider'
 import { usePrefs, type Prefs } from './lib/prefs'
-import { VehicleIdentityContext, type VehicleIdentity } from './lib/vehicleIdentity'
+import { VehicleIdentityContext, useEncryptedVehicleIdentity } from './lib/vehicleIdentity'
 
 function ServiceTabs({ prefs, update }: { prefs: Prefs; update: (change: Partial<Prefs>) => void }) {
   const { t } = useI18n()
@@ -34,10 +34,10 @@ function ServiceTabs({ prefs, update }: { prefs: Prefs; update: (change: Partial
 export default function App() {
   const [prefs, update] = usePrefs()
   const browserLocale = useBrowserLocale()
-  const [identity, setIdentity] = useState<VehicleIdentity | null>(null)
+  const identityState = useEncryptedVehicleIdentity()
   return <I18nProvider locale={prefs.locale ?? browserLocale}>
-    <VehicleIdentityContext.Provider value={{ identity, setIdentity }}>
-      {prefs.onboarded ? <ServiceTabs prefs={prefs} update={update} /> : <Setup prefs={prefs} update={update} />}
+    <VehicleIdentityContext.Provider value={identityState}>
+      {identityState.ready ? (prefs.onboarded ? <ServiceTabs prefs={prefs} update={update} /> : <Setup prefs={prefs} update={update} />) : <div role="status" className="p-6 text-center text-muted">GasWise</div>}
     </VehicleIdentityContext.Provider>
   </I18nProvider>
 }

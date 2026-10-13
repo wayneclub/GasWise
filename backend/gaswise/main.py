@@ -3,7 +3,9 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from gaswise.api import locations, parts, quality, recommendations, smart, sources, system, vehicles
 from gaswise.api.operations import OperationRunner
@@ -37,6 +39,28 @@ def create_app(
         description="Independent fuel cost API. Decimal money is serialized as strings. Demo is synthetic.",
     )
     app.state.settings = settings
+
+    @app.exception_handler(RequestValidationError)
+    async def private_validation_errors(request, error):
+        # Pydantic's default errors echo submitted VIN/plate/other request input.
+        # Keep structural diagnostics without input, exception context or values.
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": [
+                    {
+                        "type": item["type"],
+                        "loc": (*item["loc"][:-1], "extra_field")
+                        if item["type"] == "extra_forbidden"
+                        else item["loc"],
+                        "msg": "Invalid request value",
+                    }
+                    for item in error.errors()
+                ]
+            },
+            headers={"Cache-Control": "no-store"},
+        )
+
     app.state.operations = OperationRunner(settings.max_concurrent_searches)
     app.add_middleware(
         CORSMiddleware,

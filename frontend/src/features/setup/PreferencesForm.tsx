@@ -1,4 +1,5 @@
 import type { FuelType } from '../../api/types'
+import {useState} from 'react'
 import { Field, Segmented, Stepper, TextInput, Toggle } from '../../components/ui'
 import { LOCALES, useI18n } from '../../i18n'
 import { gallons } from '../../lib/format'
@@ -17,8 +18,9 @@ export function PreferencesForm({
   update: (change: Partial<Prefs>) => void
   advanced?: boolean
 }) {
-  const { identity } = useVehicleIdentity()
+  const { identity, setIdentity, storageStatus, storageError } = useVehicleIdentity()
   const { t } = useI18n()
+  const [identityReset,setIdentityReset]=useState(0)
   const fuels: { value: FuelType; label: string }[] = [
     { value: 'regular', label: t('fuel.regular') },
     { value: 'midgrade', label: t('fuel.midgradeShort') },
@@ -36,9 +38,12 @@ export function PreferencesForm({
       </Field>
 
       <Field label={t('prefs.car')} hint={t('prefs.carHint')}>
-        <VehiclePicker vehicle={prefs.vehicle} onChange={(vehicle) => update({ vehicle })} />
+        <VehiclePicker key={identityReset} vehicle={prefs.vehicle} onChange={(vehicle) => update({ vehicle })} />
         <p className="text-xs leading-relaxed text-muted">{identity ? t('vehicle.sharedReady') : t('vehicle.sharedMissing')}</p>
         {identity ? <p className="font-mono text-xs text-muted">{identity.kind === 'vin' ? `VIN · •••••••••••••${identity.value.vin.slice(-4)}` : `${identity.value.state} · •••${identity.value.plate.slice(-2)}`}</p> : null}
+        <p className="text-xs text-muted">{t(storageStatus === 'encrypted' ? 'vehicle.encryptedLocal' : 'vehicle.sessionLocal')}</p>
+        {identity || storageError ? <button type="button" onClick={()=>{setIdentity(null);setIdentityReset(n=>n+1)}} className="self-start text-xs text-accent underline">{t('vehicle.clearIdentity')}</button> : null}
+        {storageError ? <p role="alert" className="text-xs text-caution">{t('vehicle.storageError')}</p> : null}
       </Field>
 
       {prefs.vehicle ? null : (

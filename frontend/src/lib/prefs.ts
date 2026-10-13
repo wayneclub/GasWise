@@ -66,7 +66,8 @@ const KEY = 'gaswise.prefs.v1'
 export function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(KEY)
-    const saved = raw ? JSON.parse(raw) as Partial<Prefs> : {}
+    const parsed = raw ? JSON.parse(raw) as Partial<Prefs> : {}
+    const saved = Object.fromEntries(Object.keys(DEFAULT_PREFS).filter(key=>key in parsed).map(key=>[key,parsed[key as keyof Prefs]])) as Partial<Prefs>
     const reward = Number(saved.creditCashbackPercent ?? 0)
     saved.creditCashbackPercent = Number.isFinite(reward) ? String(Math.min(100, Math.max(0, reward))) : '0'
     saved.timeValuePerHour = Math.min(500, Math.max(0, Number(saved.timeValuePerHour ?? 15) || 0))
@@ -79,7 +80,8 @@ export function loadPrefs(): Prefs {
 
 function savePrefs(prefs: Prefs) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ ...prefs, paymentPolicyVersion: 2, tripMode: 'round_trip', destination: null }))
+    const publicPrefs=Object.fromEntries(Object.keys(DEFAULT_PREFS).map(key=>[key,prefs[key as keyof Prefs]]))
+    localStorage.setItem(KEY, JSON.stringify({ ...publicPrefs, paymentPolicyVersion: 2, tripMode: 'round_trip', destination: null }))
   } catch {
     // Private mode or blocked storage: the session still works without persistence.
   }

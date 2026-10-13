@@ -14,6 +14,7 @@ from gaswise.providers.geocoding import LocationProvider
 from gaswise.providers.google.maps_web import MapsWebProvider
 from gaswise.providers.google.places import GoogleProvider
 from gaswise.providers.google.routes import MapsWebRouteProvider
+from gaswise.providers.http.curl_client import CurlHTTPClient
 from gaswise.providers.http.parts import PartsHTTP
 from gaswise.providers.http.public import PublicHTTP
 from gaswise.providers.pricing.aaa import AAAProvider
@@ -87,7 +88,20 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             else None
         )
         if settings.gasbuddy_web_transport == "http":
-            price_worker = GasBuddyHTTPSession(session_seconds=settings.gasbuddy_session_seconds)
+            factory = (
+                (
+                    lambda: CurlHTTPClient(
+                        allowed_hosts={"www.gasbuddy.com"},
+                        preserve_cookies=True,
+                        profile="chrome" if settings.gasbuddy_http_client == "curl_chrome" else None,
+                    )
+                )
+                if settings.gasbuddy_http_client != "httpx"
+                else None
+            )
+            price_worker = GasBuddyHTTPSession(
+                session_seconds=settings.gasbuddy_session_seconds, client_factory=factory
+            )
         else:
             # Browser transports are optional. The default HTTP service never imports Playwright.
             from gaswise.providers.gasbuddy.anonymous_session import GasBuddyAnonymousSession
@@ -186,7 +200,9 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             SearchService(selected, settings.mode, vehicles=vehicles, top_tier=top_tier)
             if settings.mode == "demo"
             else (
-                SearchService(registry.provider(live_router), settings.mode, vehicles=vehicles, top_tier=top_tier)
+                SearchService(
+                    registry.provider(live_router), settings.mode, vehicles=vehicles, top_tier=top_tier
+                )
                 if live_router
                 else None
             )

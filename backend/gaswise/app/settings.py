@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     top_tier_refresh_hours: int = Field(default=168, ge=24, le=2160)
     top_tier_cache_file: Path | None = Path.home() / ".cache/gaswise/top-tier-brands.json"
     gasbuddy_web_transport: Literal["http", "browser", "session_http"] = "http"
+    gasbuddy_http_client: Literal["httpx", "curl", "curl_chrome"] = "httpx"
     gasbuddy_session_seconds: int = Field(default=600, ge=60, le=1800)
     gasbuddy_browser_channel: Literal["chrome", "chromium"] = "chrome"
     gasbuddy_browser_headless: bool = True

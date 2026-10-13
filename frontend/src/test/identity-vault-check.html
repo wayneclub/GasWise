@@ -1,0 +1,13 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>Browser encryption verification</title>
+<style>body{font:16px system-ui;max-width:640px;margin:48px auto;padding:24px}button{padding:12px;margin:4px}pre{white-space:pre-wrap;padding:20px;background:#eff6ef}</style>
+<h1>瀏覽器原生加密驗證</h1><p>僅使用合成測試資料，不呼叫任何車輛資料服務。</p>
+<button id="save">保存合成資料</button><button id="check">檢查加密與恢復</button><button id="clear">清除測試資料</button><pre id="result">等待測試</pre>
+<script type="module">
+import {saveIdentity,loadIdentity} from '/src/lib/identityVault.ts';
+const sample={kind:'vin',value:{vin:'A'.repeat(17)}};
+async function record(){return new Promise((resolve,reject)=>{const r=indexedDB.open('gaswise-private-v1',1);r.onsuccess=()=>{const db=r.result,t=db.transaction('vault'),g=t.objectStore('vault').get('vehicle');g.onsuccess=()=>{db.close();resolve(g.result)};g.onerror=reject};r.onerror=reject})}
+const show=text=>document.querySelector('#result').textContent=text;
+document.querySelector('#save').onclick=async()=>{try{await saveIdentity(sample);show('合成資料已加密保存')}catch{show('測試失敗')}};
+document.querySelector('#check').onclick=async()=>{try{const r=await record(),value=await loadIdentity();show(JSON.stringify({restored:value?.value.vin===sample.value.vin,keyNonExportable:r?.key.extractable===false,encryptedPayload:r&&!new TextDecoder().decode(r.ciphertext).includes(sample.value.vin)},null,2))}catch{show('測試失敗')}};
+document.querySelector('#clear').onclick=async()=>{try{await saveIdentity(null);show((await record())===undefined&&(await loadIdentity())===null?'紀錄及金鑰已清除':'測試失敗')}catch{show('測試失敗')}};
+</script></html>
