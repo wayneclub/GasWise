@@ -1,8 +1,9 @@
+import { SourcePill } from './SourcePill'
 import {useState} from 'react'
 import type {RankedStation, SmartResult, StrategyKey} from '../../api/types'
 import {Segmented} from '../../components/ui'
 import {useI18n} from '../../i18n'
-import {age, comparisonPrice, minutes, perGallon, sourceLabel, usd} from '../../lib/format'
+import {age, comparisonPrice, minutes, perGallon, usd} from '../../lib/format'
 import type {NavApp} from '../../lib/prefs'
 import {StationDetails, StationRating, TopTierBadge} from './StationDetails'
 import {RegionalPrice} from './RegionalPrice'
@@ -31,7 +32,7 @@ export function Leaderboards({result, primary, navApp, tripMode}: {result:SmartR
           </div>
           {row.station.address ? <p className="mt-0.5 truncate text-[11px] text-muted" title={row.station.address}>{row.station.address.split(',')[0]}</p> : null}
           <StationRating station={row.station}/>
-          <p className="text-xs text-muted">{minutes(row.extra_travel_minutes,t)} · {sourceLabel(row.station.source)} · {age(row.station.price_updated_at,t)}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2"><SourcePill source={row.station.source}/><span className="text-xs text-muted">{minutes(row.extra_travel_minutes,t)} · {age(row.station.price_updated_at,t)}</span></div>
           <RegionalPrice row={row}/>
           {current==='best_value'?<p className="num mt-1 text-[10px] text-muted">{t('board.score')} {usd(row.price_comparison?.comparable_cost_max ?? row.generalized_trip_cost)}</p>:null}
         </div>

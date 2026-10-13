@@ -1,8 +1,9 @@
+import { SourcePill } from './SourcePill'
 import { StarIcon, ShieldCheckIcon } from '@phosphor-icons/react'
 import type { RankedStation, Station } from '../../api/types'
 import { Button, LinkButton, Sheet } from '../../components/ui'
 import { useI18n } from '../../i18n'
-import { comparisonPrice, age, fuelKey, perGallon, sourceLabel, usd, miles, minutes } from '../../lib/format'
+import { comparisonPrice, age, fuelKey, perGallon, usd, miles, minutes } from '../../lib/format'
 import { navigationUrl } from '../../lib/navigation'
 import type { NavApp } from '../../lib/prefs'
 
@@ -63,7 +64,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
           {station.comparison_price_per_gallon && station.price_per_gallon ? <p className="mt-2 text-xs text-caution">{perGallon(comparisonPrice({ ...station, price_per_gallon: station.price_per_gallon }))} · {t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
           <p className="mt-2 text-sm">{t('station.payment')}: {t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</p>
           {station.membership_required ? <p className="mt-1 text-sm text-caution">{t('station.member', { name: station.membership_required })}</p> : null}
-          <p className="mt-2 text-xs text-muted">{t('station.source', { source: sourceLabel(station.source ?? '') })}</p>
+          <div className="mt-2"><SourcePill source={station.source ?? ''}/></div>
           <p className="text-xs text-muted">{t('age.updated', { age: age(station.price_updated_at, t) })}</p>
         </> : null}
       </div>
@@ -76,7 +77,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
       </dl> : null}
       {row?.price_comparison?.evidence.length ? <div className="rounded-control bg-sunken p-3 text-sm">
         {row.price_comparison.evidence.map((e, index) => <div key={`${e.source}:${e.payment_type}:${index}`} className="flex flex-wrap justify-between gap-2 border-b border-line py-2 last:border-0">
-          <span>{sourceLabel(e.source)} · {t(e.payment_type === 'cash' ? 'prefs.cash' : e.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</span>
+          <span className="flex flex-wrap items-center gap-2"><SourcePill source={e.source}/>{t(e.payment_type === 'cash' ? 'prefs.cash' : e.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</span>
           <span className="num">{perGallon(e.price_per_gallon)}</span>
           {!e.eligible && e.exclusion_reason ? <span className="w-full text-xs text-caution">{t(reasonKey(e.exclusion_reason))}</span> : null}
         </div>)}

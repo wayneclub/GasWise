@@ -1,8 +1,9 @@
+import { SourcePill } from './SourcePill'
 import { useState } from 'react'
 import type { SmartResult } from '../../api/types'
 import { Button } from '../../components/ui'
 import { useI18n } from '../../i18n'
-import { comparisonPrice, perGallon, sourceLabel } from '../../lib/format'
+import { comparisonPrice, perGallon } from '../../lib/format'
 import type { NavApp } from '../../lib/prefs'
 import { reasonKey } from '../../lib/stationStatus'
 import { ExcludedStations } from './ExcludedStations'
@@ -33,8 +34,8 @@ export function NearbyStations({ result, navApp, onExpandRoutes, allowUnknownPay
   for (const [key, candidate] of stations) if (candidate.open_now !== true || ['temporarily_closed', 'permanently_closed'].includes(candidate.business_status ?? '')) stations.delete(key)
   const station = selected ? stations.get(selected) : undefined
   const row = rows.find((r) => (r.station.canonical_id ?? `${r.station.source}:${r.station.id}`) === selected)
-  return <section className="flex flex-col gap-3">
-    <h2 className="text-base font-semibold">{t('station.all', { count: stations.size })}</h2>
+  return <details className="rounded-box border border-line bg-surface p-4"><summary className="cursor-pointer text-sm font-semibold">{t('station.all', { count: stations.size })}</summary><section className="mt-3 flex flex-col gap-3">
+
     <p className="text-xs leading-relaxed text-muted">{t('station.allNote')}</p>
     {coverage ? <div className="rounded-control bg-sunken p-3 text-sm text-muted">
       <dl className="grid grid-cols-4 gap-2 text-center">{(['found', 'priced', 'eligible', 'routed'] as const).map((key) => <div key={key}><dd className={key === 'routed' ? 'num text-xl font-semibold text-accent' : 'num text-xl font-semibold text-ink'}>{key === 'found' ? coverage.discovered : coverage[key]}</dd><dt className="mt-1 text-[11px]">{t(key === 'routed' ? 'coverage.compared' : `coverage.${key}`)}</dt></div>)}</dl>
@@ -49,7 +50,7 @@ export function NearbyStations({ result, navApp, onExpandRoutes, allowUnknownPay
       {[...stations].slice(0, visible).map(([key, s]) => <article key={key} className="rounded-box border border-line bg-surface p-4">
         <div className="flex items-start justify-between gap-3"><div className="flex min-w-0 flex-wrap items-center gap-1.5"><h3 className="font-medium">{s.name}</h3>{s.top_tier_brand ? <TopTierBadge brand={s.top_tier_brand} /> : null}</div><span className="shrink-0 text-sm num">{perGallon(comparisonPrice({ ...s, price_per_gallon: s.price_per_gallon! }))}</span></div>
         {s.comparison_price_per_gallon ? <span className="text-[10px] text-caution">{t('payment.estimated')}</span> : null}
-        <p className="mt-1 truncate text-xs text-muted">{s.address}</p><p className="mt-1 text-xs text-faint">{s.source ? sourceLabel(s.source) : s.rating_source ?? 'Google Maps'}</p>
+        <p className="mt-1 truncate text-xs text-muted">{s.address}</p><div className="mt-1"><SourcePill source={s.source ?? ''}/></div>
         <div className="mt-2"><StationRating station={s} /></div>
         {s.price_per_gallon ? <p className="mt-1 text-xs text-muted">{t(s.payment_type === 'cash' ? 'prefs.cash' : s.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</p> : null}
         <p className="mt-2 text-xs text-muted">{t(reasonKey(coverage?.station_statuses[key] ?? 'routed'))}</p>
@@ -58,5 +59,5 @@ export function NearbyStations({ result, navApp, onExpandRoutes, allowUnknownPay
     </div>
     {stations.size > visible ? <Button variant="secondary" onClick={() => setVisible((count) => count + 12)}>{t('station.more', { count: stations.size - visible })}</Button> : null}
     {station ? <StationDetails open onClose={() => setSelected(null)} station={station} row={row} navApp={navApp} status={coverage?.station_statuses[selected!]} tripMode={result.snapshot.query.trip_mode} /> : null}
-  </section>
+  </section></details>
 }

@@ -46,6 +46,8 @@ describe('Decide', () => {
     expect(screen.getByText('Saves 19 min')).toBeInTheDocument()
     expect(screen.getByText('Trade-off: about $6.32 per hour of driving.')).toBeInTheDocument()
     // Fuel burned driving to the station is part of the compared total.
+    expect(screen.queryByText('Fuel to get there')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:'Why this station'}))
     expect(screen.getByText('Fuel to get there')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Navigate' })).toHaveAttribute(
       'href',
@@ -160,6 +162,7 @@ describe('Decide', () => {
     expect(await screen.findByText('可比較站中最值得')).toBeInTheDocument()
     expect(screen.getByText('多 $2.05')).toBeInTheDocument()
     expect(screen.getByText('比 Arco（最便宜）')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:'為什麼推薦這家'}))
     expect(screen.getByText('來回油耗')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '導航' })).toBeInTheDocument()
     expect(document.documentElement.lang).toBe('zh-TW')

@@ -1,3 +1,4 @@
+import { SourcePill } from './SourcePill'
 import { SearchContext } from './SearchContext'
 import { useEffect, useRef, useState } from 'react'
 import { Button, Segmented, Sheet, Stepper } from '../../components/ui'
@@ -77,6 +78,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
                 />
               </div>
             </div>
+            <details className="text-xs text-muted"><summary className="cursor-pointer py-1">{t('board.radius')} {prefs.searchRadiusMiles ?? 5} mi · ${prefs.timeValuePerHour ?? 15}/h</summary>
             <div className="grid grid-cols-2 gap-3 text-xs text-muted">
               <label className="flex flex-col gap-1.5">{t('board.radius')}
                 <select aria-label={t('board.radius')} value={prefs.searchRadiusMiles ?? 5} onChange={e => update({searchRadiusMiles:Number(e.target.value)})} className="h-9 rounded-control border border-line bg-surface px-3 text-ink">
@@ -87,6 +89,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
                 <input type="number" min={0} max={500} step={5} aria-label={t('board.value')} value={prefs.timeValuePerHour ?? 15} onChange={e => update({timeValuePerHour:Math.min(500,Math.max(0,Number(e.target.value)))})} className="num h-9 min-w-0 rounded-control border border-line bg-surface px-3 text-ink" />
               </label>
             </div>
+            </details>
           </section>
 
           {session.expired ? (
@@ -149,7 +152,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
             <Leaderboards result={result} primary={primary} navApp={prefs.navApp} tripMode={prefs.tripMode} />
             <StationList rows={rows} navApp={prefs.navApp} tripMode={prefs.tripMode} />
             <NearbyStations allowUnknownPayment={prefs.allowUnknownPayment} onUnknownPayment={(value) => update({ allowUnknownPayment: value })} result={result} navApp={prefs.navApp} onExpandRoutes={() => void session.expandRoutes()} />
-            <footer className="px-1 text-[12px] leading-relaxed text-faint">
+            <footer className="px-1 text-[12px] leading-relaxed text-faint"><div className="mb-2 flex flex-wrap items-center gap-2">{result.snapshot.source_statuses.map(s=><SourcePill key={s.source} source={s.source} unavailable={s.status!=='ok'}/>)}<span>{age(result.snapshot.collected_at,t)}</span></div><details><summary className="cursor-pointer">{t('coverage.why')}</summary>
               <p>
                 {t('decide.sources', {
                   sources: sources.length ? sources.map((s) => sourceLabel(s.source)).join(', ') : t('decide.noSource'),
@@ -162,7 +165,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
               <p className="mt-1">{t('cache.policy')}</p>
               {result.cache_hits ? <p>{t('cache.reused', { count: result.cache_hits })}</p> : null}
               <p className="mt-1">{t('decide.rerankNote')}</p>
-            </footer>
+            </details></footer>
           </div>
         ) : null}
       </div>

@@ -1,3 +1,4 @@
+import { SourcePill } from './SourcePill'
 import { RegionalPrice } from './RegionalPrice'
 import { CaretDownIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
@@ -5,15 +6,13 @@ import type { RankedStation } from '../../api/types'
 import { useI18n } from '../../i18n'
 import type { NavApp } from '../../lib/prefs'
 import { StationDetails, StationRating, TopTierBadge } from './StationDetails'
-import { age, comparisonPrice, minutes, perGallon, sourceLabel, usd } from '../../lib/format'
+import { age, comparisonPrice, minutes, perGallon, usd } from '../../lib/format'
 
-// Wide screens have room for the comparison next to the pick; phones keep it collapsed.
-const wide = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches
 
 export function StationList({ rows, navApp = 'google', tripMode = 'round_trip' }: { rows: RankedStation[]; navApp?: NavApp; tripMode?: 'round_trip' | 'on_route' }) {
   const { t } = useI18n()
   const [selected, setSelected] = useState<RankedStation | null>(null)
-  const [open, setOpen] = useState(wide)
+  const [open, setOpen] = useState(false)
   if (rows.length < 2) return null
   return (
     <section className="rounded-box border border-line bg-surface shadow-raised">
@@ -40,12 +39,8 @@ export function StationList({ rows, navApp = 'google', tripMode = 'round_trip' }
               <tr key={`${row.station.source}:${row.station.id}`} className="align-top">
                 <td className="py-3 pl-5 pr-2">
                   <div className="flex flex-wrap items-center gap-1.5"><button type="button" onClick={() => setSelected(row)} className="font-medium underline decoration-line underline-offset-4" aria-label={`${t('station.view')} ${row.station.name}`}>{row.station.name}</button>{row.station.top_tier_brand ? <TopTierBadge brand={row.station.top_tier_brand} /> : null}</div><StationRating station={row.station} /><RegionalPrice row={row}/>
-                  <p className="num text-[12px] text-muted">
-                    {t(tripMode === 'on_route' ? 'list.metaOnRoute' : 'list.meta', {
-                      time: minutes(row.extra_travel_minutes, t),
-                      source: sourceLabel(row.station.source),
-                      freshness: t('age.updated', { age: age(row.station.price_updated_at, t) }),
-                    })}
+                  <SourcePill source={row.station.source}/><p className="num mt-1 text-[12px] text-muted">
+                    {t(tripMode==='on_route'?'route.extraTime':'pick.roundTrip',{time:minutes(row.extra_travel_minutes,t)})} · {t('age.updated',{age:age(row.station.price_updated_at,t)})}
                   </p>
                 </td>
                 <td className="num py-3 pr-2 text-right">{perGallon(comparisonPrice(row.station))}{row.station.comparison_price_per_gallon ? <span className="mt-1 block text-[10px] text-caution">{t('payment.estimated')}</span> : null}</td>

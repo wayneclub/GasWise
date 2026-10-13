@@ -1,3 +1,4 @@
+import { SourcePill } from './SourcePill'
 import { RegionalPrice } from './RegionalPrice'
 import {
   CarIcon,
@@ -20,7 +21,7 @@ import { useState } from 'react'
 import type { RankedStation, StrategyKey } from '../../api/types'
 import { LinkButton } from '../../components/ui'
 import { type MessageKey, type Translate, useI18n } from '../../i18n'
-import { sourceLabel, comparisonPrice, age, gallons as gal, miles, minutes, perGallon, usd } from '../../lib/format'
+import { comparisonPrice, age, gallons as gal, miles, minutes, perGallon, usd } from '../../lib/format'
 import { navigationUrl } from '../../lib/navigation'
 import type { NavApp } from '../../lib/prefs'
 import { type Assessment, breakdown, openingLabel, type Pick, type Tradeoff } from '../../lib/recommend'
@@ -177,20 +178,12 @@ export function HeroPick({
       <div className="mt-2"><StationRating station={station} /></div>
       {row ? <RegionalPrice row={row}/> : null}
       {station.comparison_price_per_gallon ? <p className="mt-1 text-xs text-caution">{t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
-      <p className="mt-1 text-xs text-muted">{sourceLabel(station.source)} · {t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}{station.membership_required ? ` · ${t('station.member', { name: station.membership_required })}` : ''}</p>
-      {row?.price_comparison ? <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">{(['cash','credit'] as const).map(payment => {
+      <div className="mt-2 flex flex-wrap items-center gap-2"><SourcePill source={station.source}/><p className="text-xs text-muted">{t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}{station.membership_required ? ` · ${t('station.member', { name: station.membership_required })}` : ''}</p></div>
+      {row?.price_comparison && ['cash','credit'].every(payment=>row.price_comparison!.evidence.some(e=>e.payment_type===payment && e.source===station.source && e.price_updated_at && Date.now()-new Date(e.price_updated_at).getTime()<=24*60*60*1000)) ? <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">{(['cash','credit'] as const).map(payment => {
         const quote = row.price_comparison?.evidence.filter(e => e.payment_type === payment && e.source === station.source && e.price_updated_at && Date.now()-new Date(e.price_updated_at).getTime() <= 24*60*60*1000).sort((a,b)=>new Date(b.price_updated_at!).getTime()-new Date(a.price_updated_at!).getTime())[0]
         return quote ? <span key={payment} className="rounded-full border border-line px-2 py-0.5">{t(payment === 'cash'?'prefs.cash':'prefs.card')} {perGallon(quote.price_per_gallon)}</span> : null
       })}</div> : null}
-      {pick.keys.length > 1 ? (
-        <p className="mt-2 flex flex-wrap gap-1.5">
-          {pick.keys.slice(1).map((key) => (
-            <span key={key} className="rounded-full bg-sunken px-2.5 py-0.5 text-[12px] text-muted">
-              {t(`pick.also.${key}`)}
-            </span>
-          ))}
-        </p>
-      ) : null}
+
 
       <div className="mt-5 flex items-end justify-between gap-4">
         <p>
@@ -205,7 +198,6 @@ export function HeroPick({
         ) : null}
       </div>
 
-      {row ? <CostEquation row={row} tripMode={tripMode} /> : null}
 
       <Comparison pick={pick} row={row} trade={trade} tripMode={tripMode} />
 
@@ -244,10 +236,10 @@ export function HeroPick({
         {t('pick.navigate')}
       </LinkButton>
 
-      <button type="button" className="mt-3 w-full rounded-control py-2 text-sm font-medium text-ink hover:bg-sunken" onClick={() => setDetailsOpen(true)}>{t('station.view')}</button>
+      <div className="mt-2 grid grid-cols-2 items-start gap-2"><button type="button" className="w-full rounded-control py-2 text-sm font-medium text-ink hover:bg-sunken" onClick={() => setDetailsOpen(true)}>{t('station.view')}</button>
       <StationDetails station={station} row={row} open={detailsOpen} onClose={() => setDetailsOpen(false)} navApp={navApp} tripMode={tripMode} />
       {row ? (
-        <div className="mt-3">
+        <div className="contents">
           <button
             type="button"
             aria-expanded={open}
@@ -258,12 +250,21 @@ export function HeroPick({
             <CaretDownIcon size={14} className={`transition ${open ? 'rotate-180' : ''}`} />
           </button>
           {open ? (
-            <div className="mt-2 rounded-control bg-sunken px-4 py-3">
+            <div className="col-span-2 mt-2 rounded-control bg-sunken px-4 py-3"><CostEquation row={row} tripMode={tripMode}/>      {pick.keys.length > 1 ? (
+        <p className="mt-2 flex flex-wrap gap-1.5">
+          {pick.keys.slice(1).map((key) => (
+            <span key={key} className="rounded-full bg-sunken px-2.5 py-0.5 text-[12px] text-muted">
+              {t(`pick.also.${key}`)}
+            </span>
+          ))}
+        </p>
+      ) : null}
               <Breakdown row={row} rows={rows} gallons={gallons} />
             </div>
           ) : null}
         </div>
       ) : null}
+      </div>
     </section>
   )
 }

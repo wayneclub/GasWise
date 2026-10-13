@@ -122,3 +122,12 @@ allowed a 60-second process deadline with a 15-second per-request timeout,
 and also ended at the process deadline (exit 124) before returning a successful
 source response. The first test was not assumed to establish universal failure;
 the second still provides no successful source or GraphQL proof.
+
+## Additional bounded AWS probes
+
+2026-10-12, same deployed container and direct AWS egress: curl_cffi Firefox,
+Safari, and Chrome forced to HTTP/1.1 each returned HTTP 403 with
+`cf-mitigated: challenge` and no homepage CSRF token. A normal anonymous
+SearchPrices POST to the existing public GraphQL endpoint also returned a
+challenge and no data. No clearance cookie, alternate proxy, or Mac relay was
+used. These tests do not establish which private WAF rule makes the decision.
