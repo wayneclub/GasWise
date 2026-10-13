@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import AwareDatetime, Field, computed_field
 
 from gaswise.contracts.common import Model, Point, Route, SourceStatus, Station
@@ -12,6 +14,7 @@ class SmartSearch(Search):
     gasbuddy_page_limit: int = Field(default=1, ge=1, le=5)
     station_lookup_limit: int = Field(default=0, ge=0, le=5)
     calculate_routes: bool = False
+    estimate_unrouted_routes: bool = False
     route_limit: int = Field(default=5, ge=1, le=100)
     # Maximum Maps discovery requests: one whole-area request, then waves of nearest unproven points.
     discovery_tiles: int = Field(default=1, ge=1, le=40)
@@ -23,10 +26,19 @@ class SnapshotRoute(Model):
     route: Route
 
 
+class SourceCacheStatus(Model):
+    checked_at: AwareDatetime
+    state: Literal["fresh", "stale"]
+
+
 class SmartSnapshot(Model):
     query: Search
     stations: list[Station] = Field(max_length=1000)
     source_statuses: list[SourceStatus] = Field(max_length=30)
+    source_cache: dict[str, SourceCacheStatus] = Field(default_factory=dict)
+    estimate_unrouted_routes: bool = False
+    acquisition_options: dict[str, int] = Field(default_factory=dict, max_length=4)
+    routes_checked_at: AwareDatetime | None = None
     baseline: Route | None = None
     routes: list[SnapshotRoute] = Field(default_factory=list, max_length=100)
     collected_at: AwareDatetime
@@ -45,6 +57,7 @@ class SearchCoverage(Model):
     priced: int
     eligible: int
     routed: int
+    estimated: int = 0
     displayed: int
     exclusions: dict[str, int]
     station_statuses: dict[str, str]
@@ -91,21 +104,27 @@ class SmartResult(Model):
             if key in routed:
                 statuses[key] = "routed"
             elif key in eligible:
-                statuses[key] = "route_not_calculated"
+                statuses[key] = "estimated_route" if self.snapshot.estimate_unrouted_routes and self.snapshot.baseline is not None else "route_not_calculated"
             else:
                 anchor = records[0]
                 closed = closed_reason([r for r in records if distance_meters(anchor.location, r.location) <= 75], query)
                 statuses[key] = closed or ineligible(representative, query, now) or "station_mapping_location_mismatch"
         for station in self.snapshot.inventory:
             statuses.setdefault(f"google_places:{station.place_id}", "station_closed" if station.open_now is False or station.business_status in {"temporarily_closed", "permanently_closed"} else "opening_status_unknown" if query.opening_policy == "require_open" and station.open_now is not True else "no_matching_fuel_price")
-        exclusions = Counter(value for value in statuses.values() if value != "routed")
-        return SearchCoverage(discovered=len(statuses), priced=len(groups), eligible=len(eligible), routed=len(routed), displayed=len(self.ranking.results) if self.ranking else 0, exclusions=dict(exclusions), station_statuses=statuses, quote_indices=quote_indices)
+        exclusions = Counter(value for value in statuses.values() if value not in {"routed", "estimated_route"})
+        return SearchCoverage(discovered=len(statuses), priced=len(groups), eligible=len(eligible), routed=len(routed), estimated=sum(value == "estimated_route" for value in statuses.values()), displayed=len(self.ranking.results) if self.ranking else 0, exclusions=dict(exclusions), station_statuses=statuses, quote_indices=quote_indices)
 
 
 class SmartRerank(Model):
     snapshot: SmartSnapshot
     signature: str = Field(min_length=64, max_length=64)
     options: RankOptions
+
+
+class SmartPriceRefresh(Model):
+    snapshot: SmartSnapshot
+    signature: str = Field(min_length=64, max_length=64)
+    options: RankOptions | None = None
 
 
 class SmartRouteRequest(Model):

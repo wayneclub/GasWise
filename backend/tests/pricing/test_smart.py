@@ -530,7 +530,7 @@ async def test_coverage_reason_matches_the_quote_shown_to_the_browser():
 
 
 async def test_expanded_discovery_compares_every_known_open_eligible_station(monkeypatch):
-    from gaswise.contracts.common import Station, Route
+    from gaswise.contracts.common import Route, Station
     from gaswise.contracts.sources import MapsWebPrices, MapsWebStation
 
     async def no_pause(_):
@@ -682,3 +682,91 @@ def test_soft_radius_keeps_stations_just_past_the_boundary():
 
     assert ineligible(at(9000), query, now) is None
     assert ineligible(at(9800), query, now) == "outside_search_radius"
+
+
+async def test_twenty_precise_routes_keep_all_fifty_candidates_and_expand_without_prices():
+    from gaswise.contracts.common import Route
+    from gaswise.contracts.smart import SmartRouteRequest
+    from gaswise.domain.pricing.comparison import distance_meters
+
+    class ManyStations(CountingProvider):
+        async def stations(self, query):
+            templates = await super().stations(query)
+            return [templates[0].model_copy(update={
+                "id": f"station-{i}", "name": f"Station {i}",
+                "location": Point(lat=34 + i * .0005, lng=-118),
+            }) for i in range(50)]
+
+        async def route(self, origin, destination, via=None):
+            self.routes += 1
+            distance = 2 * distance_meters(origin, via)
+            return Route(distance_meters=distance * 1.5, duration_seconds=distance / 10, source="fixture")
+
+    provider = ManyStations()
+    service = SmartService(b"test", "demo", demo=provider)
+    result = await service.search(SmartSearch(
+        origin=Point(lat=34, lng=-118), calculate_routes=True,
+        estimate_unrouted_routes=True, route_limit=100, max_results=100,
+    ))
+    assert provider.routes == 20
+    assert len(result.ranking.results) == 50
+    assert result.coverage.routed == 20
+    assert list(result.coverage.station_statuses.values()).count("estimated_route") == 30
+    assert sum(row.route.source == "straight_line_estimate" for row in result.ranking.results) == 30
+    assert result.ranking.decision.status == "uncertain"
+    searches = provider.searches
+    reranked = await service.rerank(SmartRerank(
+        snapshot=result.snapshot, signature=result.signature, options=RankOptions(gallons=20),
+    ))
+    assert provider.routes == 20 and provider.searches == searches
+    assert len(reranked.ranking.results) == 50
+    expanded = await service.add_routes(SmartRouteRequest(
+        snapshot=result.snapshot, signature=result.signature, route_limit=100,
+    ))
+    assert provider.routes == 50 and provider.searches == searches
+    assert expanded.coverage.routed == 50
+    assert all(row.route.source == "fixture" for row in expanded.ranking.results)
+
+
+def test_geometric_on_route_estimate_preserves_provider_baseline():
+    from gaswise.contracts.common import Route
+    from gaswise.domain.pricing.route_estimates import estimate_route
+
+    origin, destination = Point(lat=34, lng=-118), Point(lat=35, lng=-118)
+    baseline = Route(distance_meters=150000, duration_seconds=9000, source="fixture")
+    estimate = estimate_route(origin, destination, Point(lat=34.5, lng=-117.8), baseline)
+    assert estimate.distance_meters > baseline.distance_meters
+    assert estimate.duration_seconds > baseline.duration_seconds
+    assert estimate.source == "straight_line_estimate"
+
+
+async def test_price_refresh_preserves_precise_routes_and_source_query_options():
+    from gaswise.contracts.smart import SmartPriceRefresh
+    provider = CountingProvider()
+    service = SmartService(b"test","demo",demo=provider)
+    first = await service.search(SmartSearch(origin=Point(lat=34,lng=-118),calculate_routes=True,route_limit=2,discovery_tiles=7,gasbuddy_page_limit=3))
+    calls = provider.routes
+    refreshed = await service.refresh_prices(SmartPriceRefresh(snapshot=first.snapshot,signature=first.signature,options=RankOptions(gallons=20)))
+    assert provider.routes == calls
+    assert refreshed.snapshot.routes == first.snapshot.routes
+    assert refreshed.snapshot.routes_checked_at == first.snapshot.routes_checked_at
+    assert refreshed.snapshot.acquisition_options == first.snapshot.acquisition_options
+    assert refreshed.snapshot.query.gallons == 20
+    assert refreshed.ranking.results
+    service.verify(refreshed.snapshot,refreshed.signature)
+
+
+async def test_price_refresh_renews_routes_only_after_independent_route_expiry():
+    from gaswise.contracts.smart import SmartPriceRefresh
+    provider = CountingProvider()
+    service = SmartService(b"test","demo",demo=provider)
+    first = await service.search(SmartSearch(origin=Point(lat=34,lng=-118),calculate_routes=True,route_limit=1))
+    first.snapshot.routes_checked_at = datetime.now(UTC)-timedelta(minutes=16)
+    # Expire only the independent route clock; the signed request itself is still valid.
+    for key in list(service.cache.entries):
+        service.cache.entries.pop(key)
+    calls = provider.routes
+    refreshed = await service.refresh_prices(SmartPriceRefresh(snapshot=first.snapshot,signature=service.sign(first.snapshot)))
+    assert provider.routes > calls
+    assert refreshed.snapshot.routes_checked_at > first.snapshot.routes_checked_at
+    assert refreshed.ranking.results

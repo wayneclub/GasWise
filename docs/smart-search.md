@@ -69,7 +69,7 @@ Waze=1, Nearby=0, Text Search=0 and Routes=0. Detail attempts have a separate
 ## Add routes without refetching prices
 
 POST `/v1/smart/routes` with the exact returned `snapshot`, `signature`, and optional
-`route_limit` (default 5, maximum 10). Routes cover origin → station → origin for a
+`route_limit` (default 5, maximum 100). Routes cover origin → station → origin for a
 round trip, or origin → station → destination minus origin → destination for an
 on-route trip. A baseline is fetched only for on-route trips. Up to the route limit
 of candidate calls are made sequentially, without retry; the shortlist mixes nearby
@@ -160,3 +160,28 @@ or pump-price history. `--routes` requires an enabled website or paid router and
 limits the smoke to two candidate route calls. `--trip-mode on_route` adds one
 baseline route. It exits before source calls if routing is unconfigured. Website
 routes and derived costs are now live-verified; see [acceptance](google-maps-web-routes.md).
+
+
+### Bounded initial routes with geometric fallback
+
+The frontend requests 20 precise station routes and sets `estimate_unrouted_routes=true`.
+When this option is enabled, the initial search caps precise station routes at 20
+even if a larger limit is requested. On-route searches also require one direct
+baseline route. The shortlist mixes nearby stations with candidates ranked through
+the existing cost calculation using estimated routes; payment, membership, fuel,
+cashback, and vehicle rules still apply.
+
+Other eligible stations remain in comparison using straight-line extra distance
+multiplied by 1.3 and a 25 mph speed assumption. For on-route searches, this extra
+distance and time are added to the provider's direct baseline. These assumptions
+are not calibrated against live road or traffic observations. Their routes carry
+`source=straight_line_estimate` and `duration_basis=geometric_estimate`; the UI labels
+estimated drive and cost, and decisions involving estimates remain uncertain.
+
+Coverage separates `routed` (precise) from `estimated`. The frontend's compared
+count includes both. Explicit `/v1/smart/routes` expansion can calculate up to 100
+precise routes using the held prices; reranking makes no upstream calls. Clients
+that omit the new flag retain the prior precise-only behavior.
+
+Shared cross-user PostgreSQL pricing reuse, refresh leases, 72-hour quote retention,
+and provider request budgets are described in [shared-pricing-cache.md](shared-pricing-cache.md).

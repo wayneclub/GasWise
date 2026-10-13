@@ -40,8 +40,8 @@ metrics, or SQL. Existing public station/price/AAA caches remain anonymous.
 Route cache values contain totals and duration, not the user's origin; their
 keys are digests. Identifier lookup results are not persisted server-side.
 
-This feature needs no PostgreSQL. If a shared pricing database is later needed,
-`db.wayneclub.com` can hold public station/price observations only; visitor VIN,
+This identity feature needs no PostgreSQL. The shared pricing database on the
+existing PostgreSQL service holds public station/price observations only; visitor VIN,
 plate, browser key and ciphertext must not be sent to that database.
 
 ## Validation

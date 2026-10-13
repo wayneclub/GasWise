@@ -27,6 +27,11 @@ class Settings(BaseSettings):
         extra="ignore",
         hide_input_in_errors=True,
     )
+    database_url: SecretStr = SecretStr("")
+    pricing_cache_fresh_seconds: int = Field(default=900, ge=60, le=3600)
+    gasbuddy_requests_per_minute: int = Field(default=12, ge=1, le=120)
+    maps_requests_per_minute: int = Field(default=60, ge=1, le=300)
+    waze_requests_per_minute: int = Field(default=20, ge=1, le=120)
     price_sources: list[PriceSourceSettings] = Field(default_factory=list, max_length=20)
     mode: Literal["demo", "google", "prices_only"] = "demo"
     google_routes_enabled: bool = False
@@ -71,6 +76,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def live_credentials(self):
+        if self.database_url.get_secret_value() and self.gasbuddy_web_enabled and self.gasbuddy_web_transport != "http":
+            raise ValueError("Shared pricing request budgets require the GasBuddy HTTP transport")
         if self.plate_lookup_enabled and (
             not self.api_token.get_secret_value()
             or (

@@ -81,6 +81,7 @@ def records(node):
 class MapsWebProvider:
     def __init__(self, client: httpx.AsyncClient, session_file: Path | None = None):
         self.client = client
+        self.request_budget = None
         self.session_file = session_file
 
     async def stations(self, query):
@@ -143,6 +144,8 @@ class MapsWebProvider:
         if path not in ("/search", "/maps/preview/place"):
             raise ProviderError("google_maps_web_invalid_endpoint")
         try:
+            if self.request_budget:
+                await self.request_budget.before("maps")
             response = await self.client.get(
                 "https://www.google.com" + path,
                 params=params,
@@ -151,6 +154,8 @@ class MapsWebProvider:
             )
         except httpx.HTTPError:
             raise ProviderError("google_maps_web_unavailable") from None
+        if self.request_budget:
+            await self.request_budget.after("maps", response)
         if response.status_code in (401, 403) or response.is_redirect:
             raise ProviderError(
                 "google_maps_web_session_rejected"

@@ -16,6 +16,8 @@ export const es: Record<MessageKey, string> = {
   "board.none": "No hay estaciones abiertas comparables",
   "board.score": "Con costo de tiempo",
 
+  'cache.sharedFresh': '{source}: datos compartidos consultados {age}',
+  'cache.sharedStale': '{source}: caché consultada {age}; actualización sujeta a límites',
   "cache.sourceUnavailable": "{source}: no disponible temporalmente",
   "cache.failed": "Falló la actualización · se muestra la instantánea anterior",
 
@@ -317,6 +319,7 @@ export const es: Record<MessageKey, string> = {
   "station.allNote": "Con precio del combustible elegido · Abiertas",
   "coverage.summary": "{found} encontradas · {priced} con precio · {eligible} elegibles · {routed} con costes",
   "coverage.why": "¿Por qué hay pocas recomendaciones?",
+  "coverage.estimated_route": "Trayecto y coste estimados",
   "coverage.routed": "Incluida en la comparación",
   "coverage.no_matching_fuel_price": "Sin precio para el combustible elegido",
   "coverage.wrong_fuel_type": "Otro combustible",

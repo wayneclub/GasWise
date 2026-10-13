@@ -29,6 +29,7 @@ from gaswise.providers.waze.protocol import (
 class WazeProvider:
     def __init__(self, client, session_file, login_file, auto_login=True):
         self.client = client
+        self.request_budget = None
         self.session_file, self.login_file = Path(session_file), Path(login_file)
         self.auto_login = auto_login
         self.lock = asyncio.Lock()
@@ -47,9 +48,13 @@ class WazeProvider:
         if time.monotonic() < self.blocked_until:
             raise ProviderError("waze_rate_limited")
         try:
+            if self.request_budget:
+                await self.request_budget.before("waze")
             response = await self.client.post(endpoint, content=body, headers=headers, timeout=20)
         except httpx.RequestError:
             raise ProviderError("waze_upstream_unavailable") from None
+        if self.request_budget:
+            await self.request_budget.after("waze", response)
         if response.status_code == 429:
             self.blocked_until = time.monotonic() + 120
             raise ProviderError("waze_rate_limited")

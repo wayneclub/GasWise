@@ -84,12 +84,13 @@ class SearchService:
             warnings.append("Numeric premium octane and membership eligibility may be unverified.")
         if vehicle and vehicle.fuel_recommendation:
             warnings.append(vehicle.fuel_recommendation.note)
-        if len(selections) > 30:
+        candidate_limit = getattr(self.provider, "candidate_limit", 30)
+        if len(selections) > candidate_limit:
             from gaswise.domain.pricing.comparison import distance_meters
 
             selections.sort(key=lambda s: distance_meters(query.origin, s.station.location))
-            selections = selections[:30]
-            warnings.append("Candidate limit: only the nearest 30 merged stations were routed.")
+            selections = selections[:candidate_limit]
+            warnings.append(f"Candidate limit: only the nearest {candidate_limit} merged stations were routed.")
         results = []
         costs = {}
         consumption = fuel_model(query, vehicle)
@@ -332,7 +333,12 @@ def decide(results, statuses, strategy):
             status="uncertain",
             reason="Fastest estimated route among candidates; queues and stop durations are not measured.",
         )
-    if all(r.price_comparison.eligible_source_count == 1 for r in results):
+    if any(r.route.source == "straight_line_estimate" for r in results):
+        state, reason = (
+            "uncertain",
+            "Some candidate driving costs use geometric estimates; road barriers and traffic may change the recommendation.",
+        )
+    elif all(r.price_comparison.eligible_source_count == 1 for r in results):
         state, reason = (
             "single_source",
             "Comparable purchase conditions have only one source per station; price accuracy is not corroborated.",

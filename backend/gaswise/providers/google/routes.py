@@ -50,6 +50,7 @@ class MapsWebRouteProvider:
 
     def __init__(self, client, maps_source=None):
         self.client, self.maps_source = client, maps_source
+        self.request_budget = None
 
     async def route(self, origin, destination, via=None):
         points = [origin, via, destination] if via is not None else [origin, destination]
@@ -65,6 +66,11 @@ class MapsWebRouteProvider:
 
         async def get(path, **kwargs):
             nonlocal attempted
+            if self.request_budget:
+                try:
+                    await self.request_budget.before("maps")
+                except ProviderError as error:
+                    raise WebRouteError(str(error), attempted) from None
             attempted += 1
             try:
                 response = await self.client.get(
@@ -72,6 +78,11 @@ class MapsWebRouteProvider:
                 )
             except httpx.HTTPError:
                 raise WebRouteError("google_maps_web_route_unavailable", attempted) from None
+            if self.request_budget:
+                try:
+                    await self.request_budget.after("maps", response)
+                except ProviderError as error:
+                    raise WebRouteError(str(error), attempted) from None
             if response.status_code == 429:
                 raise WebRouteError("google_maps_web_route_rate_limited", attempted)
             if response.is_redirect or response.status_code in (401, 403):

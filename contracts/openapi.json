@@ -1015,6 +1015,49 @@
         ]
       }
     },
+    "/v1/smart/refresh-prices": {
+      "post": {
+        "summary": "Smart Refresh Prices",
+        "operationId": "smart_refresh_prices_v1_smart_refresh_prices_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmartPriceRefresh"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmartResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/recommendations": {
       "post": {
         "summary": "Recommendations",
@@ -1833,6 +1876,16 @@
             "type": "string",
             "title": "Postal Code"
           },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Point"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "price_per_gallon": {
             "anyOf": [
               {
@@ -1983,6 +2036,16 @@
           "postal_code": {
             "type": "string",
             "title": "Postal Code"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Point"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "price_per_gallon": {
             "type": "string",
@@ -2187,6 +2250,19 @@
             "minimum": 1.0,
             "title": "Max Results",
             "default": 5
+          },
+          "radius_meters": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 60000.0,
+                "minimum": 100.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radius Meters"
           }
         },
         "additionalProperties": false,
@@ -2399,6 +2475,22 @@
             "type": "integer",
             "title": "Official Api Requests",
             "default": 0
+          },
+          "candidate_count": {
+            "type": "integer",
+            "title": "Candidate Count",
+            "default": 0
+          },
+          "candidate_reach_meters": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Reach Meters"
           }
         },
         "additionalProperties": false,
@@ -4084,7 +4176,8 @@
             "enum": [
               "provider_estimate",
               "maps_estimate",
-              "maps_traffic_estimate"
+              "maps_traffic_estimate",
+              "geometric_estimate"
             ],
             "title": "Duration Basis",
             "default": "provider_estimate"
@@ -4678,6 +4771,11 @@
             "type": "integer",
             "title": "Routed"
           },
+          "estimated": {
+            "type": "integer",
+            "title": "Estimated",
+            "default": 0
+          },
           "displayed": {
             "type": "integer",
             "title": "Displayed"
@@ -4836,6 +4934,36 @@
           "excluded_count"
         ],
         "title": "SearchResult"
+      },
+      "SmartPriceRefresh": {
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/SmartSnapshot-Input"
+          },
+          "signature": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Signature"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RankOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "snapshot",
+          "signature"
+        ],
+        "title": "SmartPriceRefresh"
       },
       "SmartRerank": {
         "properties": {
@@ -5265,6 +5393,11 @@
             "title": "Calculate Routes",
             "default": false
           },
+          "estimate_unrouted_routes": {
+            "type": "boolean",
+            "title": "Estimate Unrouted Routes",
+            "default": false
+          },
           "route_limit": {
             "type": "integer",
             "maximum": 100.0,
@@ -5274,7 +5407,7 @@
           },
           "discovery_tiles": {
             "type": "integer",
-            "maximum": 5.0,
+            "maximum": 40.0,
             "minimum": 1.0,
             "title": "Discovery Tiles",
             "default": 1
@@ -5304,7 +5437,7 @@
               "$ref": "#/components/schemas/Station-Input"
             },
             "type": "array",
-            "maxItems": 500,
+            "maxItems": 1000,
             "title": "Stations"
           },
           "source_statuses": {
@@ -5314,6 +5447,38 @@
             "type": "array",
             "maxItems": 30,
             "title": "Source Statuses"
+          },
+          "source_cache": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SourceCacheStatus"
+            },
+            "type": "object",
+            "title": "Source Cache"
+          },
+          "estimate_unrouted_routes": {
+            "type": "boolean",
+            "title": "Estimate Unrouted Routes",
+            "default": false
+          },
+          "acquisition_options": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "maxProperties": 4,
+            "title": "Acquisition Options"
+          },
+          "routes_checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Routes Checked At"
           },
           "baseline": {
             "anyOf": [
@@ -5359,12 +5524,25 @@
             "maxItems": 100,
             "title": "Unlocated Gasbuddy"
           },
+          "discovery_area_covered": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovery Area Covered"
+          },
           "inventory": {
             "items": {
               "$ref": "#/components/schemas/MapsWebStation"
             },
             "type": "array",
-            "maxItems": 100,
+            "maxItems": 250,
             "title": "Inventory"
           },
           "vehicle": {
@@ -5407,7 +5585,7 @@
               "$ref": "#/components/schemas/Station-Output"
             },
             "type": "array",
-            "maxItems": 500,
+            "maxItems": 1000,
             "title": "Stations"
           },
           "source_statuses": {
@@ -5417,6 +5595,38 @@
             "type": "array",
             "maxItems": 30,
             "title": "Source Statuses"
+          },
+          "source_cache": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SourceCacheStatus"
+            },
+            "type": "object",
+            "title": "Source Cache"
+          },
+          "estimate_unrouted_routes": {
+            "type": "boolean",
+            "title": "Estimate Unrouted Routes",
+            "default": false
+          },
+          "acquisition_options": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "maxProperties": 4,
+            "title": "Acquisition Options"
+          },
+          "routes_checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Routes Checked At"
           },
           "baseline": {
             "anyOf": [
@@ -5462,12 +5672,25 @@
             "maxItems": 100,
             "title": "Unlocated Gasbuddy"
           },
+          "discovery_area_covered": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovery Area Covered"
+          },
           "inventory": {
             "items": {
               "$ref": "#/components/schemas/MapsWebStation"
             },
             "type": "array",
-            "maxItems": 100,
+            "maxItems": 250,
             "title": "Inventory"
           },
           "vehicle": {
@@ -5516,6 +5739,30 @@
           "route"
         ],
         "title": "SnapshotRoute"
+      },
+      "SourceCacheStatus": {
+        "properties": {
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Checked At"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "fresh",
+              "stale"
+            ],
+            "title": "State"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "checked_at",
+          "state"
+        ],
+        "title": "SourceCacheStatus"
       },
       "SourceStatus": {
         "properties": {

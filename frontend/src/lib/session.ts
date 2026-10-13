@@ -40,7 +40,8 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
     radius_meters: (prefs.searchRadiusMiles ?? 5) * 1609.344,
     max_results: 100,
     calculate_routes: true,
-    route_limit: 100,
+    route_limit: 20,
+    estimate_unrouted_routes: true,
     discovery_tiles: 20,
     gasbuddy_page_limit: 3,
     station_lookup_limit: 5,
@@ -77,7 +78,7 @@ export function locate(): Promise<Origin> {
 
 /**
  * One fuel decision transaction: locate once, refresh visible prices on a bounded interval, then rerank
- * locally-held snapshots with zero upstream calls. No polling in hidden tabs; manual refresh bypasses the price cache.
+ * locally-held snapshots with zero upstream calls. No polling in hidden tabs; manual refresh still respects the shared price freshness window and provider budgets.
  */
 export function useFuelSession(prefs: Prefs, active = true) {
   const [phase, setPhase] = useState<Phase>('idle')
@@ -118,7 +119,28 @@ export function useFuelSession(prefs: Prefs, active = true) {
     setExpired(false)
     try {
       const requestedPrefs = prefsRef.current
-      const next = await api.search({ ...searchBody(requestedPrefs, at), force_refresh: force }, abort.signal)
+      const body = searchBody(requestedPrefs, at)
+      const held = resultRef.current
+      const trip = held?.snapshot.query
+      const sameSearch = trip && trip.origin.lat === at.lat && trip.origin.lng === at.lng &&
+        trip.radius_meters === body.radius_meters && trip.trip_mode === body.trip_mode &&
+        JSON.stringify(trip.destination ?? null) === JSON.stringify(body.destination ?? null) &&
+        (trip.vehicle_id ?? null) === (body.vehicle_id ?? null) &&
+        (body.vehicle_id != null || trip.fuel_type === body.fuel_type)
+      const canRefreshPrices = (force || background) && held && sameSearch && Date.parse(held.snapshot.expires_at) > Date.now()
+      let next: SmartResult
+      if (canRefreshPrices) {
+        try {
+          next = await api.refreshPrices(held.snapshot, held.signature, rankOptions(requestedPrefs), abort.signal)
+        } catch (caught) {
+          // Expired/restart-invalid signatures need one new transaction, not an upstream retry loop.
+          if (!(caught instanceof ApiError) || caught.status !== 409 ||
+              !['snapshot_expired', 'invalid_snapshot_signature'].includes(caught.code)) throw caught
+          next = await api.search({ ...body, force_refresh: false }, abort.signal)
+        }
+      } else {
+        next = await api.search({ ...body, force_refresh: force }, abort.signal)
+      }
       if (abort.signal.aborted) return
       lastRankKey.current = JSON.stringify(rankOptions(requestedPrefs))
       setResult(next)

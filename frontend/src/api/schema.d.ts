@@ -429,6 +429,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/smart/refresh-prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Smart Refresh Prices */
+        post: operations["smart_refresh_prices_v1_smart_refresh_prices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/recommendations": {
         parameters: {
             query?: never;
@@ -773,6 +790,7 @@ export interface components {
             region: string;
             /** Postal Code */
             postal_code: string;
+            location?: components["schemas"]["Point"] | null;
             /** Price Per Gallon */
             price_per_gallon: number | string;
             /**
@@ -838,6 +856,7 @@ export interface components {
             region: string;
             /** Postal Code */
             postal_code: string;
+            location?: components["schemas"]["Point"] | null;
             /** Price Per Gallon */
             price_per_gallon: string;
             /**
@@ -923,6 +942,8 @@ export interface components {
              * @default 5
              */
             max_results: number;
+            /** Radius Meters */
+            radius_meters?: number | null;
         };
         /** GooglePriceSearch */
         GooglePriceSearch: {
@@ -1027,6 +1048,13 @@ export interface components {
              * @default 0
              */
             official_api_requests: number;
+            /**
+             * Candidate Count
+             * @default 0
+             */
+            candidate_count: number;
+            /** Candidate Reach Meters */
+            candidate_reach_meters?: number | null;
         };
         /** MapsWebSearch */
         MapsWebSearch: {
@@ -1636,7 +1664,7 @@ export interface components {
              * @default provider_estimate
              * @enum {string}
              */
-            duration_basis: "provider_estimate" | "maps_estimate" | "maps_traffic_estimate";
+            duration_basis: "provider_estimate" | "maps_estimate" | "maps_traffic_estimate" | "geometric_estimate";
             /**
              * Upstream Http Requests
              * @default 0
@@ -1903,6 +1931,11 @@ export interface components {
             eligible: number;
             /** Routed */
             routed: number;
+            /**
+             * Estimated
+             * @default 0
+             */
+            estimated: number;
             /** Displayed */
             displayed: number;
             /** Exclusions */
@@ -1959,6 +1992,13 @@ export interface components {
                 [key: string]: components["schemas"]["RankedStation"][];
             };
             vehicle?: components["schemas"]["VehicleProfile-Output"] | null;
+        };
+        /** SmartPriceRefresh */
+        SmartPriceRefresh: {
+            snapshot: components["schemas"]["SmartSnapshot-Input"];
+            /** Signature */
+            signature: string;
+            options?: components["schemas"]["RankOptions"] | null;
         };
         /** SmartRerank */
         SmartRerank: {
@@ -2144,6 +2184,11 @@ export interface components {
              */
             calculate_routes: boolean;
             /**
+             * Estimate Unrouted Routes
+             * @default false
+             */
+            estimate_unrouted_routes: boolean;
+            /**
              * Route Limit
              * @default 5
              */
@@ -2166,6 +2211,21 @@ export interface components {
             stations: components["schemas"]["Station-Input"][];
             /** Source Statuses */
             source_statuses: components["schemas"]["SourceStatus"][];
+            /** Source Cache */
+            source_cache?: {
+                [key: string]: components["schemas"]["SourceCacheStatus"];
+            };
+            /**
+             * Estimate Unrouted Routes
+             * @default false
+             */
+            estimate_unrouted_routes: boolean;
+            /** Acquisition Options */
+            acquisition_options?: {
+                [key: string]: number;
+            };
+            /** Routes Checked At */
+            routes_checked_at?: string | null;
             baseline?: components["schemas"]["Route"] | null;
             /** Routes */
             routes?: components["schemas"]["SnapshotRoute"][];
@@ -2183,6 +2243,8 @@ export interface components {
             warnings?: string[];
             /** Unlocated Gasbuddy */
             unlocated_gasbuddy?: components["schemas"]["GasBuddyQuote-Input"][];
+            /** Discovery Area Covered */
+            discovery_area_covered?: number | null;
             /** Inventory */
             inventory?: components["schemas"]["MapsWebStation"][];
             vehicle?: components["schemas"]["VehicleProfile-Input"] | null;
@@ -2196,6 +2258,21 @@ export interface components {
             stations: components["schemas"]["Station-Output"][];
             /** Source Statuses */
             source_statuses: components["schemas"]["SourceStatus"][];
+            /** Source Cache */
+            source_cache?: {
+                [key: string]: components["schemas"]["SourceCacheStatus"];
+            };
+            /**
+             * Estimate Unrouted Routes
+             * @default false
+             */
+            estimate_unrouted_routes: boolean;
+            /** Acquisition Options */
+            acquisition_options?: {
+                [key: string]: number;
+            };
+            /** Routes Checked At */
+            routes_checked_at?: string | null;
             baseline?: components["schemas"]["Route"] | null;
             /** Routes */
             routes?: components["schemas"]["SnapshotRoute"][];
@@ -2213,6 +2290,8 @@ export interface components {
             warnings?: string[];
             /** Unlocated Gasbuddy */
             unlocated_gasbuddy?: components["schemas"]["GasBuddyQuote-Output"][];
+            /** Discovery Area Covered */
+            discovery_area_covered?: number | null;
             /** Inventory */
             inventory?: components["schemas"]["MapsWebStation"][];
             vehicle?: components["schemas"]["VehicleProfile-Output"] | null;
@@ -2223,6 +2302,19 @@ export interface components {
         SnapshotRoute: {
             via: components["schemas"]["Point"];
             route: components["schemas"]["Route"];
+        };
+        /** SourceCacheStatus */
+        SourceCacheStatus: {
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "fresh" | "stale";
         };
         /** SourceStatus */
         SourceStatus: {
@@ -3558,6 +3650,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SmartRerank"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SmartResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    smart_refresh_prices_v1_smart_refresh_prices_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SmartPriceRefresh"];
             };
         };
         responses: {

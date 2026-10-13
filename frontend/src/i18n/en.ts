@@ -15,6 +15,8 @@ export const en = {
   "board.none": "No comparable open stations",
   "board.score": "Including time",
 
+  'cache.sharedFresh': '{source}: shared data checked {age}',
+  'cache.sharedStale': '{source}: cached data checked {age}; refresh subject to source limits',
   "cache.sourceUnavailable": "{source}: temporarily unavailable",
   "cache.failed": "Update failed · showing the previous snapshot",
 
@@ -317,6 +319,7 @@ export const en = {
   "station.allNote": "Selected fuel price available · Confirmed open",
   "coverage.summary": "{found} found · {priced} with prices · {eligible} eligible · {routed} with costs",
   "coverage.why": "Why fewer recommendations?",
+  "coverage.estimated_route": "Estimated drive and cost",
   "coverage.routed": "Included in cost comparison",
   "coverage.no_matching_fuel_price": "No price for your selected fuel",
   "coverage.wrong_fuel_type": "Different fuel grade",

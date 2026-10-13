@@ -67,7 +67,7 @@ class CurlHTTPClient:
                 response.status_code,
                 headers={
                     key: response.headers[key]
-                    for key in ("content-type", "cf-mitigated")
+                    for key in ("content-type", "cf-mitigated", "retry-after")
                     if key in response.headers
                 },
                 content=b"".join(chunks),

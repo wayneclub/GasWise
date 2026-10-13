@@ -1,4 +1,5 @@
 import { SourcePill } from './SourcePill'
+import { SharedCacheStatus } from './SharedCacheStatus'
 import { SearchContext } from './SearchContext'
 import { useEffect, useRef, useState } from 'react'
 import { Button, Segmented, Sheet, Stepper } from '../../components/ui'
@@ -145,6 +146,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
               </p>
               {result.snapshot.source_statuses.filter(s=>s.status==='unavailable').map(s=><p key={s.source} className="text-caution">{t('cache.sourceUnavailable',{source:sourceLabel(s.source)})}</p>)}
               {result.snapshot.warnings?.some(w => w.startsWith('AAA regional average unavailable')) ? <p className="text-caution">{t('cache.sourceUnavailable',{source:'AAA'})}</p> : null}
+              <SharedCacheStatus caches={result.snapshot.source_cache}/>
               <p className="mt-1">{t('cache.policy')}</p>
               {result.cache_hits ? <p>{t('cache.reused', { count: result.cache_hits })}</p> : null}
               <p className="mt-1">{t('decide.rerankNote')}</p>

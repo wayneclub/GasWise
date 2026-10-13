@@ -2,11 +2,12 @@
 import asyncio
 import math
 
+import h3
+
 from gaswise.contracts.common import Point
 from gaswise.contracts.sources import MAPS_WEB_PAGE_SIZE, GasBuddySearch, GooglePriceSearch, MapsWebSearch
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.cells import Coverage
-from gaswise.domain.pricing.comparison import distance_meters as distance
 from gaswise.domain.pricing.comparison import search_limit_meters
 
 
@@ -18,11 +19,14 @@ def shared_viewport(point, radius):
     """
     if radius > 45000 or abs(point.lat) > 84:
         return point, radius
-    latitude_step = radius * 0.1 / 111320
-    latitude = round(point.lat / latitude_step) * latitude_step
-    longitude_step = latitude_step / max(0.1, math.cos(math.radians(latitude)))
-    longitude = ((round(point.lng / longitude_step) * longitude_step + 180) % 360) - 180
-    return Point(lat=latitude, lng=longitude), radius * 1.1
+    cell = h3.latlng_to_cell(point.lat, point.lng, 8)
+    latitude, longitude = h3.cell_to_latlng(cell)
+    centre = Point(lat=latitude, lng=longitude)
+    # Fixed for the whole cell, including points near its boundary; never use caller offset in the key.
+    from gaswise.domain.pricing.comparison import distance_meters
+    margin = max(distance_meters(centre, Point(lat=lat,lng=lng)) for lat,lng in h3.cell_to_boundary(cell))
+    shared_radius = math.ceil(radius / 500) * 500 + math.ceil(margin / 100) * 100
+    return centre, min(50000, shared_radius)
 
 
 MAPS_WAVE = 6
@@ -74,18 +78,19 @@ async def acquire(service, search, query):
     requests = {}
     if service.gasbuddy is not None:
         # Coordinates, not ZIP: a ZIP search stops at the ZIP line. The snapped centre lets
-        # nearby users share one cached GasBuddy request; its offset widens the radius.
+        # nearby users share one cached GasBuddy request with a fixed enlarged radius.
         limit = search_limit_meters(search)
-        centre, _ = shared_viewport(search.origin, limit)
+        centre, shared_radius = shared_viewport(search.origin, limit)
         gb = GasBuddySearch(max_pages=query.gasbuddy_page_limit, origin=centre,
-                            radius_meters=min(60000, limit + distance(search.origin, centre)),
+                            radius_meters=min(60000, shared_radius),
                             fuel_type=search.fuel_type, payment_type="cash_or_credit",
                             include_payment_variants=True, max_results=100)
         requests["gasbuddy"] = service.cached("gasbuddy:" + gb.model_dump_json(), lambda: service.gasbuddy.prices(gb), refresh=query.force_refresh)
     if service.maps_web is not None:
         requests["maps"] = discover_maps(service, search, query)
     if service.waze is not None:
-        waze = GooglePriceSearch(origin=search.origin, fuel_type=search.fuel_type, radius_meters=search_limit_meters(search), max_results=20)
+        centre, radius = shared_viewport(search.origin, search_limit_meters(search))
+        waze = GooglePriceSearch(origin=centre, fuel_type=search.fuel_type, radius_meters=min(50000, radius), max_results=20)
         requests["waze"] = service.cached("waze:" + waze.model_dump_json(), lambda: service.waze.stations(waze), refresh=query.force_refresh)
     # Per-source failures stay isolated; cancellation still propagates to all waiters.
     values = await asyncio.gather(*requests.values(), return_exceptions=True)

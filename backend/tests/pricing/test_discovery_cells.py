@@ -106,3 +106,14 @@ async def test_nearby_searches_share_cached_cell_requests():
     second = await service.search(search(12, moved))
     assert second.cache_hits >= 3
     assert len(maps.queries) - first < 12
+
+
+def test_primary_h3_viewport_is_stable_for_nearby_points_and_covers_cell_boundary():
+    import h3
+
+    from gaswise.services.pricing.discovery import shared_viewport
+    centre,radius = shared_viewport(ORIGIN,6000)
+    moved = Point(lat=ORIGIN.lat+.00001,lng=ORIGIN.lng+.00001)
+    assert shared_viewport(moved,6000) == (centre,radius)
+    cell = h3.latlng_to_cell(ORIGIN.lat,ORIGIN.lng,8)
+    assert all(distance_meters(centre,Point(lat=lat,lng=lng))+6000 <= radius for lat,lng in h3.cell_to_boundary(cell))

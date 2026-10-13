@@ -214,3 +214,49 @@ it('makes an unavailable AAA benchmark explicit without inventing an average', a
   expect(await screen.findByText('AAA: temporarily unavailable')).toBeInTheDocument()
   expect(screen.queryByText(/Metro average/)).not.toBeInTheDocument()
 })
+
+it('labels geometric driving estimates in recommendations and station details', async () => {
+  const data = structuredClone(demo)
+  for (const row of [...data.ranking!.results, ...Object.values(data.ranking!.leaderboards ?? {}).flat()]) {
+    row.route.source = 'straight_line_estimate'
+    row.route.duration_basis = 'geometric_estimate'
+  }
+  vi.spyOn(globalThis, 'fetch').mockImplementation(() => respond(data))
+  render(<App />)
+  await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+  expect(screen.getAllByText('Estimated drive and cost').length).toBeGreaterThan(0)
+  fireEvent.click(screen.getByRole('button', { name: 'View details' }))
+  expect(screen.getByRole('dialog', { name: 'Station details' }).textContent).toContain('Estimated drive and cost')
+})
+
+it('refreshes held prices without restarting the full station and route search', async () => {
+  const data = structuredClone(demo)
+  data.snapshot.expires_at = new Date(Date.now() + 600000).toISOString()
+  data.snapshot.query.radius_meters = 5 * 1609.344
+  data.snapshot.source_cache = { maps: { checked_at: new Date(Date.now() - 120000).toISOString(), state: 'stale' } }
+  const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => respond(data))
+  render(<App />)
+  await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh prices' }))
+  await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2))
+  expect(fetch.mock.calls[1][0]).toBe('/api/v1/smart/refresh-prices')
+  const body = JSON.parse(String(fetch.mock.calls[1][1]?.body))
+  expect(body.signature).toBe(data.signature)
+  expect(body.snapshot.routes).toEqual(data.snapshot.routes)
+  expect(body.options).toBeDefined()
+})
+
+it('starts one new transaction when a server restart invalidates the held snapshot', async () => {
+  const data = structuredClone(demo)
+  data.snapshot.expires_at = new Date(Date.now() + 600000).toISOString()
+  data.snapshot.query.radius_meters = 5 * 1609.344
+  const fetch = vi.spyOn(globalThis, 'fetch').mockImplementationOnce(() => respond(data))
+    .mockImplementationOnce(() => respond({ detail: 'invalid_snapshot_signature' }, 409))
+    .mockImplementation(() => respond(data))
+  render(<App />)
+  await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh prices' }))
+  await waitFor(() => expect(fetch).toHaveBeenCalledTimes(3))
+  expect(fetch.mock.calls.map(([url]) => url)).toEqual(['/api/v1/smart/search', '/api/v1/smart/refresh-prices', '/api/v1/smart/search'])
+  expect(JSON.parse(String(fetch.mock.calls[2][1]?.body)).force_refresh).toBe(false)
+})

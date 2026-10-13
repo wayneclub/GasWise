@@ -38,7 +38,7 @@ export function NearbyStations({ result, navApp, onExpandRoutes, allowUnknownPay
 
     <p className="text-xs leading-relaxed text-muted">{t('station.allNote')}</p>
     {coverage ? <div className="rounded-control bg-sunken p-3 text-sm text-muted">
-      <dl className="grid grid-cols-4 gap-2 text-center">{(['found', 'priced', 'eligible', 'routed'] as const).map((key) => <div key={key}><dd className={key === 'routed' ? 'num text-xl font-semibold text-accent' : 'num text-xl font-semibold text-ink'}>{key === 'found' ? coverage.discovered : coverage[key]}</dd><dt className="mt-1 text-[11px]">{t(key === 'routed' ? 'coverage.compared' : `coverage.${key}`)}</dt></div>)}</dl>
+      <dl className="grid grid-cols-4 gap-2 text-center">{(['found', 'priced', 'eligible', 'routed'] as const).map((key) => <div key={key}><dd className={key === 'routed' ? 'num text-xl font-semibold text-accent' : 'num text-xl font-semibold text-ink'}>{key === 'found' ? coverage.discovered : key === "routed" ? coverage.routed + (coverage.estimated ?? 0) : coverage[key]}</dd><dt className="mt-1 text-[11px]">{t(key === 'routed' ? 'coverage.compared' : `coverage.${key}`)}</dt></div>)}</dl>
       <details className="mt-2"><summary className="cursor-pointer font-medium text-ink">{t('coverage.why')}</summary>
         {onUnknownPayment ? <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs"><input type="checkbox" checked={allowUnknownPayment ?? false} onChange={(event) => onUnknownPayment(event.target.checked)}/>{t('prefs.unconfirmed')}</label> : null}
         <ul className="mt-2 space-y-1">{Object.entries(coverage.exclusions).map(([reason, count]) => <li key={reason}>{t(reasonKey(reason))}: {count}</li>)}</ul>

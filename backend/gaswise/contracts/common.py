@@ -58,7 +58,7 @@ class Route(Model):
     duration_seconds: float = Field(ge=0)
     source: str
     fetched_at: AwareDatetime | None = None
-    duration_basis: Literal["provider_estimate", "maps_estimate", "maps_traffic_estimate"] = (
+    duration_basis: Literal["provider_estimate", "maps_estimate", "maps_traffic_estimate", "geometric_estimate"] = (
         "provider_estimate"
     )
     upstream_http_requests: int = Field(default=0, ge=0)

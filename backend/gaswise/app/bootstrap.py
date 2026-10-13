@@ -23,6 +23,8 @@ from gaswise.providers.pricing.demo import DemoComparisonSource, DemoProvider
 from gaswise.providers.pricing.feed import HTTPPriceSource
 from gaswise.providers.pricing.registry import SourceRegistry
 from gaswise.providers.quality.top_tier import TopTierProvider
+from gaswise.providers.storage.postgres import PostgresPricingCache
+from gaswise.providers.storage.request_budget import RequestBudget
 from gaswise.providers.vehicles.catalog import VehicleProvider
 from gaswise.providers.vehicles.hertz import HertzProvider
 from gaswise.providers.vehicles.plate import AutoZonePlateProvider, PlateProvider
@@ -31,6 +33,7 @@ from gaswise.providers.vehicles.vin import VinProvider
 from gaswise.providers.waze.provider import WazeProvider
 from gaswise.services.parts.fitment import PartsProvider
 from gaswise.services.pricing.search import SearchService
+from gaswise.services.pricing.shared_cache import SharedPricingCache
 from gaswise.services.pricing.smart import SmartService
 
 
@@ -209,6 +212,29 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
                 else None
             )
         )
+        shared_cache = None
+        if settings.database_url.get_secret_value():
+            store = await PostgresPricingCache.connect(settings.database_url.get_secret_value())
+            stack.push_async_callback(store.close)
+            shared_cache = SharedPricingCache(store, settings.pricing_cache_fresh_seconds)
+            stack.push_async_callback(shared_cache.close)
+            budget = RequestBudget(store, {
+                "gasbuddy": settings.gasbuddy_requests_per_minute,
+                "maps": settings.maps_requests_per_minute,
+                "waze": settings.waze_requests_per_minute,
+            })
+            price_worker.request_budget = budget
+            maps_web.request_budget = budget
+            if website_router is not None:
+                website_router.request_budget = budget
+            if waze is not None:
+                waze.request_budget = budget
+            cleanup_task = asyncio.create_task(shared_cache.maintain())
+            async def stop_cache_cleanup():
+                cleanup_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await cleanup_task
+            stack.push_async_callback(stop_cache_cleanup)
         smart = SmartService(
             secrets.token_bytes(32),
             settings.mode,
@@ -221,6 +247,7 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             vehicles=vehicles,
             top_tier=top_tier,
             aaa=aaa,
+            shared_cache=shared_cache,
         )
         stack.push_async_callback(smart.close)
         yield Services(

@@ -53,6 +53,7 @@ class GasBuddyHTTPSession:
                 headers={"User-Agent": "GasWise/0.5 anonymous fuel comparison"},
             )
         )
+        self.request_budget = None
         self._client = None
         self._csrf = None
         self._created_at = 0
@@ -61,7 +62,11 @@ class GasBuddyHTTPSession:
 
     async def _bootstrap(self):
         self._client = self._factory()
+        if self.request_budget:
+            await self.request_budget.before("gasbuddy")
         response = await self._client.get(LANDING)
+        if self.request_budget:
+            await self.request_budget.after("gasbuddy", response)
         if response.headers.get("cf-mitigated") == "challenge":
             raise ProviderError("gasbuddy_http_bootstrap_challenge")
         if not response.is_success:
@@ -85,6 +90,8 @@ class GasBuddyHTTPSession:
                 page_requests = 0
                 for _ in range(getattr(query, "max_pages", 1)):
                     page_requests += 1
+                    if self.request_budget:
+                        await self.request_budget.before("gasbuddy")
                     response = await self._client.post(
                         GRAPHQL,
                         headers={
@@ -100,6 +107,8 @@ class GasBuddyHTTPSession:
                             "query": METADATA_QUERY,
                         },
                     )
+                    if self.request_budget:
+                        await self.request_budget.after("gasbuddy", response)
                     if response.headers.get("cf-mitigated") == "challenge":
                         raise ProviderError("gasbuddy_http_api_challenge")
                     if not response.is_success:

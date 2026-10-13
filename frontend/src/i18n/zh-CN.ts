@@ -16,6 +16,8 @@ export const zhCN: Record<MessageKey, string> = {
   "board.none": "没有可比较的营业中加油站",
   "board.score": "含时间成本",
 
+  'cache.sharedFresh': '{source}：共享数据于 {age} 查询',
+  'cache.sharedStale': '{source}：缓存于 {age} 查询；更新受来源频率限制',
   "cache.sourceUnavailable": "{source}：暂时无法获取",
   "cache.failed": "更新失败 · 显示上次获取的报价",
 
@@ -317,6 +319,7 @@ export const zhCN: Record<MessageKey, string> = {
   "station.allNote": "有所选油品报价 · 确认营业中",
   "coverage.summary": "找到 {found} 家 · {priced} 家有油价 · {eligible} 家符合条件 · {routed} 家有成本计算",
   "coverage.why": "为什么推荐比较少？",
+  "coverage.estimated_route": "行车距离与成本为估算",
   "coverage.routed": "已纳入成本比较",
   "coverage.no_matching_fuel_price": "没有所选油品价格",
   "coverage.wrong_fuel_type": "油品不符",

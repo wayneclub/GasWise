@@ -22,10 +22,11 @@ Only the frontend joins the existing proxy network. Neither container publishes
 a public port, and the backend belongs only to the app network. Container health
 checks, automatic restart, memory limits, and bounded log rotation are enabled.
 
-No PostgreSQL connection is needed: the current service has no account/history
-storage, and search snapshots are signed and held by the client. Browser vehicle
-preferences remain local. Add a dedicated database/user if persistent account or
-history features are introduced later.
+The shared public pricing cache uses the existing `postgres` container through
+`postgres:5432` on `docker_default`. Set the dedicated `GASWISE_DATABASE_URL` in
+private `.env`; no new database container or public port is created. The backend's
+existing `vpn_egress` network also reaches this DB endpoint, but only the GasBuddy
+HTTP client uses the US proxy. See [shared pricing cache](../docs/shared-pricing-cache.md).
 
 ## Deploy an image already published by GitHub Actions
 
@@ -33,6 +34,9 @@ history features are introduced later.
 ssh -i ~/.ssh/LightsailDefaultKey-ap-northeast-1.pem ubuntu@13.159.93.30 \
   'cd ~/apps/gaswise && ./deploy.sh sha-<full-commit-hash>'
 ```
+
+Copy the current `docker-compose.yml` before deployment and run `deploy.sh` as
+`ubuntu`, without `sudo`, so `.env` retains its service-user ownership.
 
 The script pulls both images, waits for health, checks and reloads NPM, and records
 the release. A failed upgrade rolls back to the previous healthy image tag.

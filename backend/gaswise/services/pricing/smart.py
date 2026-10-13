@@ -11,7 +11,7 @@ from time import perf_counter
 
 from gaswise.contracts.common import Point, Route, SourceStatus, Station
 from gaswise.contracts.search import Search
-from gaswise.contracts.smart import SmartResult, SmartSnapshot, SnapshotRoute
+from gaswise.contracts.smart import SmartResult, SmartSearch, SmartSnapshot, SnapshotRoute
 from gaswise.contracts.sources import GooglePriceSearch, MapsWebSearch
 from gaswise.domain.ports import PriceSnapshot, ProviderError
 from gaswise.domain.pricing.comparison import (
@@ -23,12 +23,14 @@ from gaswise.domain.pricing.comparison import (
     select_prices,
 )
 from gaswise.domain.pricing.identity import inventory_match, located_inventory_match, site_match
+from gaswise.domain.pricing.route_estimates import estimate_route
 from gaswise.domain.pricing.top_tier import tag_top_tier
 from gaswise.domain.vehicles.fuel_policy import check_vehicle_fuel, resolve_fuel_query
 from gaswise.services.pricing.cache import TTLCache
 from gaswise.services.pricing.discovery import acquire, acquired
 from gaswise.services.pricing.regional import address_region, benchmarks, match_benchmark
 from gaswise.services.pricing.search import SearchService
+from gaswise.services.pricing.shared_cache import cache_observations
 
 
 def canonical(value):
@@ -93,6 +95,7 @@ def gasbuddy_station(quote, matched=None):
 class SnapshotProvider:
     def __init__(self, snapshot):
         self.data = snapshot
+        self.candidate_limit = 1000 if snapshot.estimate_unrouted_routes else 30
 
     async def snapshot(self, query):
         return PriceSnapshot(self.data.stations, self.data.source_statuses)
@@ -106,6 +109,8 @@ class SnapshotProvider:
         for row in self.data.routes:
             if via is not None and point_key(row.via) == point_key(via):
                 return row.route
+        if self.data.estimate_unrouted_routes and via is not None and self.data.baseline is not None:
+            return estimate_route(origin, destination, via, self.data.baseline)
         raise ProviderError("route_not_in_snapshot")
 
 
@@ -123,6 +128,7 @@ class SmartService:
         vehicles=None,
         top_tier=None,
         aaa=None,
+        shared_cache=None,
     ):
         self.secret, self.mode = secret, mode
         self.gasbuddy, self.google, self.router, self.demo = gasbuddy, google, router, demo
@@ -131,6 +137,7 @@ class SmartService:
         self.vehicles = vehicles
         self.top_tier = top_tier
         self.aaa = aaa
+        self.shared_cache = shared_cache
         self.inflight = {}
         self.waiters = {}
         self.source_slots = {"gasbuddy": asyncio.Semaphore(1), "maps": asyncio.Semaphore(6), "waze": asyncio.Semaphore(2), "aaa": asyncio.Semaphore(1)}
@@ -149,6 +156,12 @@ class SmartService:
     async def cached(self, key, operation, seconds=90, refresh=False):
         source = key.split(":", 1)[0]
         source_slot = self.source_slots.get(source)
+        if self.shared_cache is not None and source in {"gasbuddy", "maps", "waze"}:
+            # Forced refresh cannot bypass the cross-user freshness window or source budgets.
+            async def shared_operation():
+                async with source_slot:
+                    return await operation()
+            return await self.shared_cache.get(source, key, shared_operation)
         # Keys are digests: exact origin/query identity without plaintext coordinates.
         key = "cache:" + hashlib.sha256(key.encode()).hexdigest()
         if not refresh:
@@ -223,6 +236,8 @@ class SmartService:
                 self.inflight.pop(key, None)
 
     async def close(self):
+        if self.shared_cache is not None:
+            await self.shared_cache.close()
         tasks = list(self.inflight.values())
         for task in tasks:
             task.cancel()
@@ -233,16 +248,23 @@ class SmartService:
         self.source_failures.clear()
         self.failures.clear()
 
-    async def collect(self, query):
+    async def collect(self, query, vehicle_override=None):
+        token = cache_observations.set({})
+        try:
+            return await self._collect(query, vehicle_override)
+        finally:
+            cache_observations.reset(token)
+
+    async def _collect(self, query, vehicle_override=None):
         started = perf_counter()
         if query.calculate_routes and self.router is None and self.demo is None:
             # Fail before collecting any price or Places data.
             raise ProviderError("smart_routing_not_configured")
         search = Search.model_validate(
-            query.model_dump(exclude={"calculate_routes", "route_limit", "maps_detail_limit", "discovery_tiles", "force_refresh", "gasbuddy_page_limit", "station_lookup_limit"})
+            query.model_dump(exclude={"estimate_unrouted_routes", "calculate_routes", "route_limit", "maps_detail_limit", "discovery_tiles", "force_refresh", "gasbuddy_page_limit", "station_lookup_limit"})
         )
-        vehicle = None
-        if search.vehicle_id is not None:
+        vehicle = vehicle_override
+        if search.vehicle_id is not None and vehicle is None:
             if self.vehicles is None:
                 raise ProviderError("vehicle_catalog_not_configured")
             vehicle = await self.vehicles.vehicle(search.vehicle_id)
@@ -251,7 +273,7 @@ class SmartService:
             check_vehicle_fuel(vehicle, search)
         calls = {"gasbuddy_search": 0, "google_nearby": 0, "google_text_search": 0, "routes": 0}
         if vehicle is not None:
-            calls["vehicle_catalog_lookup"] = 1
+            calls["vehicle_catalog_lookup"] = int(vehicle_override is None)
         statuses, warnings, stations, unlocated = [], [], [], []
         if vehicle and vehicle.fuel_recommendation:
             warnings.extend(vehicle.fuel_recommendation.assessment_warnings)
@@ -364,8 +386,15 @@ class SmartService:
                         SourceStatus(source="google_maps_web", status="unavailable", detail=str(error))
                     )
                 if raw is not None:
+                    saved_mappings = await self.shared_cache.mappings("gasbuddy_web", [q.id for q in raw.prices]) if self.shared_cache else {}
+                    mapped_inventory = {f"google_places:{row.place_id}": row for row in matching_inventory}
                     for quote in raw.prices:
-                        matched = site_match(matching_inventory, quote)
+                        matched = mapped_inventory.get(saved_mappings.get(quote.id))
+                        # Revalidate a persisted link against current provider coordinates.
+                        if matched is not None and (quote.location is None or distance_meters(quote.location, matched.location) > 75):
+                            matched = None
+                        if matched is None:
+                            matched = site_match(matching_inventory, quote)
                         if matched is None and quote.location is None:
                             unlocated.append(quote)
                             continue
@@ -510,11 +539,16 @@ class SmartService:
         if self.top_tier is not None:
             # Tagged once at acquisition and signed with the snapshot; reranks reuse the tags.
             stations = tag_top_tier(stations, self.top_tier.index)
+        if self.shared_cache is not None:
+            await self.shared_cache.observe(stations)
         now = datetime.now(UTC)
         snapshot = SmartSnapshot(
             query=search,
+            estimate_unrouted_routes=query.estimate_unrouted_routes,
+            acquisition_options={key: getattr(query, key) for key in ("gasbuddy_page_limit", "discovery_tiles", "maps_detail_limit", "station_lookup_limit")},
             stations=stations,
             source_statuses=statuses,
+            source_cache=cache_observations.get() or {},
             collected_at=now,
             expires_at=now + timedelta(minutes=10),
             warnings=warnings,
@@ -541,7 +575,7 @@ class SmartService:
 
         discovery_done = perf_counter()
         if query.calculate_routes:
-            await asyncio.gather(self.collect_routes(snapshot, query.route_limit, calls), averages())
+            await asyncio.gather(self.collect_routes(snapshot, min(query.route_limit, 20) if query.estimate_unrouted_routes else query.route_limit, calls), averages())
         else:
             await averages()
         routes_done = perf_counter()
@@ -552,6 +586,7 @@ class SmartService:
     async def collect_routes(self, snapshot, route_limit, calls):
         search = snapshot.query
         now = datetime.now(UTC)
+        snapshot.routes_checked_at = snapshot.routes_checked_at or now
         router = self.demo or self.router
         counter_name = getattr(router, "http_counter_name", None)
         if counter_name:
@@ -584,9 +619,21 @@ class SmartService:
             snapshot.baseline = Route(distance_meters=0, duration_seconds=0, source="no_trip")
         # Keep cheap AND nearby candidates. This is bounded shortlist discovery,
         # not proof of a global optimum. All snapshot quotes remain available.
-        selections, _, _ = select_prices(snapshot.stations, search.model_copy(update={"payment_type": "cash_or_credit"}), now)
+        selections, _, _ = select_prices(
+            snapshot.stations,
+            search if snapshot.estimate_unrouted_routes else search.model_copy(update={"payment_type": "cash_or_credit"}),
+            now,
+        )
         unique = {point_key(row.station.location): row.station for row in selections}
-        by_price = sorted(unique.values(), key=comparison_price)
+        if snapshot.estimate_unrouted_routes:
+            estimated = await SearchService(
+                SnapshotProvider(snapshot), self.mode, vehicle_profile=snapshot.vehicle
+            ).search(search.model_copy(update={"max_results": 100}))
+            ordered = {point_key(row.station.location): row.station for row in estimated.results}
+            # Keep every point for explicit expansion even beyond the displayed top 100.
+            by_price = [*ordered.values(), *(st for key, st in unique.items() if key not in ordered)]
+        else:
+            by_price = sorted(unique.values(), key=comparison_price)
         by_distance = sorted(unique.values(), key=lambda st: distance_meters(search.origin, st.location))
         chosen = {}
         for cheap, near in zip(by_price, by_distance, strict=True):
@@ -610,13 +657,50 @@ class SmartService:
         routed = await asyncio.gather(*(bounded_route(st) for st in pending))
         snapshot.routes.extend(row for row in routed if row is not None)
         if len(snapshot.routes) < len(unique):
-            snapshot.warnings.append("Some eligible stations lack routes; ranking coverage is partial.")
+            snapshot.warnings.append(
+                "Unrouted stations use straight-line distance with a 1.3 road factor and 25 mph; traffic, road barriers and queues are not measured."
+                if snapshot.estimate_unrouted_routes else "Some eligible stations lack routes; ranking coverage is partial."
+            )
 
     def verify(self, snapshot, signature):
         if not hmac.compare_digest(signature, self.sign(snapshot)):
             raise ProviderError("invalid_snapshot_signature")
         if datetime.now(UTC) >= snapshot.expires_at:
             raise ProviderError("snapshot_expired")
+
+    async def refresh_prices(self, request):
+        return await self.coalesce("refresh-prices:" + request.model_dump_json(), lambda: self._refresh_prices(request))
+
+    async def _refresh_prices(self, request):
+        previous = request.snapshot
+        self.verify(previous, request.signature)
+        values = previous.query.model_dump()
+        if request.options is not None:
+            values.update(request.options.model_dump(exclude_unset=True))
+        values.update(previous.acquisition_options)
+        values.update(calculate_routes=False, estimate_unrouted_routes=previous.estimate_unrouted_routes)
+        # The signed vehicle configuration and precise trip stay fixed during price refresh.
+        fresh = await self.collect(SmartSearch.model_validate(values), previous.vehicle)
+        snapshot = fresh.snapshot
+        checked = previous.routes_checked_at or previous.collected_at
+        snapshot.routes_checked_at = checked
+        snapshot.baseline = previous.baseline.model_copy(deep=True) if previous.baseline else None
+        snapshot.routes = [row.model_copy(deep=True) for row in previous.routes]
+        if previous.baseline is not None:
+            if (datetime.now(UTC) - checked).total_seconds() >= 900:
+                snapshot.baseline, snapshot.routes = None, []
+                snapshot.routes_checked_at = None
+                try:
+                    await self.collect_routes(snapshot, 20, fresh.upstream_calls)
+                except ProviderError:
+                    snapshot.baseline = previous.baseline.model_copy(deep=True)
+                    snapshot.estimate_unrouted_routes = True
+                    snapshot.warnings.append("Route refresh deferred; the older direct-trip baseline is retained and station detours are estimated.")
+            else:
+                snapshot.warnings.append("Existing routes were retained during price refresh; traffic was not refreshed.")
+            fresh.ranking = await self.rank(snapshot, snapshot.query)
+        fresh.signature = self.sign(snapshot)
+        return fresh
 
     async def add_routes(self, request):
         return await self.coalesce(

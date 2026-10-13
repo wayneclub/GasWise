@@ -16,6 +16,8 @@ export const zhTW: Record<MessageKey, string> = {
   "board.none": "沒有可比較的營業中加油站",
   "board.score": "含時間成本",
 
+  'cache.sharedFresh': '{source}：共用資料於 {age} 查詢',
+  'cache.sharedStale': '{source}：快取於 {age} 查詢；更新受來源頻率限制',
   "cache.sourceUnavailable": "{source}：暫時無法取得",
   "cache.failed": "更新失敗 · 顯示上次取得的報價",
 
@@ -317,6 +319,7 @@ export const zhTW: Record<MessageKey, string> = {
   "station.allNote": "有所選油品報價 · 確認營業中",
   "coverage.summary": "找到 {found} 家 · {priced} 家有油價 · {eligible} 家符合條件 · {routed} 家有成本計算",
   "coverage.why": "為什麼推薦比較少？",
+  "coverage.estimated_route": "行車距離與成本為估算",
   "coverage.routed": "已納入成本比較",
   "coverage.no_matching_fuel_price": "沒有所選油品價格",
   "coverage.wrong_fuel_type": "油品不符",

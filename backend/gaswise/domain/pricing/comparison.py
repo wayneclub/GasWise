@@ -51,7 +51,9 @@ def ineligible(station: Station, query: Search, now: datetime) -> str | None:
     age = (now - station.price_updated_at).total_seconds() / 60 if station.price_updated_at else None
     if age is not None and age < -5:
         return "future_price_timestamp"
-    if age is not None and age > query.max_price_age_minutes:
+    if age is not None and age >= min(query.max_price_age_minutes, 4320):
+        return "stale_price"
+    if age is None and (now - station.fetched_at).total_seconds() >= 21600:
         return "stale_price"
     return None
 

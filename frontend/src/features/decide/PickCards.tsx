@@ -79,6 +79,7 @@ function CostEquation({ row, tripMode }: { row: RankedStation; tripMode: 'round_
   const item = 'flex min-w-0 flex-col'
   return (
     <div className="mt-4 rounded-control bg-sunken px-3 py-2.5 text-[12px] text-muted">
+      {row.route.source === "straight_line_estimate" ? <p className="text-xs text-caution">{t("coverage.estimated_route")}</p> : null}
       <div className="flex items-center gap-2">
       <GasPumpIcon size={16} className="shrink-0 text-ink" />
       <span className={item}>{t(Number(row.credit_cashback_amount ?? 0) > 0 ? 'reward.netFill' : 'cost.fill')}<span className="num text-[14px] font-medium text-ink">{usd(row.net_purchase_cost ?? row.purchase_cost)}</span><span className="num whitespace-nowrap text-[11px] text-faint">{gal(Math.round(Number(row.purchase_cost) / Number(comparisonPrice(row.station))), t)}</span></span>
@@ -185,6 +186,7 @@ export function HeroPick({
       })}</div> : null}
 
 
+      {row?.route.source === "straight_line_estimate" ? <p className="mt-2 text-xs text-caution">{t("coverage.estimated_route")}</p> : null}
       <div className="mt-5 flex items-end justify-between gap-4">
         <p>
           <span className="num text-[44px] font-semibold leading-none tracking-[-0.03em]">{perGallon(comparisonPrice(station))}</span>
@@ -283,6 +285,7 @@ export function AlternativePick({ pick, navApp, tripMode = 'round_trip' }: { pic
         <p className="text-[12px] font-medium text-muted">{pick.keys.map((key) => t(`pick.${key}`)).join(' / ')}</p>
         <div className="flex items-center gap-1.5"><button type="button" onClick={() => setDetailsOpen(true)} className="min-w-0 truncate text-left text-[15px] font-medium underline decoration-line underline-offset-4" aria-label={`${t('station.view')} ${station.name}`}>{station.name}</button>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div>
         <StationRating station={station} />
+        {pick.row?.route.source === "straight_line_estimate" ? <p className="text-xs text-caution">{t("coverage.estimated_route")}</p> : null}
         <p className="text-xs text-muted">{t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</p>
       </div>
       <div className="text-right">

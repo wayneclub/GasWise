@@ -99,6 +99,11 @@ export function assess(result: SmartResult, primary: StrategyKey = 'best_value')
     if (rank.indexOf(to) > rank.indexOf(level)) level = to
   }
 
+  if (ranking.results.some(candidate => candidate.route.source === "straight_line_estimate")) {
+    lower("medium")
+    reasons.push({ key: "coverage.estimated_route" })
+  }
+
   const ageMinutes = row?.price_age_minutes
   if (row && ageMinutes == null) {
     lower('medium')

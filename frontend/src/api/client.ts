@@ -61,6 +61,10 @@ export const api = {
   search: (body: SmartSearchBody, signal?: AbortSignal) =>
     post<SmartResult>('/v1/smart/search', body, signal),
 
+  /** Read shared source data while preserving the trip and still-fresh routes. */
+  refreshPrices: (snapshot: SmartSnapshot, signature: string, options: Partial<RankOptions>, signal?: AbortSignal) =>
+    post<SmartResult>('/v1/smart/refresh-prices', { snapshot, signature, options }, signal),
+
   /** Recompute from the signed snapshot with zero upstream calls. */
   rerank: (snapshot: SmartSnapshot, signature: string, options: Partial<RankOptions>, signal?: AbortSignal) =>
     post<SmartResult>('/v1/smart/rerank', { snapshot, signature, options }, signal),
