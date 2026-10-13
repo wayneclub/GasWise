@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/prices/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Price History */
+        post: operations["price_history_v1_prices_history_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/locations/resolve": {
         parameters: {
             query?: never;
@@ -988,6 +1005,26 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HistoryRequest */
+        HistoryRequest: {
+            /** Canonical Id */
+            canonical_id?: string | null;
+            /** Source */
+            source: string;
+            /** Station Id */
+            station_id: string;
+            /**
+             * Fuel Type
+             * @enum {string}
+             */
+            fuel_type: "regular" | "midgrade" | "premium" | "diesel";
+            /**
+             * Days
+             * @default 30
+             * @enum {integer}
+             */
+            days: 7 | 30 | 90;
+        };
         /** LocationCandidate */
         LocationCandidate: {
             /** Id */
@@ -1414,6 +1451,37 @@ export interface components {
             comparable: boolean;
             /** Comparison Exclusion Reason */
             comparison_exclusion_reason?: string | null;
+        };
+        /** PriceHistory */
+        PriceHistory: {
+            /** Observations */
+            observations: components["schemas"]["PriceObservation"][];
+            /** Truncated */
+            truncated: boolean;
+        };
+        /** PriceObservation */
+        PriceObservation: {
+            /** Source */
+            source: string;
+            /** Station Id */
+            station_id: string;
+            /** Payment Type */
+            payment_type: string;
+            /** Condition */
+            condition: string;
+            /** Price */
+            price: string;
+            /** Reported At */
+            reported_at: string | null;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Membership */
+            membership: string | null;
+            /** Octane */
+            octane: number | null;
         };
         /** RankOptions */
         RankOptions: {
@@ -2980,6 +3048,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    price_history_v1_prices_history_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HistoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceHistory"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

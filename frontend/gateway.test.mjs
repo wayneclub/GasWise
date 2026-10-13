@@ -39,6 +39,12 @@ test('injects server authentication and strips browser authorization', async () 
   assert.deepEqual(await result.json(), { echoed: { text: 'test car' } })
   assert.equal(result.headers.get('cache-control'), 'no-store')
 })
+test('proxies the bounded history reader with server authentication', async () => {
+  const body = { source: 'waze', station_id: 'one', fuel_type: 'regular', days: 30 }
+  const response = await fetch(`${base}/api/v1/prices/history`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), { echoed: body })
+})
 test('rejects cross-origin credential use without upstream traffic', async () => {
   const previous = calls
   const result = await fetch(`${base}/api/v1/smart/search`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://untrusted.example' }, body: '{}' })

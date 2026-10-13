@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from gaswise.api import locations, parts, quality, recommendations, smart, sources, system, vehicles
+from gaswise.api import history, locations, parts, quality, recommendations, smart, sources, system, vehicles
 from gaswise.api.operations import OperationRunner
 from gaswise.app.bootstrap import build_services
 from gaswise.app.runtime import ProviderOverrides
@@ -68,7 +68,7 @@ def create_app(
         allow_methods=["GET", "POST"],
         allow_headers=["Authorization", "Content-Type"],
     )
-    for module in (system, locations, parts, vehicles, sources, smart, recommendations, quality):
+    for module in (system, history, locations, parts, vehicles, sources, smart, recommendations, quality):
         app.include_router(module.router)
 
     @app.middleware("http")

@@ -1,6 +1,26 @@
 import type { MessageKey } from './en'
 
 export const zhTW: Record<MessageKey, string> = {
+  "history.title": "歷史油價",
+  "history.show": "查看走勢",
+  "history.hide": "收合",
+  "history.days": "{days} 天",
+  "history.note": "這是報價觀測紀錄，非油站實際改價時間。來源與購買條件分開比較；虛線僅連接觀測點，空檔沒有已確認價格。",
+  "history.error": "歷史資料暫時無法讀取。",
+  "history.retry": "重試",
+  "history.loading": "正在讀取歷史油價…",
+  "history.empty": "這段期間尚無觀測紀錄，會隨油價收集逐步累積。",
+  "history.series": "來源／付款方式／購買條件",
+  "history.low": "期間最低",
+  "history.high": "期間最高",
+  "history.change": "首筆 → 末筆",
+  "history.chart": "油價觀測紀錄走勢",
+  "history.single": "目前只有一筆紀錄，尚無法比較走勢或變化。",
+  "history.records": "查看 {count} 筆紀錄",
+  "history.time": "來源回報時間（本地）",
+  "history.observed": "收集時間；來源回報時間不明",
+  "history.truncated": "僅顯示最新 1,000 筆觀測，統計僅涵蓋這些紀錄。",
+
   "fill.timeValue": "時間成本",
   "board.title": "加油站前三名",
   "board.money": "最省錢",

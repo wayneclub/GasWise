@@ -1,6 +1,26 @@
 import type { MessageKey } from './en'
 
 export const es: Record<MessageKey, string> = {
+  "history.title": "Historial de precios",
+  "history.show": "Ver tendencia",
+  "history.hide": "Ocultar",
+  "history.days": "{days} días",
+  "history.note": "Cotizaciones observadas, no horas exactas de cambio en el surtidor. Fuentes y condiciones se comparan por separado. Las líneas discontinuas conectan observaciones; los intervalos no tienen precios verificados.",
+  "history.error": "El historial no está disponible temporalmente.",
+  "history.retry": "Reintentar",
+  "history.loading": "Cargando historial…",
+  "history.empty": "Aún no hay observaciones en este período. El historial se acumula al recopilar precios.",
+  "history.series": "Fuente / pago / condiciones",
+  "history.low": "Mínimo del período",
+  "history.high": "Máximo del período",
+  "history.change": "Primera → última",
+  "history.chart": "Observaciones de precios a lo largo del tiempo",
+  "history.single": "Solo una observación; aún no hay tendencia ni cambio.",
+  "history.records": "Ver {count} observaciones",
+  "history.time": "Hora reportada (local)",
+  "history.observed": "Hora de recopilación; hora reportada desconocida",
+  "history.truncated": "Se muestran las últimas 1.000 observaciones; las estadísticas solo cubren estos registros.",
+
   "fill.timeValue": "Valor del tiempo",
   "board.title": "Las 3 mejores estaciones",
   "board.money": "Precio",

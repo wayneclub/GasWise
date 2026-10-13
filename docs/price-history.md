@@ -51,3 +51,23 @@ skipped, and rejected acquisition evidence cannot classify current payment.
 Run `scripts/smoke/check_payment_history.py` inside the deployed backend to verify
 actual PostgreSQL history read/write, estimate, repeat ranking and missing-history
 fallback. Its validation rows are rolled back and it makes zero upstream calls.
+
+## User interface and read API
+
+Open a station's details, then expand **Price history** below its current quote.
+The 7/30/90-day controls read existing observations only, with no upstream calls.
+The selected fuel grade stays fixed to the station detail quote. Source, source
+station ID, payment basis and purchase condition define separate series. Unknown
+payment is labelled explicitly; estimated comparison prices never enter the chart.
+Period low/high and first-to-last change describe only the selected recorded
+series. Dashed connections are visual guides, not verified gap prices. One record
+has no trend; missing observations and unavailable storage have distinct states.
+The table uses local report time, or explicitly labelled collection time when the
+report time is unknown. History starts with collection; no backfilling is implied.
+
+Authenticated `POST /v1/prices/history` accepts `canonical_id` (optional), `source`,
+`station_id`, `fuel_type`, and `days` (7, 30 or 90). The production gateway exposes
+this read endpoint. Results contain at most 1,000 latest observations; `truncated`
+is explicit and limits all displayed statistics. No configured history store
+returns 503, while an empty matching period returns an empty list. Queries match a
+verified canonical identity or the exact source/station pair, never station names.

@@ -43,6 +43,49 @@
         ]
       }
     },
+    "/v1/prices/history": {
+      "post": {
+        "summary": "Price History",
+        "operationId": "price_history_v1_prices_history_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceHistory"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/locations/resolve": {
       "post": {
         "summary": "Resolve Location",
@@ -2355,6 +2398,63 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HistoryRequest": {
+        "properties": {
+          "canonical_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Id"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source"
+          },
+          "station_id": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Station Id"
+          },
+          "fuel_type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "midgrade",
+              "premium",
+              "diesel"
+            ],
+            "title": "Fuel Type"
+          },
+          "days": {
+            "type": "integer",
+            "enum": [
+              7,
+              30,
+              90
+            ],
+            "title": "Days",
+            "default": 30
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "station_id",
+          "fuel_type"
+        ],
+        "title": "HistoryRequest"
+      },
       "LocationCandidate": {
         "properties": {
           "id": {
@@ -3586,6 +3686,106 @@
           "eligible"
         ],
         "title": "PriceEvidence"
+      },
+      "PriceHistory": {
+        "properties": {
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/PriceObservation"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Observations"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "observations",
+          "truncated"
+        ],
+        "title": "PriceHistory"
+      },
+      "PriceObservation": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "station_id": {
+            "type": "string",
+            "title": "Station Id"
+          },
+          "payment_type": {
+            "type": "string",
+            "title": "Payment Type"
+          },
+          "condition": {
+            "type": "string",
+            "title": "Condition"
+          },
+          "price": {
+            "type": "string",
+            "title": "Price"
+          },
+          "reported_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported At"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "membership": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Membership"
+          },
+          "octane": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Octane"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "station_id",
+          "payment_type",
+          "condition",
+          "price",
+          "reported_at",
+          "observed_at",
+          "membership",
+          "octane"
+        ],
+        "title": "PriceObservation"
       },
       "RankOptions": {
         "properties": {

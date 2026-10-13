@@ -37,6 +37,11 @@ class SharedPricingCache:
         self.tasks = set()
         self.closed = False
 
+    async def price_history(self, canonical_id, source, station_id, fuel_type, days):
+        if not hasattr(self.store, "price_history"):
+            raise ProviderError("price_history_unavailable")
+        return await self._db("price_history", canonical_id, source, station_id, fuel_type, days)
+
     async def payment_history(self, stations):
         if not hasattr(self.store, "payment_history"):
             return {}

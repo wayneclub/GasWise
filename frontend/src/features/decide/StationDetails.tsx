@@ -1,3 +1,4 @@
+import { PriceHistory } from './PriceHistory'
 import {googleStationUrl,stationSourceUrl} from '../../lib/stationLinks'
 import { SourcePill, StationSources } from './SourcePill'
 import { StarIcon, ShieldCheckIcon } from '@phosphor-icons/react'
@@ -70,6 +71,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
           <p className="text-xs text-muted">{t('age.updated', { age: age(station.price_updated_at, t) })}</p>
         </> : null}
       </div>
+      <PriceHistory station={station} />
       <p className="text-sm">{t('station.hours')}: {t(station.open_now === true ? 'hours.open' : station.open_now === false ? 'hours.closed' : 'hours.unknown')}</p>
       {row?.route.source === "straight_line_estimate" ? <p className="text-xs text-caution">{t("coverage.estimated_route")}</p> : null}
       {row ? <dl className="grid grid-cols-2 gap-2 border-t border-line pt-3 text-sm">

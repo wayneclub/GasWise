@@ -32,6 +32,32 @@ class PostgresPricingCache:
             raise RuntimeError("Shared pricing PostgreSQL startup failed; check private configuration") from None
         return cls(pool)
 
+    async def price_history(self, canonical_id, source, station_id, fuel_type, days):
+        rows = await self.pool.fetch("""
+            SELECT source, station_id, payment_type, purchase_condition,
+                   price_per_gallon, reported_at, first_seen_at, attributes
+            FROM gaswise.quote_history
+            WHERE ((canonical_id = $1 AND $1::text IS NOT NULL)
+                   OR (source = $2 AND station_id = $3))
+              AND fuel_type = $4
+              AND COALESCE(reported_at, first_seen_at) >= now() - make_interval(days => $5)
+              AND COALESCE(reported_at, first_seen_at) <= now()
+            ORDER BY COALESCE(reported_at, first_seen_at) DESC, observation_key
+            LIMIT 1001
+        """, canonical_id, source, station_id, fuel_type, days)
+        observations = []
+        for row in rows[:1000]:
+            attrs = json.loads(row["attributes"]) if isinstance(row["attributes"], str) else row["attributes"]
+            observations.append({
+                "source": row["source"], "station_id": row["station_id"],
+                "payment_type": row["payment_type"], "condition": row["purchase_condition"],
+                "price": str(row["price_per_gallon"]),
+                "reported_at": row["reported_at"].isoformat() if row["reported_at"] else None,
+                "observed_at": row["first_seen_at"].isoformat(),
+                "membership": attrs.get("membership_required"), "octane": attrs.get("octane"),
+            })
+        return {"observations": observations, "truncated": len(rows) > 1000}
+
     async def payment_history(self, keys, fuel_types):
         rows = await self.pool.fetch("""
             SELECT * FROM (

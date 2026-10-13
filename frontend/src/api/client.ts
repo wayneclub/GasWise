@@ -50,7 +50,11 @@ async function post<T>(path: string, body: unknown, signal?: AbortSignal): Promi
   throw new ApiError(response.status, code, Number.isFinite(retry) && retry > 0 ? retry : null)
 }
 
+export type PriceObservation = import('./schema').components['schemas']['PriceObservation']
+export type PriceHistory = import('./schema').components['schemas']['PriceHistory']
+
 export const api = {
+  priceHistory: (body: import('./schema').components['schemas']['HistoryRequest'], signal?: AbortSignal) => post<PriceHistory>('/v1/prices/history', body, signal),
   resolveLocation: (text: string, signal?: AbortSignal) => post<LocationResult>('/v1/locations/resolve', { text }, signal),
   partsSearch: (body: PartsSearchRequest, signal?: AbortSignal) => post<PartsSearchResult>('/v1/parts/search', body, signal),
   routes: (snapshot: SmartSnapshot, signature: string, signal?: AbortSignal) => post<SmartResult>('/v1/smart/routes', { snapshot, signature, route_limit: 100 }, signal),
