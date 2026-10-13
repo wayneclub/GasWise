@@ -14,12 +14,12 @@ function ServiceTabs({ prefs, update }: { prefs: Prefs; update: (change: Partial
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [tab, setTab] = useState<'fuel' | 'parts'>('fuel')
   return <>
-    <header className="border-b border-line bg-surface">
+    <header className="liquid-nav">
       <div className="mx-auto flex min-h-16 w-full max-w-5xl items-center gap-2 px-4 sm:gap-8">
         <div className="flex shrink-0 items-center gap-2 font-semibold tracking-tight"><GasPumpIcon size={22} weight="fill" className="text-accent" /><span>GasWise</span></div>
         <nav className="flex min-w-0 flex-1 items-center gap-1 self-stretch" role="tablist" aria-label="GasWise">
           {(['fuel', 'parts'] as const).map((key) => { const Icon = key === 'fuel' ? GasPumpIcon : WrenchIcon; return <button key={key} type="button" role="tab" id={`tab-${key}`} aria-controls={`panel-${key}`} aria-selected={!settingsOpen && tab === key}
-            className={`relative flex min-h-14 min-w-0 flex-1 items-center justify-center gap-2 whitespace-normal sm:whitespace-nowrap px-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-accent sm:flex-none sm:px-5 ${!settingsOpen && tab === key ? 'text-accent after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:bg-accent' : 'text-muted hover:text-ink'}`}
+            className={`liquid-tab relative flex min-h-14 min-w-0 flex-1 items-center justify-center gap-2 whitespace-normal sm:whitespace-nowrap px-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-accent sm:flex-none sm:px-5 ${!settingsOpen && tab === key ? 'text-accent' : 'text-muted hover:text-ink'}`}
             onKeyDown={(event) => { if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) { event.preventDefault(); const next = event.key === 'Home' ? 'fuel' : event.key === 'End' ? 'parts' : key === 'fuel' ? 'parts' : 'fuel'; setTab(next); setSettingsOpen(false); document.getElementById(`tab-${next}`)?.focus() } }}
             tabIndex={tab === key ? 0 : -1} onClick={() => { setTab(key); setSettingsOpen(false) }}><Icon size={18} className="hidden sm:block" />{t(`nav.${key}`)}</button> })}
         </nav>

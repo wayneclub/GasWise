@@ -14,7 +14,7 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
   const tone = {
     primary: 'bg-ink text-surface shadow-soft hover:opacity-90',
-    secondary: 'bg-surface text-ink border border-line hover:bg-sunken',
+    secondary: 'liquid-control text-ink hover:bg-sunken',
     ghost: 'text-muted hover:text-ink hover:bg-sunken',
   }[variant]
   return (
@@ -71,7 +71,7 @@ export function Segmented<T extends string>({
   onChange: (value: T) => void
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col gap-1 rounded-control bg-sunken p-1">
+    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col gap-1 liquid-segment rounded-control p-1">
       {options.map((option) => {
         const active = option.value === value
         return (
@@ -83,7 +83,7 @@ export function Segmented<T extends string>({
             aria-checked={active}
             onClick={() => onChange(option.value)}
             className={`min-h-9 min-w-0 whitespace-nowrap rounded-[11px] px-1.5 py-1 text-[13px] font-medium leading-snug transition sm:text-sm ${focus} ${
-              active ? 'bg-surface text-ink shadow-soft' : 'text-muted hover:text-ink'
+              active ? 'liquid-selection text-ink' : 'text-muted hover:text-ink'
             }`}
           >
             {option.label}
@@ -117,7 +117,7 @@ export function Stepper({
   const clamp = (next: number) => Math.min(max, Math.max(min, Math.round(next * 10) / 10))
   const button = `grid size-9 place-items-center rounded-[11px] text-ink hover:bg-sunken ${press} ${focus}`
   return (
-    <div className={`inline-flex h-11 items-center gap-1 self-start rounded-control border border-line bg-surface p-1 ${className}`} role="group" aria-label={label}>
+    <div className={`inline-flex h-11 items-center gap-1 self-start liquid-control rounded-control p-1 ${className}`} role="group" aria-label={label}>
       <button type="button" className={button} aria-label={t('ui.decrease', { label })} disabled={value <= min} onClick={() => onChange(clamp(value - step))}>
         <MinusIcon size={16} weight="bold" />
       </button>
@@ -193,9 +193,9 @@ export function Sheet({
       onClose={onClose}
       onClick={(event) => event.target === ref.current && onClose()}
       aria-label={title}
-      className="m-0 mt-auto max-h-[92dvh] w-full max-w-none rounded-t-box border border-line bg-canvas p-0 text-ink shadow-raised backdrop:bg-[#3a3328]/25 backdrop:backdrop-blur-[2px] sm:m-auto sm:max-w-md sm:rounded-box"
+      className="liquid-sheet m-0 mt-auto max-h-[92dvh] w-full max-w-none rounded-t-box p-0 text-ink shadow-raised backdrop:bg-[#3a3328]/25 backdrop:backdrop-blur-[2px] sm:m-auto sm:max-w-md sm:rounded-box"
     >
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-canvas px-5 py-4">
+      <div className="sticky top-0 z-10 flex items-center justify-between liquid-sheet-heading px-5 py-4">
         <h2 className="text-base font-semibold">{title}</h2>
         <button type="button" onClick={onClose} aria-label={t('ui.close')} className={`grid size-9 place-items-center rounded-control text-muted hover:bg-sunken hover:text-ink ${focus}`}>
           <XIcon size={18} />

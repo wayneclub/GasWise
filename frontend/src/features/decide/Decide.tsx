@@ -52,7 +52,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="flex flex-col gap-4">
-          <section aria-label={t('decide.yourFill')} className="rounded-box border border-line bg-surface p-4">
+          <section aria-label={t('decide.yourFill')} className="liquid-panel rounded-box p-4">
             <div className="grid grid-cols-1 items-center min-[420px]:grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-3">
               <h2 className="text-sm font-semibold">{t('decide.yourFill')}</h2>
               <Stepper label={t('ui.gallons')} value={prefs.gallons} min={1} max={30} step={1} format={(value)=>gallons(value,t)} onChange={(gallons)=>update({gallons})} className="w-full" />

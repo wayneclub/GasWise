@@ -81,3 +81,77 @@ body::before {
     radial-gradient(60rem 40rem at 100% -10%, rgba(255, 253, 248, 0.9), transparent 60%),
     radial-gradient(50rem 36rem at -10% 110%, rgba(232, 224, 210, 0.55), transparent 60%);
 }
+
+/* Liquid material is reserved for navigation and controls. Data surfaces stay opaque.
+   The solid base is also the fallback when backdrop filtering is unavailable. */
+:root {
+  --glass-fill: rgba(252, 251, 248, 0.82);
+  --glass-edge: rgba(255, 255, 255, 0.9);
+  --glass-depth: 0 8px 24px -18px rgba(48, 62, 48, 0.28);
+}
+
+.liquid-nav,
+.liquid-panel,
+.liquid-sheet {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-depth);
+}
+
+.liquid-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-width: 0 0 1px;
+}
+
+.liquid-tab {
+  margin-block: 8px;
+  min-height: 44px;
+  border-radius: var(--radius-control);
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.liquid-tab[aria-selected='true'] {
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
+}
+
+.liquid-tab:active { transform: scale(0.98); }
+
+.liquid-control,
+.liquid-selection {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 2px 4px rgba(48, 62, 48, 0.04);
+}
+
+.liquid-segment { background: rgba(223, 228, 219, 0.7); }
+.liquid-sheet-heading { background: var(--color-surface); }
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-nav,
+  .liquid-panel,
+  .liquid-sheet {
+    background: var(--glass-fill);
+    -webkit-backdrop-filter: blur(18px) saturate(125%);
+    backdrop-filter: blur(18px) saturate(125%);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-nav,
+  .liquid-panel,
+  .liquid-sheet {
+    background: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .liquid-segment { background: var(--color-sunken); }
+}
+
+@media (forced-colors: active) {
+  .liquid-nav, .liquid-panel, .liquid-sheet,
+  .liquid-control, .liquid-selection { box-shadow: none; }
+  .liquid-tab[aria-selected='true'] { outline: 2px solid Highlight; }
+}
