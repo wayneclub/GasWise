@@ -75,7 +75,8 @@ def main():
         if Path(container["Config"]["Labels"]["com.docker.compose.project.working_dir"]) != args.compose_dir:
             raise RuntimeError("unexpected_compose_directory")
         started = datetime.fromisoformat(container["State"]["StartedAt"].replace("Z", "+00:00")).timestamp()
-        health = container["State"].get("Health", {}).get("Status", "unknown")
+        health = (container["State"].get("Health", {}).get("Status", "unknown")
+                  if container["State"].get("Running") else "stopped")
         now = time.time()
         state, recover = decide(state, health, started, now)
         if recover:
