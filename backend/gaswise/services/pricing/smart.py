@@ -19,9 +19,10 @@ from gaswise.domain.pricing.comparison import (
     distance_meters,
     ineligible,
     merged_opening,
+    search_limit_meters,
     select_prices,
 )
-from gaswise.domain.pricing.identity import inventory_match, located_inventory_match
+from gaswise.domain.pricing.identity import inventory_match, located_inventory_match, site_match
 from gaswise.domain.pricing.top_tier import tag_top_tier
 from gaswise.domain.vehicles.fuel_policy import check_vehicle_fuel, resolve_fuel_query
 from gaswise.services.pricing.cache import TTLCache
@@ -48,6 +49,45 @@ def snapshot_bytes(snapshot):
 
 def point_key(point):
     return point.lat, point.lng
+
+
+def gasbuddy_station(quote, matched=None):
+    """GasBuddy's own coordinates place a quote; a matched Google place adds identity and ratings."""
+    common = dict(
+        id=quote.id,
+        name=quote.name,
+        address=quote.address,
+        price_per_gallon=quote.price_per_gallon,
+        fuel_type=quote.fuel_type,
+        payment_type=quote.payment_type,
+        price_updated_at=quote.price_updated_at,
+        fetched_at=quote.fetched_at,
+        source="gasbuddy_web",
+        membership_required=quote.membership_required,
+    )
+    if matched is None:
+        return Station(
+            **common,
+            canonical_id=f"gasbuddy:{quote.id}",
+            location=quote.location,
+            attribution=["GasBuddy"],
+            details={"source_url": quote.source_url},
+        )
+    return Station(
+        **common,
+        canonical_id=f"google_places:{matched.place_id}",
+        location=matched.location,
+        attribution=["GasBuddy", "Google Maps"],
+        rating=matched.rating,
+        review_count=matched.review_count,
+        rating_source=matched.rating_source,
+        details={
+            "opening_status": matched.opening_status,
+            "source_url": quote.source_url,
+            "location_source_name": matched.name,
+        },
+        **merged_opening(matched),
+    )
 
 
 class SnapshotProvider:
@@ -259,11 +299,11 @@ class SmartService:
                             continue
                         detail_requests += tile.detail_requests if not hit else 0
                         for item in tile.inventory:
-                            if distance_meters(search.origin, item.location) <= search.radius_meters:
+                            if distance_meters(search.origin, item.location) <= search_limit_meters(search):
                                 old = inventory_by_id.get(item.place_id)
                                 inventory_by_id[item.place_id] = item.model_copy(update=merged_opening(old, item)) if old else item
                         for item in tile.stations:
-                            if distance_meters(search.origin, item.location) <= search.radius_meters:
+                            if distance_meters(search.origin, item.location) <= search_limit_meters(search):
                                 key = (item.source, item.id, item.payment_type)
                                 old = quotes_by_id.get(key)
                                 quotes_by_id[key] = item.model_copy(update=merged_opening(old, item)) if old else item
@@ -277,7 +317,7 @@ class SmartService:
                         candidates = {}
                         for quote in raw.prices:
                             age = (datetime.now(UTC) - quote.price_updated_at).total_seconds() / 60 if quote.price_updated_at else None
-                            if age is None or age < -5 or age > search.max_price_age_minutes or inventory_match(list(inventory_by_id.values()), quote.address):
+                            if quote.location is not None or age is None or age < -5 or age > search.max_price_age_minutes or inventory_match(list(inventory_by_id.values()), quote.address):
                                 continue
                             candidates.setdefault(quote.address, quote)
                         candidates = sorted(candidates.values(), key=lambda q: (q.postal_code[:5] not in known_zips, q.price_per_gallon))
@@ -316,32 +356,11 @@ class SmartService:
                     )
                 if raw is not None:
                     for quote in raw.prices:
-                        matched = inventory_match(maps_inventory, quote.address)
-                        if matched is None:
+                        matched = site_match(maps_inventory, quote)
+                        if matched is None and quote.location is None:
                             unlocated.append(quote)
                             continue
-                        stations.append(
-                            Station(
-                                id=quote.id,
-                                canonical_id=f"google_places:{matched.place_id}",
-                                name=quote.name,
-                                location=matched.location,
-                                address=quote.address,
-                                price_per_gallon=quote.price_per_gallon,
-                                fuel_type=quote.fuel_type,
-                                payment_type=quote.payment_type,
-                                price_updated_at=quote.price_updated_at,
-                                fetched_at=quote.fetched_at,
-                                source="gasbuddy_web",
-                                membership_required=quote.membership_required,
-                                attribution=["GasBuddy", "Google Maps"],
-                                rating=matched.rating,
-                                review_count=matched.review_count,
-                                rating_source=matched.rating_source,
-                                details={"opening_status": matched.opening_status, "source_url": quote.source_url, "location_source_name": matched.name},
-                                **merged_opening(matched),
-                            )
-                        )
+                        stations.append(gasbuddy_station(quote, matched))
                     statuses.append(
                         SourceStatus(
                             source="gasbuddy_web",
@@ -377,7 +396,10 @@ class SmartService:
                     for quote in raw.prices:
                         located = self.google.locate_from_places(data, quote)
                         if located is None:
-                            unlocated.append(quote)
+                            if quote.location is not None:
+                                stations.append(gasbuddy_station(quote))
+                            else:
+                                unlocated.append(quote)
                             continue
                         place_id, point = located
                         place = next((p for p in data.get("places", []) if p.get("id") == place_id), {})
@@ -426,19 +448,25 @@ class SmartService:
                     )
                 )
             elif raw is not None:
-                unlocated = raw.prices
-                statuses.append(SourceStatus(source="gasbuddy_web", status="ok", quote_count=0))
-                warnings.append(
-                    "GasBuddy quotes have no verified coordinates; location and cost ranking unavailable."
-                )
+                located = [gasbuddy_station(quote) for quote in raw.prices if quote.location is not None]
+                unlocated = [quote for quote in raw.prices if quote.location is None]
+                stations.extend(located)
+                statuses.append(SourceStatus(source="gasbuddy_web", status="ok", quote_count=len(located)))
+                if unlocated:
+                    warnings.append(
+                        "Some GasBuddy quotes have no coordinates; their location and cost ranking are unavailable."
+                    )
             if self.waze is not None:
                 calls["waze_search"] = 0
                 try:
                     quotes, hit = acquired(acquisitions, "waze")
                     calls["waze_search"] += int(not hit)
                     calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
+                    gasbuddy_sites = [s for s in stations if (s.canonical_id or "").startswith("gasbuddy:")]
                     for quote in quotes:
                         matched = located_inventory_match(maps_inventory, quote)
+                        if matched is None and (site := site_match(gasbuddy_sites, quote)) is not None:
+                            quote = quote.model_copy(update={"canonical_id": site.canonical_id})
                         if matched is not None:
                             quote = quote.model_copy(
                                 update={

@@ -28,10 +28,15 @@ def distance_meters(a, b):
     return 6371000 * 2 * math.asin(math.sqrt(min(1, h)))
 
 
+def search_limit_meters(query) -> float:
+    """Soft boundary: a station just past the chosen radius stays eligible and detour cost ranks it."""
+    return min(50000, query.radius_meters + max(800, query.radius_meters * 0.2))
+
+
 def ineligible(station: Station, query: Search, now: datetime) -> str | None:
     if station.fuel_type != query.fuel_type:
         return "wrong_fuel_type"
-    if distance_meters(query.origin, station.location) > query.radius_meters:
+    if distance_meters(query.origin, station.location) > search_limit_meters(query):
         return "outside_search_radius"
     if station.membership_required and station.membership_required not in query.memberships:
         return "membership_required"

@@ -18,6 +18,7 @@ from gaswise.contracts.common import Point, Station
 from gaswise.contracts.search import Search
 from gaswise.contracts.sources import GasBuddyPrices, GasBuddyQuote, GasBuddySearch, gasbuddy_variables
 from gaswise.domain.ports import ProviderError
+from gaswise.domain.pricing.comparison import distance_meters
 
 # Exact public SearchPrices document observed from normal page loading.
 PRICE_QUERY = """query SearchPrices($brandId: Int, $cursor: String, $fuel: Int, $lat: Float, $lng: Float, $maxAge: Int, $search: String) {
@@ -88,6 +89,16 @@ PRICE_QUERY = """query SearchPrices($brandId: Int, $cursor: String, $fuel: Int, 
     __typename
   }
 }"""
+
+
+def station_point(metadata):
+    lat, lng = metadata.get("latitude"), metadata.get("longitude")
+    if not isinstance(lat, int | float) or not isinstance(lng, int | float) or (lat, lng) == (0, 0):
+        return None
+    try:
+        return Point(lat=lat, lng=lng)
+    except ValueError:
+        return None
 
 
 class GasBuddyWebProvider:
@@ -206,6 +217,7 @@ class GasBuddyWebProvider:
                                 city=address["locality"],
                                 region=address["region"],
                                 postal_code=address["postalCode"],
+                                location=station_point(metadata),
                                 price_per_gallon=Decimal(str(price["price"])),
                                 fuel_type=query.fuel_type,
                                 payment_type=method,
@@ -221,6 +233,10 @@ class GasBuddyWebProvider:
                         )
         except (ValueError, KeyError, TypeError, AttributeError, ArithmeticError):
             raise ProviderError("gasbuddy_web_schema_changed") from None
+        radius, origin = getattr(query, "radius_meters", None), getattr(query, "origin", None)
+        if radius is not None and origin is not None:
+            # Far stations from later nearest-first pages must not crowd out max_results.
+            quotes = [q for q in quotes if q.location is None or distance_meters(origin, q.location) <= radius]
         quotes.sort(key=lambda quote: (quote.price_per_gallon, quote.id))
         station_ids = list(dict.fromkeys(quote.id for quote in quotes))
         truncated = len(station_ids) > query.max_results
@@ -237,8 +253,12 @@ class GasBuddyWebProvider:
                 "Website protocol is undocumented and can change or reject access.",
                 "Premium does not verify numeric octane; source timestamps are not retrieval timestamps.",
                 "Prices sorted after filtering the complete fetched page; additional upstream pages may exist.",
-                "ZIP search uses upstream ZIP coverage, not a nearby radius; use city search to include surrounding stations.",
-            ],
+            ]
+            + (
+                ["ZIP search uses upstream ZIP coverage, not a nearby radius; use city search to include surrounding stations."]
+                if query.postal_code
+                else []
+            ),
         )
 
     async def stations(self, query: Search) -> list[Station]:

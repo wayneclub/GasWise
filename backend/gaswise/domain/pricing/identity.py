@@ -81,3 +81,66 @@ def located_inventory_match(inventory, quote):
         if name == other_name and key(address) == key(row.address) and distance_meters(row.location, quote.location) <= 25:
             matches.append(row)
     return matches[0] if len(matches) == 1 else None
+
+
+HOUSE_NUMBER = re.compile(r"^\s*(\d+[A-Z]?)\s+([^,]+)", re.IGNORECASE)
+ORDINALS = dict(zip(
+    "first second third fourth fifth sixth seventh eighth ninth tenth".split(),
+    "1st 2nd 3rd 4th 5th 6th 7th 8th 9th 10th".split(),
+    strict=True,
+))
+STREET_NOISE = set(
+    "n s e w ne nw se sw north south east west st street ave av avenue blvd boulevard rd road dr drive "
+    "way hwy highway ln lane pl place ct court pkwy parkway cir circle ter terrace trl trail sq".split()
+)
+
+
+def street_parts(address):
+    """House number plus distinctive street words; ignores direction, suffix and city spelling."""
+    match = HOUSE_NUMBER.match(address or "")
+    if match is None:
+        return None, set()
+    words = re.findall(r"[a-z0-9]+", match[2].lower())
+    return match[1].lower(), {ORDINALS.get(word, word) for word in words} - STREET_NOISE
+
+
+def site_match(inventory, quote, meters=60, site_meters=40):
+    """Crosswalk a source that carries its own coordinates.
+
+    Sources spell one forecourt differently ("1st"/"First", "W Sunset"/"Sunset",
+    postal vs administrative city) and Google may list a station and its store as
+    separate places. Require the same house number, a shared street word and
+    nearby coordinates; every candidate must sit on one site. Never match by brand alone.
+    A listing whose street line is not an address (a promotion slogan) needs the exact
+    station name within 25m instead.
+    """
+    strict = inventory_match(inventory, quote.address, quote.location)
+    if strict is not None or quote.location is None:
+        return strict
+    number, street = street_parts(quote.address)
+    if number is None:
+        name = re.sub(r"[^a-z0-9]", "", quote.name.lower())
+        rows = [
+            row for row in inventory
+            if re.sub(r"[^a-z0-9]", "", row.name.lower()) == name
+            and distance_meters(row.location, quote.location) <= 25
+        ]
+        return rows[0] if len(rows) == 1 else None
+    if not street:
+        return None
+    rows = []
+    for row in inventory:
+        other_number, other_street = street_parts(row.address)
+        if (
+            other_number == number
+            and street & other_street
+            and distance_meters(row.location, quote.location) <= meters
+        ):
+            rows.append(row)
+    if not rows or any(distance_meters(a.location, b.location) > site_meters for a in rows for b in rows):
+        return None
+    brand = next(iter(re.findall(r"[a-z0-9]+", quote.name.lower())), "")
+    return min(
+        rows,
+        key=lambda row: (brand not in row.name.lower(), distance_meters(row.location, quote.location)),
+    )

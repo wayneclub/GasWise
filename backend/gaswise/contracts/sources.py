@@ -78,6 +78,8 @@ class GasBuddySearch(Model):
     brand_id: int | None = Field(default=None, gt=0)
     max_price_age_minutes: int | None = Field(default=None, ge=1, le=10080)
     max_results: int = Field(default=5, ge=1, le=100)
+    # Coordinate searches come back nearest-first: stop paging once a whole page lies beyond this.
+    radius_meters: float | None = Field(default=None, ge=100, le=60000)
 
     @model_validator(mode="after")
     def location_required(self):
@@ -111,6 +113,8 @@ class GasBuddyQuote(Model):
     city: str
     region: str
     postal_code: str
+    # GasBuddy station coordinates when the listing includes them; never geocoded or guessed.
+    location: Point | None = None
     price_per_gallon: Decimal = Field(gt=0)
     currency: Literal["USD"] = "USD"
     unit: Literal["US_gallon"] = "US_gallon"

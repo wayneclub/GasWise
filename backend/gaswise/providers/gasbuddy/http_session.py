@@ -11,9 +11,11 @@ import time
 
 import httpx
 
+from gaswise.contracts.common import Point
 from gaswise.contracts.search import Search
 from gaswise.contracts.sources import gasbuddy_variables
 from gaswise.domain.ports import ProviderError
+from gaswise.domain.pricing.comparison import distance_meters
 from gaswise.providers.gasbuddy.web import PRICE_QUERY
 
 LANDING = "https://www.gasbuddy.com/"
@@ -21,8 +23,21 @@ GRAPHQL = "https://www.gasbuddy.com/graphql"
 # These station fields were verified via the same anonymous API on 2026-10-09.
 METADATA_QUERY = PRICE_QUERY.replace(
     "      results {\n        id",
-    "      results {\n        id\n        name\n        priceUnit\n        address { country line1 locality postalCode region }",
+    "      results {\n        id\n        name\n        latitude\n        longitude\n        priceUnit\n"
+    "        address { country line1 locality postalCode region }",
 )
+
+
+def beyond_radius(query, results):
+    """Coordinate listings are nearest-first; a page wholly outside the radius ends paging."""
+    origin, radius = getattr(query, "origin", None), getattr(query, "radius_meters", None)
+    if origin is None or radius is None or getattr(query, "search", None) or query.postal_code:
+        return False
+    try:
+        points = [Point(lat=row["latitude"], lng=row["longitude"]) for row in results]
+    except (KeyError, TypeError, ValueError):
+        return False
+    return bool(points) and min(distance_meters(origin, point) for point in points) > radius
 
 
 class GasBuddyHTTPSession:
@@ -97,7 +112,7 @@ class GasBuddyHTTPSession:
                         results.setdefault(str(station["id"]), station)
                     listing = page
                     cursor = (page.get("cursor") or {}).get("next")
-                    if not cursor or cursor in seen_cursors:
+                    if not cursor or cursor in seen_cursors or beyond_radius(query, page["results"]):
                         break
                     seen_cursors.add(cursor)
                     variables = {**variables, "cursor": cursor}

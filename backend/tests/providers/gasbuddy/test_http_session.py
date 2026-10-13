@@ -175,3 +175,38 @@ async def test_default_client_routes_only_through_configured_proxy():
         assert transport._pool._proxy_url.host == b"gluetun"
     finally:
         await client.aclose()
+
+
+async def test_coordinate_search_places_quotes_and_stops_paging_past_the_radius():
+    import json
+
+    from gaswise.contracts.sources import GasBuddySearch
+
+    pages = []
+    # Nearest-first listing: page 1 ~0.5 km and ~6 km away, page 2 wholly ~20 km away.
+    rows = [[("near", 34.0045), ("edge", 34.054)], [("far", 34.18)], [("never", 34.3)]]
+
+    def handler(request):
+        if request.method == "GET":
+            return httpx.Response(200, text='<script>window.gbcsrf = "fixture";</script>')
+        body = json.loads(request.content)
+        assert "latitude" in body["query"] and body["variables"]["lat"] == 34 and body["variables"]["search"] is None
+        pages.append(body["variables"].get("cursor"))
+        number = len(pages)
+        return httpx.Response(200, json={"data": {"locationBySearchTerm": {"stations": {
+            "cursor": {"next": f"p{number + 1}"},
+            "results": [{"id": name, "name": name.title(), "latitude": lat, "longitude": -118, "priceUnit": "dollars_per_gallon",
+                         "address": {"country": "US", "line1": f"{number} Main St", "locality": "Los Angeles", "region": "CA", "postalCode": "90021"},
+                         "prices": [{"fuelProduct": "premium_gas", "credit": {"price": 6, "postedTime": datetime.now(UTC).isoformat()}}]}
+                        for name, lat in rows[number - 1]],
+        }}}})
+
+    worker = GasBuddyHTTPSession(client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    provider = GasBuddyWebProvider(None, snapshot_loader=worker.snapshot, transport="http")
+    try:
+        result = await provider.prices(GasBuddySearch(origin=Point(lat=34, lng=-118), radius_meters=8000, max_pages=5, max_results=100))
+    finally:
+        await worker.close()
+    assert pages == [None, "p2"]
+    assert {q.id: q.location.lat for q in result.prices} == {"near": 34.0045, "edge": 34.054}
+    assert not any("ZIP search" in warning for warning in result.warnings)

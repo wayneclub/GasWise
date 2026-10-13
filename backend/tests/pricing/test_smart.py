@@ -624,3 +624,59 @@ async def test_unknown_payment_credit_estimate_preserves_raw_quote_and_does_not_
     cash = await service.rerank(SmartRerank(snapshot=first.snapshot, signature=first.signature, options=RankOptions(payment_type='cash', allow_unknown_payment=True, unknown_payment_credit_markup='0.20')))
     assert cash.ranking.results[0].station.comparison_price_per_gallon is None
     assert cash.ranking.results[0].purchase_cost == Decimal('63.90')
+
+
+class PlacedGasBuddy(RawGasBuddy):
+    """GasBuddy listing that carries the station's own coordinates."""
+
+    queries = []
+
+    async def prices(self, query):
+        self.queries.append(query)
+        data = await super().prices(query)
+        data.prices[0].location = Point(lat=34.0101, lng=-118)
+        data.prices[0].address = data.prices[0].address.replace("1516", "1600")
+        return data
+
+
+async def test_gasbuddy_searches_by_coordinates_and_keeps_unmatched_located_quotes():
+    gb = PlacedGasBuddy()
+    service = SmartService(b"test", "prices_only", gasbuddy=gb, maps_web=MapsInventory())
+    result = await service.search(SmartSearch(origin=Point(lat=34, lng=-118), postal_code="90015", radius_meters=1609))
+    query = gb.queries[-1]
+    # ZIP searches stop at the ZIP line; the coordinate search covers the radius plus its soft buffer.
+    assert query.postal_code is None and query.origin is not None
+    assert query.radius_meters >= 1609 + 800
+    placed = next(s for s in result.snapshot.stations if s.source == "gasbuddy_web")
+    assert placed.canonical_id == "gasbuddy:gb1"
+    assert placed.location == Point(lat=34.0101, lng=-118)
+    assert placed.attribution == ["GasBuddy"]
+    assert not result.snapshot.unlocated_gasbuddy
+
+
+async def test_waze_quote_joins_gasbuddy_placed_site_instead_of_a_second_card():
+    class SameSiteWaze(WazeQuotes):
+        async def stations(self, query):
+            rows = await super().stations(query)
+            return [rows[0].model_copy(update={"location": Point(lat=34.01011, lng=-118), "address": "1600 S Main St Los Angeles CA 90015"})]
+
+    service = SmartService(b"test", "prices_only", gasbuddy=PlacedGasBuddy(), waze=SameSiteWaze())
+    result = await service.search(SmartSearch(origin=Point(lat=34, lng=-118)))
+    assert {s.canonical_id for s in result.snapshot.stations} == {"gasbuddy:gb1"}
+
+
+def test_soft_radius_keeps_stations_just_past_the_boundary():
+    from gaswise.domain.pricing.comparison import ineligible, search_limit_meters
+
+    query = SmartSearch(origin=Point(lat=34, lng=-118), radius_meters=8047, fuel_type="premium", payment_type="cash_or_credit")
+    assert search_limit_meters(query) == pytest.approx(8047 * 1.2)
+    now = datetime.now(UTC)
+
+    def at(meters):
+        from gaswise.contracts.common import Station
+
+        return Station(id="s", name="S", location=Point(lat=34 + meters / 111195, lng=-118), fuel_type="premium",
+                       price_per_gallon="5", payment_type="credit", price_updated_at=now, fetched_at=now, source="fixture")
+
+    assert ineligible(at(9000), query, now) is None
+    assert ineligible(at(9800), query, now) == "outside_search_radius"
