@@ -14,7 +14,7 @@ it('shows three ranked choices for each category, with dated AAA regional contex
   const board = screen.getByRole('region',{name:'Top 3 stations'})
   expect(within(board).getAllByRole('listitem')).toHaveLength(3)
   expect(within(board).getByText(/Metro average · 2026-10-12/)).toBeInTheDocument()
-  const names = () => within(board).getAllByRole('listitem').map(li=>within(li).getByRole('button').textContent)
+  const names = () => within(board).getAllByRole('listitem').map(li=>within(li).getAllByRole('link')[0].textContent)
   expect(names()[0]).toBe(rows[0].station.name)
   fireEvent.click(within(board).getByRole('radio',{name:'Cost'}))
   expect(names()).toEqual([...rows].reverse().map(r=>r.station.name))

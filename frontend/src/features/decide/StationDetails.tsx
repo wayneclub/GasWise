@@ -1,3 +1,4 @@
+import {googleStationUrl,stationSourceUrl} from '../../lib/stationLinks'
 import { SourcePill, StationSources } from './SourcePill'
 import { StarIcon, ShieldCheckIcon } from '@phosphor-icons/react'
 import type { RankedStation, Station } from '../../api/types'
@@ -48,7 +49,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
   }
   return <Sheet open={open} onClose={onClose} title={t('station.details')}>
     <div className="flex flex-col gap-4">
-      <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-xl font-semibold">{station.name}</h3>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div><p className="mt-1 text-sm text-muted">{station.address}</p></div>
+      <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-xl font-semibold"><a href={googleStationUrl(station)} target="_blank" rel="noreferrer" className="underline decoration-line underline-offset-4">{station.name}</a></h3>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div><p className="mt-1 text-sm text-muted">{station.address}</p></div>
       <StationRating station={station} />
       {station.rating != null ? <p className="text-xs text-faint">{t('station.ratingNote', { source: station.rating_source ?? 'Google Maps' })}</p> : null}
       {station.top_tier_brand ? <div className="flex items-start gap-3 rounded-control bg-sunken p-3">
@@ -78,7 +79,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
       </dl> : null}
       {row?.price_comparison?.evidence.length ? <div className="rounded-control bg-sunken p-3 text-sm">
         {row.price_comparison.evidence.map((e, index) => <div key={`${e.source}:${e.payment_type}:${index}`} className="flex flex-wrap justify-between gap-2 border-b border-line py-2 last:border-0">
-          <span className="flex flex-wrap items-center gap-2"><SourcePill source={e.source}/>{t(e.payment_type === 'cash' ? 'prefs.cash' : e.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</span>
+          <span className="flex flex-wrap items-center gap-2"><SourcePill source={e.source} href={stationSourceUrl(e.source,e.provider_station_id,station)}/>{t(e.payment_type === 'cash' ? 'prefs.cash' : e.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</span>
           <span className="num">{perGallon(e.price_per_gallon)}</span>
           {!e.eligible && e.exclusion_reason ? <span className="w-full text-xs text-caution">{t(reasonKey(e.exclusion_reason))}</span> : null}
         </div>)}

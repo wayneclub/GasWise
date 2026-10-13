@@ -1,3 +1,4 @@
+import {googleStationUrl} from '../../lib/stationLinks'
 import { StationSources } from './SourcePill'
 import {useState} from 'react'
 import type {RankedStation, SmartResult, StrategyKey} from '../../api/types'
@@ -27,7 +28,7 @@ export function Leaderboards({result, primary, onStrategyChange, navApp, tripMod
         <span className={`num flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${index===0?'bg-accent-soft text-accent':'bg-sunken text-muted'}`}>{index+1}</span>
         <div className="min-w-0">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5"><button type="button" className="text-left text-sm font-semibold underline decoration-line underline-offset-4" onClick={()=>setSelected(row)}>{row.station.name}</button>{row.station.top_tier_brand ? <TopTierBadge brand={row.station.top_tier_brand}/> : null}</div>
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5"><a href={googleStationUrl(row.station)} target="_blank" rel="noreferrer" className="text-left text-sm font-semibold underline decoration-line underline-offset-4">{row.station.name}</a><button type="button" className="text-xs text-muted underline" onClick={()=>setSelected(row)}>{t('station.view')}</button>{row.station.top_tier_brand ? <TopTierBadge brand={row.station.top_tier_brand}/> : null}</div>
             <div className="num text-right text-sm"><p className="font-semibold">{current==='fastest_stop' ? minutes(row.extra_travel_minutes,t) : usd(current==='best_value' ? row.price_comparison?.comparable_cost_max ?? row.generalized_trip_cost : row.actual_fuel_cost)}</p><p className="mt-1 text-[11px] text-muted">{perGallon(comparisonPrice(row.station))}/gal</p></div>
           </div>
           {row.station.address ? <p className="mt-0.5 truncate text-[11px] text-muted" title={row.station.address}>{row.station.address.split(',')[0]}</p> : null}

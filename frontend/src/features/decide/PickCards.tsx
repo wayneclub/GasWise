@@ -1,3 +1,4 @@
+import {googleStationUrl} from '../../lib/stationLinks'
 import { StationSources } from './SourcePill'
 import { RegionalPrice } from './RegionalPrice'
 import {
@@ -173,7 +174,7 @@ export function HeroPick({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2"><h2 id="hero-pick" className="text-[26px] font-semibold leading-tight tracking-tight">
-        {station.name}
+        <a href={googleStationUrl(station)} target="_blank" rel="noreferrer" className="underline decoration-line underline-offset-4">{station.name}</a>
       </h2>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div>
       {station.address ? <p className="mt-0.5 truncate text-[14px] text-muted">{station.address}</p> : null}
       <div className="mt-2"><StationRating station={station} /></div>
