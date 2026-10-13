@@ -146,3 +146,29 @@ Enable only with appropriate source acquisition/storage permissions. Compare
 actual upstream HTTP calls per search, cache hits, rejection rates, original quote
 age and unique station coverage with an on-demand-only baseline before expanding.
 Provider rejection-rate improvements are not assumed from implementation alone.
+
+### Production pilot validation on 2026-10-13
+
+Release `b149f2dc34e322c195409ed06395a5d299755835` was deployed through the successful
+GitHub test/publish/deploy workflow. Both running GHCR containers were healthy and
+public HTTPS and the public search gateway returned 200. The pilot is enabled
+with 12 registered queries maximum, a 900-second minimum interval and 40 proactive
+HTTP calls per source per rolling 24 hours.
+
+Three repeated internal HTTP searches after the shared refresh completed returned
+21 quote records with four cache hits and zero upstream calls each, taking
+0.05–0.07 seconds. A public HTTPS search returned the same quote count, four cache
+hits and zero upstream calls. These timings are warm-cache internal samples, not
+cold search or production load-test measurements. GasBuddy supplied ten quote
+records and Waze eleven; Maps acquisition succeeded but supplied no Premium quote
+with details disabled. This is not complete city or pump-price verification.
+
+Existing production PostgreSQL tests with isolated temporary source rows verified
+shared background minute/daily caps and retained foreground capacity. The isolated
+runtime scheduler fixture verified the inherited background request marker and
+that source pressure suppresses acquisition, with zero provider HTTP calls.
+`check_hot_refresh_runtime.py` reproduces that test. No natural scheduled refresh
+had completed at the time of this check; long-term rejection-rate improvement is
+not established. The first smoke attempt rejected differing observations; the
+version-aware smoke now checks timestamp invariance within the same source-cache
+version, allowing changes when a source refresh has completed.

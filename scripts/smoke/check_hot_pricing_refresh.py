@@ -50,7 +50,8 @@ async def main():
             status.raise_for_status()
             assert status.json()["enabled"]
             searches = []
-            original_reports = None
+            previous_reports, previous_clocks = {}, {}
+            refreshed_sources = set()
             for gallons in (8, 9, 10):
                 started = perf_counter()
                 response = await client.post("/v1/smart/search", json={
@@ -63,17 +64,27 @@ async def main():
                 result = response.json()
                 reports = sorted((quote["source"], quote["id"], quote.get("price_updated_at"), quote["fetched_at"])
                                  for quote in result["snapshot"]["stations"])
-                if original_reports is None:
-                    original_reports = reports
-                elif reports != original_reports:
-                    raise AssertionError("Repeated search changed original observation timestamps")
+                clocks = result["snapshot"]["source_cache"]
+                for source in {report[0] for report in reports}:
+                    source_reports = [report for report in reports if report[0] == source]
+                    cache_source = {"gasbuddy_web": "gasbuddy", "google_maps_web": "maps"}.get(source, source)
+                    clock = clocks.get(cache_source, {}).get("checked_at")
+                    if source in previous_reports:
+                        if clock == previous_clocks[source]:
+                            assert source_reports == previous_reports[source], "Cache reuse changed observation timestamps"
+                        else:
+                            refreshed_sources.add(source)
+                    previous_reports[source], previous_clocks[source] = source_reports, clock
                 searches.append({"elapsed_seconds": round(perf_counter() - started, 2),
                                  "cache_hits": result["cache_hits"], "upstream_calls": result["upstream_calls"],
-                                 "quote_count": len(reports), "sources": result["snapshot"]["source_statuses"]})
+                                 "quote_count": len(reports), "sources": result["snapshot"]["source_statuses"],
+                                 "source_cache": clocks})
             status = await client.get("/v1/sources/refresh-status")
             status.raise_for_status()
             print(json.dumps({"budget_checks": budget, "searches": searches,
-                              "unchanged_observation_times": True, "refresh_status": status.json()}, indent=2))
+                              "unchanged_observation_times_on_same_cache_version": True,
+                              "sources_refreshed_between_searches": sorted(refreshed_sources),
+                              "refresh_status": status.json()}, indent=2))
     finally:
         await store.close()
 
