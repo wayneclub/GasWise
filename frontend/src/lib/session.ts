@@ -45,6 +45,7 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
     discovery_tiles: 20,
     gasbuddy_page_limit: 3,
     station_lookup_limit: 5,
+    maps_detail_limit: 5,
     trip_mode: prefs.tripMode,
     ...(prefs.tripMode === 'on_route' && prefs.destination ? { destination: prefs.destination } : {}),
     ...(prefs.vehicle
