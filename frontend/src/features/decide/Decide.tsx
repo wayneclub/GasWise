@@ -2,7 +2,7 @@ import { SourcePill } from './SourcePill'
 import { SharedCacheStatus } from './SharedCacheStatus'
 import { SearchContext } from './SearchContext'
 import { useEffect, useRef, useState } from 'react'
-import { Button, Segmented, Sheet, Stepper } from '../../components/ui'
+import { Segmented, Stepper } from '../../components/ui'
 import { type MessageKey, useI18n } from '../../i18n'
 import { age, gallons, sourceLabel } from '../../lib/format'
 import { type Prefs } from '../../lib/prefs'
@@ -48,7 +48,12 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
   return (
     <div className="mx-auto w-full max-w-md px-4 pb-12 lg:max-w-5xl">
       <SearchContext prefs={prefs} label={locationLabel} source={session.originKind} permission={session.locationPermission} locating={phase === 'locating'} searching={phase === 'searching'}
-        onLocate={() => void start({ userInitiated: true })} onChange={() => setLocationOpen(true)} onSettings={onSettings} onRefresh={() => void session.refresh()} />
+        onLocate={() => void start({ userInitiated: true })} onChange={() => setLocationOpen(open => !open)} onSettings={onSettings} onRefresh={() => void session.refresh()}>
+        {locationOpen || !session.origin ? <>
+          {error?.kind === 'location' && !['prompt', 'permission_pending'].includes(error.code) ? <div role="status" className="mb-3"><h3 className="text-sm font-semibold">{t(`error.${messageId(error)}.title` as MessageKey)}</h3><p className="mt-1 text-sm text-muted">{t(`error.${messageId(error)}.body` as MessageKey)}</p></div> : null}
+          <LocationSearch onChoose={(location, label) => { setLocationLabel(label); setLocationOpen(false); void start({ override: location }) }} />
+        </> : null}
+      </SearchContext>
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="flex flex-col gap-4">
@@ -94,11 +99,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
           {phase === 'searching' || phase === 'idle' || (phase === 'locating' && !result) ? (
             <PickSkeleton label={phase === 'searching' ? t('decide.searching') : t('decide.locating')} />
           ) : phase === 'error' && error?.kind === 'location' ? (
-            <section className="rounded-box border border-line bg-surface p-5">
-              {error.code !== 'prompt' ? <><h3 className="text-sm font-semibold">{t(`error.${messageId(error)}.title` as MessageKey)}</h3><p className="mb-4 mt-2 text-sm leading-relaxed text-muted">{t(`error.${messageId(error)}.body` as MessageKey)}</p></> : null}
-              <LocationSearch onChoose={(location, label) => { setLocationLabel(label); void start({ override: location }) }} />
-              {import.meta.env.DEV ? <Button variant="ghost" className="mt-3 h-8 text-xs" onClick={() => { setLocationLabel(t('decide.demoLocation')); void start({ override: DOWNTOWN_LA }) }}>{t('decide.demoLocation')}</Button> : null}
-            </section>
+            null
           ) : phase === 'error' && error ? (
             <ErrorState
               key={error.at}
@@ -154,9 +155,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
         ) : null}
       </div>
 
-      <Sheet open={locationOpen} title={t('location.change')} onClose={() => setLocationOpen(false)}>
-        <LocationSearch onChoose={(location, label) => { setLocationLabel(label); setLocationOpen(false); void start({ override: location }) }} />
-      </Sheet>
+
     </div>
   )
 }

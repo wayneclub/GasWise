@@ -80,7 +80,7 @@ export const es: Record<MessageKey, string> = {
 
   'location.label': 'Dirección, ciudad o código postal de EE. UU.',
   'location.placeholder': 'Ej. Pasadena, CA o 90015',
-  'location.hint': 'Busca con Google Maps y elige un resultado. El código postal usa el centro de la zona.',
+  'location.hint': 'Una coincidencia se aplica automáticamente; elige si hay varias. Los códigos postales de EE. UU. usan el centro de la zona.',
   'location.error': 'La búsqueda no está disponible. Reintenta o usa la ubicación del dispositivo.',
   'location.empty': 'No se encontró la ubicación. Añade ciudad o estado.',
   'location.change': 'Buscar ubicación',

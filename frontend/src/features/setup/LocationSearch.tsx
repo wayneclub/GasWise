@@ -21,7 +21,11 @@ export function LocationSearch({ onChoose }: { onChoose: (location: Origin, labe
     try {
       const result = await api.resolveLocation(text.trim(), abort.signal)
       if (abort.signal.aborted) return
-      setItems(result.candidates); setStatus(result.candidates.length ? 'idle' : 'empty')
+      setStatus(result.candidates.length ? 'idle' : 'empty')
+      if (result.candidates.length === 1) {
+        const [item] = result.candidates
+        onChoose(item.location, item.label)
+      } else setItems(result.candidates)
     } catch { if (!abort.signal.aborted) setStatus('error') }
   }}>
     <label className="text-sm font-medium" htmlFor={id}>{t('location.label')}</label>

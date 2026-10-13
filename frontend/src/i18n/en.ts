@@ -80,7 +80,7 @@ export const en = {
 
   'location.label': 'Address, city or US ZIP code',
   'location.placeholder': 'e.g. Pasadena, CA or 90015',
-  'location.hint': 'Search with Google Maps, then choose a result. ZIP codes use the area center.',
+  'location.hint': 'One matching location is applied automatically; choose when several match. US ZIP codes use the area center.',
   'location.error': 'Location search is unavailable. Retry or use device location.',
   'location.empty': 'No matching location. Add the city or state.',
   'location.change': 'Search location',

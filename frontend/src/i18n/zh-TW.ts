@@ -80,7 +80,7 @@ export const zhTW: Record<MessageKey, string> = {
 
   'location.label': '地址、城市或美國郵遞區號',
   'location.placeholder': '例如 Pasadena, CA 或 90015',
-  'location.hint': '由 Google Maps 查找後選擇位置。郵遞區號使用區域中心，並非你的精確位置。',
+  'location.hint': '唯一符合的位置會直接套用；多個結果才需要選擇。美國郵遞區號使用區域中心，並非你的精確位置。',
   'location.error': '目前無法查找位置，請重試或使用裝置定位。',
   'location.empty': '沒有找到位置，請補上城市或州名。',
   'location.change': '搜尋位置',

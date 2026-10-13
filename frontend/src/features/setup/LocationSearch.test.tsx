@@ -1,0 +1,36 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, expect, it, vi } from 'vitest'
+import { api } from '../../api/client'
+import { I18nProvider } from '../../i18n/I18nProvider'
+import { LocationSearch } from './LocationSearch'
+import type { Origin } from '../../lib/session'
+
+afterEach(() => vi.restoreAllMocks())
+
+function search(onChoose: (location: Origin, label: string) => void, query = '90015') {
+  render(<I18nProvider locale="en"><LocationSearch onChoose={onChoose} /></I18nProvider>)
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: query } })
+  fireEvent.click(screen.getByRole('button', { name: 'Find' }))
+}
+
+it('applies the only resolved US location with one search submission', async () => {
+  const candidate = { id: 'ny', label: 'New York, NY 10001, USA', location: { lat: 40.75, lng: -73.99 } }
+  vi.spyOn(api, 'resolveLocation').mockResolvedValue({ candidates: [candidate], source: 'google_maps_web' })
+  const choose = vi.fn()
+  search(choose, '10001')
+  await waitFor(() => expect(choose).toHaveBeenCalledExactlyOnceWith(candidate.location, candidate.label))
+})
+
+it('requires an explicit choice when the provider returns multiple locations', async () => {
+  const candidates = [
+    { id: 'il', label: 'Springfield, IL, USA', location: { lat: 39.8, lng: -89.65 } },
+    { id: 'ma', label: 'Springfield, MA, USA', location: { lat: 42.1, lng: -72.59 } },
+  ]
+  vi.spyOn(api, 'resolveLocation').mockResolvedValue({ candidates, source: 'google_maps_web' })
+  const choose = vi.fn()
+  search(choose, 'Springfield')
+  const option = await screen.findByRole('button', { name: candidates[1].label })
+  expect(choose).not.toHaveBeenCalled()
+  fireEvent.click(option)
+  expect(choose).toHaveBeenCalledExactlyOnceWith(candidates[1].location, candidates[1].label)
+})
