@@ -5,7 +5,8 @@ import json
 import httpx
 
 from gaswise.app.settings import Settings
-from gaswise.providers.google.maps_web import DETAIL_FEATURES, MapsWebProvider, records
+from gaswise.contracts.sources import MapsWebSearch
+from gaswise.providers.google.maps_web import MapsWebProvider
 from gaswise.providers.storage.postgres import PostgresPricingCache
 from gaswise.providers.storage.request_budget import RequestBudget
 
@@ -17,14 +18,13 @@ async def check():
         async with httpx.AsyncClient(timeout=15) as client:
             provider = MapsWebProvider(client, settings.maps_web_session_file)
             provider.request_budget = RequestBudget(store, {"maps": settings.maps_requests_per_minute})
-            # Known public canary with a browser-verified full fuel table; this is a
-            # session health check, never a substitute for user-region price acquisition.
-            pb = "!1m6!1s0x80c2c7cfc7d0f519:0x62b7eab7cbae63d2!3m1!1d1000!4m2!3d34.0336356!4d-118.2622718!3m1!1e3" + DETAIL_FEATURES
-            data = await provider.get_data("/maps/preview/place", {
-                "authuser": "0", "hl": "en", "gl": "us", "q": "Chevron", "pb": pb,
-            }, provider.headers())
-            target = [row for row in records(data) if row[78] == "ChIJGfXQx8_HwoAR0mOuy7fqt2I"]
-            healthy = bool(target and target[0][86])
+            # One search, zero detail calls. The website's minimal place endpoint can
+            # omit field 86 even while region search supplies authenticated full tables.
+            data = await provider.prices(MapsWebSearch(
+                origin={"lat": 34.0390107, "lng": -118.2672801}, radius_meters=9000,
+                fuel_type="premium", detail_limit=0,
+            ))
+            healthy = any(quote.fuel_type != "regular" for quote in data.all_prices)
             print(json.dumps({"status": "full_fuel_table_available" if healthy else "session_or_canary_needs_check"}))
             return 0 if healthy else 2
     finally:

@@ -34,9 +34,9 @@ identity so an in-flight old request cannot overwrite a new browser login.
 Subsequent source requests read the renewed file. Source budgets and cooldowns
 apply to these requests as usual; this does not trigger polling of idle areas.
 
-The thread automation checks the production session every six hours with
-`check_google_session.py`, one budgeted Google detail request for a known public
-fuel-table canary. HTTP 200 or a Regular summary alone does not prove session
+The thread automation checks the production session hourly with
+`check_google_session.py`, one budgeted Google search request in a known public
+canary region, with zero detail requests. HTTP 200 or a Regular summary alone does not prove session
 health. A missing table could also reflect a changed canary; treat it as a
 signal to investigate, not proof of account logout.
 
