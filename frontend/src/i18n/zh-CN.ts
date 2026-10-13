@@ -1,6 +1,7 @@
 import type { MessageKey } from './en'
 
 export const zhCN: Record<MessageKey, string> = {
+  "fill.timeValue": "时间成本",
   "board.title": "加油站前三名",
   "board.money": "最省钱",
   "board.balanced": "最划算",

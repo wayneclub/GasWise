@@ -1,6 +1,7 @@
 import type { MessageKey } from './en'
 
 export const es: Record<MessageKey, string> = {
+  "fill.timeValue": "Valor del tiempo",
   "board.title": "Las 3 mejores estaciones",
   "board.money": "Precio",
   "board.balanced": "Equilibrio",

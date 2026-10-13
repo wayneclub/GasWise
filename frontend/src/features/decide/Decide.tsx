@@ -51,44 +51,27 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="flex flex-col gap-4">
-          <section aria-label={t('decide.yourFill')} className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3"><h2 className="text-sm font-semibold">{t('decide.yourFill')}</h2>
+          <section aria-label={t('decide.yourFill')} className="rounded-box border border-line bg-surface p-4">
+            <div className="grid grid-cols-1 items-center min-[420px]:grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-3">
+              <h2 className="text-sm font-semibold">{t('decide.yourFill')}</h2>
+              <Stepper label={t('ui.gallons')} value={prefs.gallons} min={1} max={30} step={1} format={(value)=>gallons(value,t)} onChange={(gallons)=>update({gallons})} className="w-full" />
+              <span className="text-xs font-medium text-muted">{t('prefs.payment')}</span>
               <Segmented label={t('prefs.payment')} value={prefs.payment} options={[{value:'cash_or_credit',label:t('prefs.all')},{value:'cash',label:t('prefs.cash')},{value:'credit',label:t('prefs.card')}]} onChange={(payment) => update({payment})} />
+              <span className="text-xs font-medium text-muted">{t('prefs.priority')}</span>
+              <Segmented label={t('prefs.priority')} value={prefs.preference} options={[{value:'money',label:t('prefs.moneyShort')},{value:'balanced',label:t('prefs.balanced')},{value:'time',label:t('prefs.timeShort')}]} onChange={(preference)=>update({preference})} />
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <Stepper
-                label={t('ui.gallons')}
-                value={prefs.gallons}
-                min={1}
-                max={30}
-                step={1}
-                format={(value) => gallons(value, t)}
-                onChange={(value) => update({ gallons: value })}
-              />
-              <div className="min-w-[14rem] flex-1">
-                <Segmented
-                  label={t('prefs.priority')}
-                  value={prefs.preference}
-                  options={[
-                    { value: 'money', label: t('prefs.moneyShort') },
-                    { value: 'balanced', label: t('prefs.balanced') },
-                    { value: 'time', label: t('prefs.timeShort') },
-                  ]}
-                  onChange={(preference) => update({ preference })}
-                />
+            <details className="mt-4 border-t border-line pt-3 text-xs text-muted">
+              <summary className="cursor-pointer py-1">{t('board.radius')} {prefs.searchRadiusMiles ?? 5} mi · {t('fill.timeValue')} ${prefs.timeValuePerHour ?? 15}/h</summary>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1.5">{t('board.radius')}
+                  <select aria-label={t('board.radius')} value={prefs.searchRadiusMiles ?? 5} onChange={e=>update({searchRadiusMiles:Number(e.target.value)})} className="h-11 min-w-0 rounded-control border border-line bg-surface px-3 text-ink">
+                    {[2,5,10,20].map(m=><option key={m} value={m}>{m} mi</option>)}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1.5">{t('board.value')}
+                  <input type="number" min={0} max={500} step={5} aria-label={t('board.value')} value={prefs.timeValuePerHour ?? 15} onChange={e=>update({timeValuePerHour:Math.min(500,Math.max(0,Number(e.target.value)))})} className="num h-11 min-w-0 rounded-control border border-line bg-surface px-3 text-ink" />
+                </label>
               </div>
-            </div>
-            <details className="text-xs text-muted"><summary className="cursor-pointer py-1">{t('board.radius')} {prefs.searchRadiusMiles ?? 5} mi · ${prefs.timeValuePerHour ?? 15}/h</summary>
-            <div className="grid grid-cols-2 gap-3 text-xs text-muted">
-              <label className="flex flex-col gap-1.5">{t('board.radius')}
-                <select aria-label={t('board.radius')} value={prefs.searchRadiusMiles ?? 5} onChange={e => update({searchRadiusMiles:Number(e.target.value)})} className="h-9 rounded-control border border-line bg-surface px-3 text-ink">
-                  {[2,5,10,20].map(m => <option key={m} value={m}>{m} mi</option>)}
-                </select>
-              </label>
-              <label className="flex flex-col gap-1.5">{t('board.value')}
-                <input type="number" min={0} max={500} step={5} aria-label={t('board.value')} value={prefs.timeValuePerHour ?? 15} onChange={e => update({timeValuePerHour:Math.min(500,Math.max(0,Number(e.target.value)))})} className="num h-9 min-w-0 rounded-control border border-line bg-surface px-3 text-ink" />
-              </label>
-            </div>
             </details>
           </section>
 

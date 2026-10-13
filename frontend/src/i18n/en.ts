@@ -1,5 +1,6 @@
 /** Source of truth for UI copy. Other locales must provide every key (type-checked). */
 export const en = {
+  "fill.timeValue": "Time value",
   "board.title": "Top 3 stations",
   "board.money": "Cost",
   "board.balanced": "Balance",

@@ -102,7 +102,9 @@ export function Stepper({
   step,
   format,
   onChange,
+  className = '',
 }: {
+  className?: string
   label: string
   value: number
   min: number
@@ -115,11 +117,11 @@ export function Stepper({
   const clamp = (next: number) => Math.min(max, Math.max(min, Math.round(next * 10) / 10))
   const button = `grid size-9 place-items-center rounded-[11px] text-ink hover:bg-sunken ${press} ${focus}`
   return (
-    <div className="inline-flex items-center gap-1 self-start rounded-control border border-line bg-surface p-1" role="group" aria-label={label}>
+    <div className={`inline-flex h-11 items-center gap-1 self-start rounded-control border border-line bg-surface p-1 ${className}`} role="group" aria-label={label}>
       <button type="button" className={button} aria-label={t('ui.decrease', { label })} disabled={value <= min} onClick={() => onChange(clamp(value - step))}>
         <MinusIcon size={16} weight="bold" />
       </button>
-      <output className="num min-w-[4.5rem] text-center text-[15px] font-medium" aria-live="polite">
+      <output className="num flex-1 min-w-[4.5rem] text-center text-[15px] font-medium" aria-live="polite">
         {format(value)}
       </output>
       <button type="button" className={button} aria-label={t('ui.increase', { label })} disabled={value >= max} onClick={() => onChange(clamp(value + step))}>
