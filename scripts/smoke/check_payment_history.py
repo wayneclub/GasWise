@@ -31,6 +31,8 @@ async def main():
                 rows.append(cash.model_copy(update={'payment_type':method, 'price_per_gallon':Decimal(price),
                                                    'price_updated_at':stamp}).model_dump(mode='json'))
         store = PostgresPricingCache(connection)
+        # An unlocated initial quote must acquire metadata when inventory maps it later.
+        await store._observe(connection, [{**r, "location": None, "canonical_id": None} for r in rows])
         await store._observe(connection, rows)
         history = await store.payment_history([key], ['premium'])
         assert len(history[key]) == 6

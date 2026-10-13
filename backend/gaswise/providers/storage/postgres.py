@@ -176,7 +176,8 @@ class PostgresPricingCache:
                 ON CONFLICT (observation_key) DO UPDATE
                 SET first_seen_at=LEAST(quote_history.first_seen_at, EXCLUDED.first_seen_at),
                     last_seen_at=GREATEST(quote_history.last_seen_at, EXCLUDED.last_seen_at),
-                    canonical_id=COALESCE(EXCLUDED.canonical_id,quote_history.canonical_id)
+                    canonical_id=COALESCE(EXCLUDED.canonical_id,quote_history.canonical_id),
+                    attributes=quote_history.attributes || jsonb_strip_nulls(EXCLUDED.attributes)
             """, history)
 
     async def mappings(self, source, ids):
