@@ -124,7 +124,7 @@ function Comparison({ pick, row, trade, tripMode }: { pick: Pick; row: RankedSta
     <div className="mt-3">
       <div className="grid grid-cols-2 gap-2">
         <div className={tile}>
-          <span className={label}><CurrencyCircleDollarIcon size={13} />{t('compare.money')}</span>
+          <span className={label}><CurrencyCircleDollarIcon size={13} />{t('pick.estimatedSavings')}</span>
           {money ? <>
             <span className={`num text-[17px] font-semibold ${money.good ? 'text-accent' : 'text-ink'}`}>{money.text}</span>
             <span className="truncate text-[12px] text-muted">{money.caption}</span>
@@ -188,19 +188,19 @@ export function HeroPick({
 
 
       {row?.route.source === "straight_line_estimate" ? <p className="mt-2 text-xs text-caution">{t("coverage.estimated_route")}</p> : null}
-      <div className="mt-5 flex items-end justify-between gap-4">
-        <p>
-          <span className="num text-[44px] font-semibold leading-none tracking-[-0.03em]">{pick.keys[0]==='fastest_stop' ? minutes(pick.recommendation.extra_travel_minutes,t) : usd(pick.keys[0]==='best_value' && row ? row.price_comparison?.comparable_cost_max ?? row.generalized_trip_cost : pick.recommendation.actual_fuel_cost)}</span>
-          <span className="ml-1 text-[14px] text-muted">{pick.keys[0]==='best_value' ? t('board.score') : pick.keys[0]==='fastest_stop' ? t(tripMode==='round_trip'?'cost.trip':'cost.tripRoute') : t('cost.total')}</span>
+      <div className="mt-5">
+        <p className="flex flex-wrap items-baseline gap-1.5">
+          <span className="num text-[44px] font-semibold leading-none tracking-[-0.03em]">{perGallon(station.price_per_gallon)}</span>
+          <span className="text-[16px] text-muted">{t('pick.perGallon')}</span>
         </p>
         {pick.recommendation.actual_fuel_cost ? (
-          <p className="text-right text-[13px] leading-tight text-muted">
-            {t('pick.totalFor', { gallons: gal(gallons, t) })} · {perGallon(comparisonPrice(station))}/gal
-            <span className="num mt-1 block text-[17px] font-medium text-ink">{usd(pick.recommendation.actual_fuel_cost)}</span>
-          </p>
+          <div className="mt-3 border-t border-line pt-3 text-[13px] leading-relaxed text-muted">
+            <p>{t('pick.totalFor', { gallons: gal(gallons, t) })} <span className="num font-medium">{usd(pick.recommendation.actual_fuel_cost)}</span></p>
+            {pick.keys[0] === 'best_value' && row ? <p>{t('pick.estimatedWithTime')} <span className="num">{usd(row.price_comparison?.comparable_cost_max ?? row.generalized_trip_cost)}</span></p> : null}
+            <p className="mt-1 text-xs text-faint">{t('pick.fillEstimate')}</p>
+          </div>
         ) : null}
       </div>
-
 
       <Comparison pick={pick} row={row} trade={trade} tripMode={tripMode} />
 
