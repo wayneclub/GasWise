@@ -26,11 +26,13 @@ METADATA_QUERY = PRICE_QUERY.replace(
 
 
 class GasBuddyHTTPSession:
-    def __init__(self, session_seconds=600, client_factory=None):
+    def __init__(self, session_seconds=600, client_factory=None, proxy=None):
         self.session_seconds = session_seconds
         self._factory = client_factory or (
             lambda: httpx.AsyncClient(
                 http2=True,
+                proxy=proxy,
+                trust_env=False,
                 follow_redirects=True,
                 timeout=httpx.Timeout(15),
                 headers={"User-Agent": "GasWise/0.5 anonymous fuel comparison"},

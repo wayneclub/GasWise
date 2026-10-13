@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     gasbuddy_web_transport: Literal["http", "browser", "session_http"] = "http"
     gasbuddy_http_client: Literal["httpx", "curl", "curl_chrome"] = "httpx"
     gasbuddy_session_seconds: int = Field(default=600, ge=60, le=1800)
+    # One fixed operator-owned US egress (GasBuddy serves US traffic only); never user supplied.
+    gasbuddy_http_proxy: HttpUrl | None = None
     gasbuddy_browser_channel: Literal["chrome", "chromium"] = "chrome"
     gasbuddy_browser_headless: bool = True
     gasbuddy_browser_timeout_seconds: int = Field(default=35, ge=5, le=45)

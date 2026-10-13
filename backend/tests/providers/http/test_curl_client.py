@@ -68,3 +68,14 @@ async def test_shared_transport_rejects_unauthorized_destination_before_network(
     client = CurlHTTPClient(allowed_hosts={"www.gasbuddy.com"})
     with pytest.raises(ValueError, match="curl_host_not_allowed"):
         await client.post("https://example.com/", json={"query": "fixture"})
+
+
+def test_fixed_proxy_reaches_curl_session_without_trusting_environment():
+    options = {}
+    CurlHTTPClient(
+        allowed_hosts={"www.gasbuddy.com"},
+        session_factory=lambda **kw: options.update(kw),
+        proxy="http://gluetun:8888",
+    ).new_session()
+    assert options["proxy"] == "http://gluetun:8888"
+    assert options["trust_env"] is False

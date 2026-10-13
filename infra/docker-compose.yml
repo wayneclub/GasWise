@@ -4,9 +4,12 @@ services:
     image: ghcr.io/wayneclub/gaswise-backend:${GASWISE_IMAGE_TAG:?Set an immutable image tag}
     container_name: gaswise-backend
     env_file: .env
+    environment:
+      # GasBuddy rejects non-US traffic; only its client leaves through the US gluetun egress.
+      GASWISE_GASBUDDY_HTTP_PROXY: http://gluetun:8888
     volumes:
       - ./credentials:/run/gaswise
-    networks: [app]
+    networks: [app, vpn_egress]
     read_only: true
     tmpfs: [/tmp]
     restart: unless-stopped
@@ -31,4 +34,7 @@ services:
 networks:
   app: {}
   npm_network:
+    external: true
+  vpn_egress:
+    name: docker_default
     external: true

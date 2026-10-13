@@ -88,19 +88,21 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             else None
         )
         if settings.gasbuddy_web_transport == "http":
+            proxy = str(settings.gasbuddy_http_proxy) if settings.gasbuddy_http_proxy else None
             factory = (
                 (
                     lambda: CurlHTTPClient(
                         allowed_hosts={"www.gasbuddy.com"},
                         preserve_cookies=True,
                         profile="chrome" if settings.gasbuddy_http_client == "curl_chrome" else None,
+                        proxy=proxy,
                     )
                 )
                 if settings.gasbuddy_http_client != "httpx"
                 else None
             )
             price_worker = GasBuddyHTTPSession(
-                session_seconds=settings.gasbuddy_session_seconds, client_factory=factory
+                session_seconds=settings.gasbuddy_session_seconds, client_factory=factory, proxy=proxy
             )
         else:
             # Browser transports are optional. The default HTTP service never imports Playwright.

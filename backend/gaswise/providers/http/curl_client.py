@@ -11,8 +11,11 @@ from curl_cffi.requests import AsyncSession, RequestsError
 
 
 class CurlHTTPClient:
-    def __init__(self, *, allowed_hosts, session_factory=AsyncSession, profile=None, preserve_cookies=False):
+    def __init__(
+        self, *, allowed_hosts, session_factory=AsyncSession, profile=None, preserve_cookies=False, proxy=None
+    ):
         self.allowed_hosts = frozenset(allowed_hosts)
+        self.proxy = proxy
         self.session_factory = session_factory
         self.profile = profile
         self.preserve_cookies = preserve_cookies
@@ -22,6 +25,8 @@ class CurlHTTPClient:
         options = dict(trust_env=False, timeout=15, allow_redirects=False, max_clients=1)
         if self.profile:
             options["impersonate"] = self.profile
+        if self.proxy:
+            options["proxy"] = self.proxy
         return self.session_factory(**options)
 
     async def get(self, url, **kwargs):

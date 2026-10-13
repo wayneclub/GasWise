@@ -163,3 +163,15 @@ async def test_cursor_pages_recover_later_station_with_its_own_metadata():
         assert {q.name for q in result.prices} == {"First station", "Later station"}
     finally:
         await worker.close()
+
+
+async def test_default_client_routes_only_through_configured_proxy():
+    worker = GasBuddyHTTPSession(proxy="http://gluetun:8888")
+    client = worker._factory()
+    try:
+        assert client._trust_env is False
+        [(pattern, transport)] = client._mounts.items()
+        assert pattern.pattern == "all://"
+        assert transport._pool._proxy_url.host == b"gluetun"
+    finally:
+        await client.aclose()
