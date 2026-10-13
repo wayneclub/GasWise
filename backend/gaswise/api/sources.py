@@ -37,6 +37,16 @@ async def price_sources(*, services: Services = Depends(get_services)):
     }
 
 
+@router.get("/v1/sources/refresh-status", dependencies=[Depends(authorize)])
+async def hot_refresh_status(
+    *, services: Services = Depends(get_services),
+    operations: OperationRunner = Depends(get_operations),
+):
+    if services.smart.hot_refresh is None:
+        return {"enabled": False}
+    return await operations.run(services.smart.hot_refresh.status)
+
+
 @router.get("/v1/sources/aaa/averages", response_model=AAASnapshot, dependencies=[Depends(authorize)])
 async def aaa_averages(
     state: str = Query(default="CA", min_length=2, max_length=2),

@@ -40,6 +40,11 @@ CREATE TABLE IF NOT EXISTS gaswise.source_limits (
     failure_count integer NOT NULL DEFAULT 0
 );
 
+-- Background counters are shared across workers and reserve foreground capacity.
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS background_count integer NOT NULL DEFAULT 0;
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS background_day_start timestamptz NOT NULL DEFAULT now();
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS background_day_count integer NOT NULL DEFAULT 0;
+
 -- Analytical observations are independent of the short-lived serving cache.
 CREATE TABLE IF NOT EXISTS gaswise.quote_history (
     observation_key text PRIMARY KEY,

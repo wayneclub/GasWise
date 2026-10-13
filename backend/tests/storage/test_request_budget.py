@@ -38,3 +38,24 @@ async def test_budget_database_failure_does_not_allow_unbudgeted_network_access(
             raise RuntimeError("private connection error")
     with pytest.raises(ProviderError,match="shared_pricing_budget_unavailable"):
         await RequestBudget(Broken(),{"waze":20}).before("waze")
+
+
+async def test_background_http_requests_use_separate_shared_allowance():
+    from gaswise.domain.pricing.shared_cache import background_acquisition
+
+    class Store:
+        calls = []
+
+        async def consume(self, source, limit, **options):
+            self.calls.append((source, limit, options))
+
+    store = Store()
+    budget = RequestBudget(store, {"maps": 60}, background_daily_limit=40)
+    token = background_acquisition.set(True)
+    try:
+        await budget.before("maps")
+    finally:
+        background_acquisition.reset(token)
+    await budget.before("maps")
+    assert store.calls == [("maps", 60, {"background": True, "background_daily_limit": 40}),
+                           ("maps", 60, {})]

@@ -213,7 +213,17 @@ class PostgresPricingCache:
         """, source, ids)
         return {row["station_id"]: row["canonical_id"] for row in rows}
 
-    async def consume(self, source, limit):
+    async def budget_state(self, source):
+        row = await self.pool.fetchrow("""
+            SELECT CASE WHEN now()-window_start < interval '60 seconds' THEN request_count ELSE 0 END AS used,
+                   CASE WHEN now()-window_start < interval '60 seconds' THEN background_count ELSE 0 END AS background_used,
+                   CASE WHEN now()-background_day_start < interval '24 hours' THEN background_day_count ELSE 0 END AS background_day_used,
+                   GREATEST(0, EXTRACT(EPOCH FROM blocked_until-now())) AS blocked_seconds
+            FROM gaswise.source_limits WHERE source=$1
+        """, source)
+        return dict(row) if row else {"used": 0, "background_used": 0, "background_day_used": 0, "blocked_seconds": 0}
+
+    async def consume(self, source, limit, *, background=False, background_daily_limit=100):
         async with self.pool.acquire() as connection, connection.transaction():
             await connection.execute("INSERT INTO gaswise.source_limits(source) VALUES($1) ON CONFLICT DO NOTHING", source)
             row = await connection.fetchrow("""
@@ -222,12 +232,21 @@ class PostgresPricingCache:
             if row["blocked_until"] and row["blocked_until"] > row["clock"]:
                 raise ProviderError(f"{source}_rate_limited")
             reset = (row["clock"] - row["window_start"]).total_seconds() >= 60
-            if not reset and row["request_count"] >= limit:
+            day_reset = (row["clock"] - row["background_day_start"]).total_seconds() >= 86400
+            used = 0 if reset else row["request_count"]
+            bg_used = 0 if reset else row["background_count"]
+            day_used = 0 if day_reset else row["background_day_count"]
+            if used >= limit:
                 raise ProviderError(f"{source}_request_budget_exhausted")
+            if background and (used >= max(1, limit // 2) or bg_used >= max(1, limit // 5)
+                               or day_used >= background_daily_limit):
+                raise ProviderError(f"{source}_background_budget_exhausted")
             await connection.execute("""
-                UPDATE gaswise.source_limits SET request_count=$2,
-                window_start=CASE WHEN $3 THEN now() ELSE window_start END WHERE source=$1
-            """, source, 1 if reset else row["request_count"] + 1, reset)
+                UPDATE gaswise.source_limits SET request_count=$2, background_count=$4,
+                window_start=CASE WHEN $3 THEN now() ELSE window_start END,
+                background_day_count=$5,
+                background_day_start=CASE WHEN $6 THEN now() ELSE background_day_start END WHERE source=$1
+            """, source, used + 1, reset, bg_used + int(background), day_used + int(background), day_reset)
 
     async def cooldown(self, source, retry_seconds=None):
         await self.pool.execute("""

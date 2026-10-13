@@ -141,6 +141,9 @@ class SharedPricingCache:
             # Log no URLs, DSNs, cookies, payloads or caller coordinates.
             logger.warning("Shared public pricing refresh deferred for %s", source)
 
+    async def budget_state(self, source):
+        return await self._db("budget_state", source)
+
     async def observe(self, stations):
         await self._db("observe", stations)
 

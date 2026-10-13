@@ -648,6 +648,27 @@
         ]
       }
     },
+    "/v1/sources/refresh-status": {
+      "get": {
+        "summary": "Hot Refresh Status",
+        "operationId": "hot_refresh_status_v1_sources_refresh_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/sources/aaa/averages": {
       "get": {
         "summary": "Aaa Averages",

@@ -32,6 +32,7 @@ from gaswise.providers.vehicles.specifications import SpecificationProvider
 from gaswise.providers.vehicles.vin import VinProvider
 from gaswise.providers.waze.provider import WazeProvider
 from gaswise.services.parts.fitment import PartsProvider
+from gaswise.services.pricing.hot_refresh import HotQueryRefresh
 from gaswise.services.pricing.search import SearchService
 from gaswise.services.pricing.shared_cache import SharedPricingCache
 from gaswise.services.pricing.smart import SmartService
@@ -222,7 +223,7 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
                 "gasbuddy": settings.gasbuddy_requests_per_minute,
                 "maps": settings.maps_requests_per_minute,
                 "waze": settings.waze_requests_per_minute,
-            })
+            }, background_daily_limit=settings.hot_pricing_refresh_daily_requests)
             price_worker.request_budget = budget
             maps_web.request_budget = budget
             if website_router is not None:
@@ -250,6 +251,24 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             shared_cache=shared_cache,
         )
         stack.push_async_callback(smart.close)
+        if settings.hot_pricing_refresh_enabled:
+            if shared_cache is None or settings.mode == "demo":
+                raise ValueError("Hot pricing refresh requires shared PostgreSQL cache and live mode")
+            smart.hot_refresh = HotQueryRefresh(
+                shared_cache,
+                max_queries=settings.hot_pricing_refresh_max_queries,
+                interval=max(settings.hot_pricing_refresh_interval_seconds, settings.pricing_cache_fresh_seconds),
+                limits=budget.limits,
+                daily_limit=settings.hot_pricing_refresh_daily_requests,
+            )
+            hot_task = asyncio.create_task(smart.hot_refresh.run())
+
+            async def stop_hot_refresh():
+                hot_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await hot_task
+
+            stack.push_async_callback(stop_hot_refresh)
         yield Services(
             vehicles=vehicles,
             vin=vin,

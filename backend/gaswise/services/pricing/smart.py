@@ -139,6 +139,7 @@ class SmartService:
         self.top_tier = top_tier
         self.aaa = aaa
         self.shared_cache = shared_cache
+        self.hot_refresh = None
         self.inflight = {}
         self.waiters = {}
         self.source_slots = {"gasbuddy": asyncio.Semaphore(1), "maps": asyncio.Semaphore(6), "waze": asyncio.Semaphore(2), "aaa": asyncio.Semaphore(1)}
@@ -162,6 +163,8 @@ class SmartService:
             async def shared_operation():
                 async with source_slot:
                     return await operation()
+            if self.hot_refresh is not None:
+                self.hot_refresh.observe(source, key, shared_operation)
             return await self.shared_cache.get(source, key, shared_operation)
         # Keys are digests: exact origin/query identity without plaintext coordinates.
         key = "cache:" + hashlib.sha256(key.encode()).hexdigest()

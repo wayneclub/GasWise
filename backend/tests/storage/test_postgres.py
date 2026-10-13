@@ -103,3 +103,35 @@ async def test_existing_postgres_shares_results_refresh_leases_budget_and_cleans
         await store.pool.execute("DELETE FROM gaswise.source_limits WHERE source=$1",source)
         await other.close()
         await store.close()
+
+
+async def test_existing_postgres_background_caps_are_shared_and_foreground_keeps_capacity():
+    store = await PostgresPricingCache.connect(os.environ["GASWISE_TEST_DATABASE_URL"])
+    other = await PostgresPricingCache.connect(os.environ["GASWISE_TEST_DATABASE_URL"])
+    source = "integration_background_" + uuid.uuid4().hex
+    try:
+        async def consume(cache):
+            try:
+                await cache.consume(source, 10, background=True, background_daily_limit=3)
+                return True
+            except ProviderError:
+                return False
+
+        results = await asyncio.gather(*(consume(store if i % 2 else other) for i in range(6)))
+        assert sum(results) == 2  # 20% of the shared minute budget.
+        assert (await other.budget_state(source))["background_used"] == 2
+        await other.consume(source, 10)  # Foreground is still allowed.
+        await store.pool.execute("UPDATE gaswise.source_limits SET window_start=now()-interval '61 seconds' WHERE source=$1", source)
+        assert await consume(other)
+        assert not await consume(store)  # Daily cap survives minute reset.
+        assert (await store.budget_state(source))["background_day_used"] == 3
+        await store.pool.execute("UPDATE gaswise.source_limits SET background_day_start=now()-interval '25 hours',window_start=now()-interval '61 seconds' WHERE source=$1", source)
+        assert await consume(other)
+        # Foreground pressure independently prevents a background request.
+        await store.pool.execute("UPDATE gaswise.source_limits SET request_count=5,background_count=0 WHERE source=$1", source)
+        assert not await consume(store)
+        await other.consume(source, 10)
+    finally:
+        await store.pool.execute("DELETE FROM gaswise.source_limits WHERE source=$1", source)
+        await other.close()
+        await store.close()

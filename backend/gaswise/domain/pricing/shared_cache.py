@@ -1,8 +1,11 @@
 """Public pricing-cache port. No visitor identities, routes or session credentials."""
 
+from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
+
+background_acquisition = ContextVar("background_pricing_acquisition", default=False)
 
 
 @dataclass

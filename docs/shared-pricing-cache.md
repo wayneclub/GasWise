@@ -88,3 +88,61 @@ coverage proof. Never print a connection URL, password or environment dump.
 
 The integrated personal-search, price-refresh and route-reuse design is in
 [search-cache-architecture.md](search-cache-architecture.md).
+
+## Adaptive hot-query refresh pilot
+
+`GASWISE_HOT_PRICING_REFRESH_ENABLED=true` enables the pilot (default false).
+Live mode and shared PostgreSQL are required. It reuses SmartService public query
+keys and coverage, without city-wide scans or personal routes. Restart clears its
+process-local demand registry; database counters and cooldowns survive restart.
+
+The bounded registry holds 20 recent queries by default
+(`GASWISE_HOT_PRICING_REFRESH_MAX_QUERIES`, 1–100). At least three foreground uses
+within the last hour qualify. Uses expire individually after an hour; idle queries
+are removed. Counts include browser refresh actions and are not unique user counts.
+When full, new queries stay on-demand until slots expire.
+
+The scheduler checks once per minute and considers at most one acquisition per
+tick. With the default minimum interval of 900 seconds:
+
+| Foreground uses in the last hour | Update interval |
+| --- | --- |
+| 0–2 | No proactive acquisition |
+| 3–5 | 60 minutes |
+| 6–11 | 30 minutes |
+| 12 or more | 15 minutes |
+
+`GASWISE_HOT_PRICING_REFRESH_INTERVAL_SECONDS` sets the minimum (900–3600), never
+shorter than cache freshness. Normal demand pacing is capped at one hour. A
+provider failure doubles the source pause, up to six hours; successful background
+loads reduce the failure level one step at a time. Cached reads do not establish
+provider recovery. Known shared provider cooldown also suppresses scheduled loads.
+
+All background actual HTTP calls inherit a context marker, including pagination,
+bootstrap and details. Database row locks enforce across workers:
+
+- Existing total per-source minute caps remain unchanged.
+- Background stops when total minute usage reaches half the source cap.
+- Background has its own cap of 20% of the minute allowance (minimum one call).
+- Background has a rolling 24-hour cap per source, default 100 HTTP calls
+  (`GASWISE_HOT_PRICING_REFRESH_DAILY_REQUESTS`, 1–1000).
+
+These hard caps apply at each outgoing request, not just at query start; a query
+can stop partway through pagination. Background acquisition uses identical cache
+leases and source slots, and cannot bypass freshness or rejection cooldowns.
+Counters include attempts before network I/O, so network failure does not restore
+spent allowance. Foreground retains the original total budget. Demand-driven
+stale revalidation remains part of foreground acquisition; the extra allowance
+applies to proactive scheduled work.
+
+Authenticated `GET /v1/sources/refresh-status` reports demand registry sizes,
+source usage, cooldowns, backoff and completed loads. It exposes no query keys,
+coordinates, cookies or visitor identifiers, and is not exposed by the public
+frontend gateway. `scripts/smoke/check_hot_pricing_refresh.py` runs inside the
+backend, tests isolated database budget counters, and makes three bounded public
+DTLA searches without routes, details or targeted lookups.
+
+Enable only with appropriate source acquisition/storage permissions. Compare
+actual upstream HTTP calls per search, cache hits, rejection rates, original quote
+age and unique station coverage with an on-demand-only baseline before expanding.
+Provider rejection-rate improvements are not assumed from implementation alone.

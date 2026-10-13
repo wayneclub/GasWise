@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 
 from gaswise.domain.ports import ProviderError
+from gaswise.domain.pricing.shared_cache import background_acquisition
 
 
 def retry_seconds(headers):
@@ -20,12 +21,17 @@ def retry_seconds(headers):
 
 
 class RequestBudget:
-    def __init__(self, store, limits):
+    def __init__(self, store, limits, background_daily_limit=100):
         self.store, self.limits = store, limits
+        self.background_daily_limit = background_daily_limit
 
     async def before(self, source):
         try:
-            await self.store.consume(source, self.limits[source])
+            if background_acquisition.get():
+                await self.store.consume(source, self.limits[source], background=True,
+                                         background_daily_limit=self.background_daily_limit)
+            else:
+                await self.store.consume(source, self.limits[source])
         except ProviderError:
             raise
         except Exception:
