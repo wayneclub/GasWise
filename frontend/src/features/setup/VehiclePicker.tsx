@@ -1,5 +1,5 @@
 import { CarIcon, CheckCircleIcon } from '@phosphor-icons/react'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { ApiError, api } from '../../api/client'
 import type { FuelType, VehicleResolution, VehicleResolveRequest, VinResolution } from '../../api/types'
 import { IdentityFields } from './IdentityFields'
@@ -35,6 +35,8 @@ export function VehiclePicker({
   onChange: (vehicle: SavedVehicle | null) => void
 }) {
   const { t } = useI18n()
+  const active = useRef(true)
+  useEffect(() => { active.current = true; return () => { active.current = false } }, [])
   const { identity: sharedIdentity, setIdentity } = useVehicleIdentity()
   const [editing, setEditing] = useState(false)
   const [mode, setMode] = useState<'model' | 'vin' | 'plate'>('model')
@@ -50,6 +52,7 @@ export function VehiclePicker({
     setMessage(null)
     try {
       const resolution = await api.resolveVehicle(body)
+      if (!active.current) return
       if (resolution.status === 'resolved' && resolution.vehicle) {
         const v = resolution.vehicle
         onChange({
@@ -69,9 +72,10 @@ export function VehiclePicker({
         setMessage(t('vehicle.noMatch'))
       }
     } catch (error) {
+      if (!active.current) return
       setMessage(t(error instanceof ApiError && error.status === 0 ? 'vehicle.offline' : 'vehicle.unavailable'))
     } finally {
-      setPending(false)
+      if (active.current) setPending(false)
     }
   }
 
@@ -82,6 +86,7 @@ export function VehiclePicker({
       const response = identity.kind === 'vin'
         ? await api.resolveVin({ ...identity.value, ...(vehicleId ? { vehicle_id: vehicleId } : {}) })
         : (await api.resolvePlate({ ...identity.value, ...(vehicleId ? { vehicle_id: vehicleId } : {}) })).resolution
+      if (!active.current) return
       if (response.status === 'resolved' && response.vehicle) {
         const v = response.vehicle
         onChange({ id: v.id, label: `${v.year} ${v.make} ${v.model}`, fuelType: gradeOf({ status: 'resolved', vehicle: v, fuel_recommendation: response.fuel_recommendation } as VehicleResolution), combinedMpg: v.combined_mpg })
@@ -91,8 +96,9 @@ export function VehiclePicker({
       } else if (response.choices?.length) setIdentityQuestion(response)
       else { if (response.decoded) { setIdentity(identity); onChange(null) } setMessage(t('vehicle.partial')) }
     } catch (error) {
+      if (!active.current) return
       setMessage(t(error instanceof ApiError && error.status === 0 ? 'vehicle.offline' : 'vehicle.unavailable'))
-    } finally { setPending(false) }
+    } finally { if (active.current) setPending(false) }
   }
 
   function submit(event: FormEvent) {

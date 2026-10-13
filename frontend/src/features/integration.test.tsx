@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
 import { I18nProvider } from '../i18n/I18nProvider'
@@ -332,4 +332,21 @@ it('shows both recovered payment quotes and closure evidence without a navigatio
   expect(screen.getByText('Cash $6.17')).toBeInTheDocument()
   expect(screen.getByText('Card $6.37')).toBeInTheDocument()
   expect(screen.queryByRole('link',{name:/Navigate/})).not.toBeInTheDocument()
+})
+
+
+it('does not restore a cleared identity from an outstanding vehicle lookup', async () => {
+  let finish!: (value: Response) => void
+  const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => new Promise<Response>(resolve => { finish = resolve }))
+  const save = vi.fn()
+  const update = vi.fn()
+  const picker = render(english(<VehicleIdentityContext.Provider value={{identity:null,setIdentity:save}}><VehiclePicker vehicle={null} onChange={update} /></VehicleIdentityContext.Provider>))
+  fireEvent.click(screen.getByRole('radio', { name: 'VIN' }))
+  fireEvent.change(screen.getByRole('textbox', { name: '17-character VIN' }), { target: { value: vin } })
+  fireEvent.click(screen.getByRole('button', { name: 'Find' }))
+  expect(fetch).toHaveBeenCalledTimes(1)
+  picker.unmount() // Clearing private data remounts the picker and discards its draft.
+  await act(async () => { finish(new Response(JSON.stringify({status:'resolved',vehicle:car}))) })
+  expect(save).not.toHaveBeenCalled()
+  expect(update).not.toHaveBeenCalled()
 })
