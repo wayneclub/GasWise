@@ -10,7 +10,7 @@ permissions:
   contents: read
 concurrency:
   group: docker-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -106,3 +106,36 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://gaswise.wayneclub.com
+    concurrency:
+      group: gaswise-production
+      cancel-in-progress: false
+    steps:
+      - name: Configure dedicated SSH identity
+        env:
+          DEPLOY_KEY: ${{ secrets.GASWISE_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.GASWISE_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/gaswise_deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Deploy immutable release
+        env:
+          DEPLOY_HOST: ${{ secrets.GASWISE_DEPLOY_HOST }}
+        run: |
+          ssh -i ~/.ssh/gaswise_deploy -o IdentitiesOnly=yes -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes -o ConnectTimeout=15 \
+            "ubuntu@$DEPLOY_HOST" "sha-$GITHUB_SHA"
+      - name: Verify public HTTPS
+        run: curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 3 https://gaswise.wayneclub.com/ -o /dev/null
+      - name: Remove temporary SSH identity
+        if: always()
+        run: rm -f ~/.ssh/gaswise_deploy

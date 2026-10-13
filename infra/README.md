@@ -40,8 +40,17 @@ Copy the current `docker-compose.yml` before deployment and run `deploy.sh` as
 
 The script pulls both images, waits for health, checks and reloads NPM, and records
 the release. A failed upgrade rolls back to the previous healthy image tag.
-GitHub Actions automatically builds and publishes images; this server script
-performs deployment explicitly.
+GitHub Actions now deploys automatically after tests and both image publications
+succeed on `main` (push or manual workflow dispatch). PRs and tags do not deploy.
+The production environment records each deployment. Main runs and production
+deployments are serialized without cancelling an in-progress deployment.
+
+Repository secrets: `GASWISE_DEPLOY_HOST`, `GASWISE_DEPLOY_KNOWN_HOSTS` (pinned
+server host key), and `GASWISE_DEPLOY_SSH_KEY` (dedicated private key). The server's
+authorized key uses `restrict,command="/home/ubuntu/apps/gaswise/actions-deploy.sh"`.
+This wrapper accepts only immutable image tags and holds a server deployment lock.
+It cannot run arbitrary SSH commands or open a shell. Private provider credentials
+stay on the server. Copy wrapper/script updates separately using the admin identity.
 
 ## Proxy and DNS
 
