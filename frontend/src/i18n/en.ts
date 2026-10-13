@@ -40,6 +40,11 @@ export const en = {
   "reward.explanation": "Pay at pump {purchase} · estimated cashback −{reward}; not an immediate discount.",
   "reward.total": "Estimated cost after cashback",
   'prefs.languageAuto': 'Browser default',
+  'payment.evidence': 'Payment evidence: {kind} · {level}',
+  'payment.inferredCash': 'Possible cash price',
+  'payment.inferredCredit': 'Possible card price',
+  'payment.samePrice': 'Cash/card same price',
+  'payment.unresolved': 'Payment unresolved',
   'payment.estimated': 'Estimated',
   'payment.estimate': 'Card estimate +{adjustment}/gal · source {raw}',
 

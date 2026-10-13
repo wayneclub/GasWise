@@ -40,6 +40,11 @@ export const zhTW: Record<MessageKey, string> = {
   "reward.explanation": "油泵付款 {purchase} · 預估回饋 −{reward}，不是現場折扣。",
   "reward.total": "預估回饋後總成本",
   'prefs.languageAuto': '跟隨瀏覽器語言',
+  'payment.evidence': '付款判定：{kind} · {level}',
+  'payment.inferredCash': '可能現金價',
+  'payment.inferredCredit': '可能刷卡價',
+  'payment.samePrice': '現金／刷卡同價',
+  'payment.unresolved': '付款條件未判定',
   'payment.estimated': '估算',
   'payment.estimate': '刷卡估算 +{adjustment}/加侖 · 原報價 {raw}',
 

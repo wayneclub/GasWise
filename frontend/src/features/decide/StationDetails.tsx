@@ -64,6 +64,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
         {station.price_per_gallon ? <>
           {station.comparison_price_per_gallon && station.price_per_gallon ? <p className="mt-2 text-xs text-caution">{perGallon(comparisonPrice({ ...station, price_per_gallon: station.price_per_gallon }))} · {t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
           <p className="mt-2 text-sm">{t('station.payment')}: {t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</p>
+          {station.payment_type === 'unknown' && station.payment_inference ? <p className="mt-1 text-xs text-caution">{t('payment.evidence', {kind: t(station.payment_inference.classification === 'cash' ? 'payment.inferredCash' : station.payment_inference.classification === 'credit' ? 'payment.inferredCredit' : station.payment_inference.classification === 'same_price' ? 'payment.samePrice' : 'payment.unresolved'), level: t(station.payment_inference.confidence === 'medium' ? 'confidence.medium' : 'confidence.low')})}</p> : null}
           {station.membership_required ? <p className="mt-1 text-sm text-caution">{t('station.member', { name: station.membership_required })}</p> : null}
           <div className="mt-2"><StationSources source={station.source ?? ''} row={row}/></div>
           <p className="text-xs text-muted">{t('age.updated', { age: age(station.price_updated_at, t) })}</p>

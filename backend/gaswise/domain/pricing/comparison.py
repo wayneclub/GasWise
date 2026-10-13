@@ -5,9 +5,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
+from pydantic import ValidationError
+
 from gaswise.contracts.common import Station
 from gaswise.contracts.search import PriceEvidence, Search
 from gaswise.domain.pricing.grades import octane_floor, station_octane_inference
+from gaswise.domain.pricing.payment import infer_payment, source_family
 
 
 @dataclass
@@ -108,9 +111,24 @@ def net_purchase_price(station: Station, query: Search) -> Decimal:
 
 def select_prices(stations: list[Station], query: Search, now: datetime):
     groups: dict[str, list[Station]] = {}
+    inference_query = query.model_copy(update={"payment_type": "cash_or_credit", "allow_unknown_payment": True})
+    qualified = [s for s in stations if ineligible(s, inference_query, now) is None
+                 and closed_reason([s], query) is None and top_tier_reason([s], query) is None]
     for station in stations:
         inference = station_octane_inference(station, query)
+        history = []
+        for row in station.payment_history:
+            try:
+                history.append(Station.model_validate(row))
+            except (ValidationError, TypeError, ValueError):
+                continue
+        payment = infer_payment(station, qualified, history, now)
+        station = station.model_copy(update={"payment_inference": payment})
         adjustment = query.unknown_payment_credit_markup if station.payment_type == "unknown" and query.payment_type != "cash" else Decimal(0)
+        if station.payment_type == "unknown" and query.payment_type != "cash" and payment["classification"] == "cash" and payment["spread"] is not None:
+            adjustment = Decimal(payment["spread"])
+            station = station.model_copy(update={"comparison_price_min": station.price_per_gallon, "comparison_price_max": station.price_per_gallon + Decimal(payment["spread_max"])})
+            payment["basis"] = "station_history_estimate"
         station = station.model_copy(update={"octane_inference": inference, "comparison_price_per_gallon": station.price_per_gallon + adjustment if adjustment else None, "payment_price_adjustment": adjustment})
         # Explicit crosswalk only. Nearby stations or similar brand names are not sufficient identity evidence.
         key = station.canonical_id or f"{station.source}:{station.id}"
@@ -152,12 +170,15 @@ def select_prices(stations: list[Station], query: Search, now: datetime):
             )
         # Use known timestamps first. A user source preference breaks ties within 30 minutes
         # of the newest quote, never outweighs an arbitrarily newer observation.
-        dated = [r for r in eligible if r.price_updated_at is not None]
+        known = [r for r in eligible if r.payment_type != "unknown" and r.price_updated_at is not None and (now-r.price_updated_at).total_seconds() <= 86400]
+        # Select purchase conditions before timestamp cohorts: unknown never silently replaces a valid card quote.
+        candidates = known or eligible
+        dated = [r for r in candidates if r.price_updated_at is not None]
         newest = max((r.price_updated_at for r in dated), default=None)
         cohort = (
             [r for r in dated if (newest - r.price_updated_at).total_seconds() <= 1800]
             if newest
-            else eligible
+            else candidates
         )
 
         def preference(record):
@@ -179,6 +200,15 @@ def select_prices(stations: list[Station], query: Search, now: datetime):
             min(cohort, key=lambda r: (r.payment_type == "unknown", net_purchase_price(r, query), preference(r)))
             if query.payment_type == "cash_or_credit" else min(cohort, key=preference)
         )
+        # New unknown reports are change evidence, not a verified replacement card price.
+        changed = [r for r in eligible if r.payment_type == "unknown" and r.price_updated_at is not None
+                   and winner.price_updated_at is not None
+                   and (r.price_updated_at-winner.price_updated_at).total_seconds() > 1800
+                   and abs(comparison_price(r)-comparison_price(winner)) > Decimal("0.05")]
+        if changed:
+            bounds = [comparison_price(winner), *[comparison_price(r) for r in changed]]
+            winner = winner.model_copy(update={"comparison_price_min": min(bounds), "comparison_price_max": max(bounds)})
+            warnings.append(f"Possible price change at {key}; newer unknown-payment quotes disagree with the selected payment quote. Recommendation range includes the conflict, not a verified card price.")
         metadata = {}
         peers = [r for r in records if distance_meters(winner.location, r.location) <= 75]
         for peer in peers:
@@ -207,7 +237,7 @@ def select_prices(stations: list[Station], query: Search, now: datetime):
                     item.exclusion_reason or "purchase_conditions_not_comparable"
                 )
         reason = (
-            "Known-time quotes within 30 minutes of newest; verified payment then user source preference breaks ties."
+            "Valid same-day payment-specific quotes first; otherwise latest usable evidence. Timestamp cohort and user preference break ties."
             if newest
             else "Source time unknown; payment specificity then user preference breaks ties."
         )
@@ -239,7 +269,10 @@ def comparable_prices(selection: Selection, now: datetime | None = None):
         ):
             per_source[quote.source] = quote
     prices = [comparison_price(s) for s in per_source.values()]
+    lower = min([*prices, selection.station.comparison_price_min or min(prices)])
+    upper = max([*prices, selection.station.comparison_price_max or max(prices)])
     spread = max(prices) - min(prices)
+    count = len({source_family(q.source) for q in per_source.values()})
     known_conditions = selection.station.payment_type != "unknown"
     known_times = all(s.price_updated_at for s in per_source.values())
     fresh_times = known_times and (
@@ -247,13 +280,13 @@ def comparable_prices(selection: Selection, now: datetime | None = None):
         or all(0 <= (now - s.price_updated_at).total_seconds() <= 3600 for s in per_source.values())
     )
     agreement = (
-        "single_source" if len(prices) < 2 else "consistent" if spread <= Decimal("0.05") else "conflicting"
+        "conflicting" if spread > Decimal("0.05") else "single_source" if count < 2 else "consistent"
     )
     quality = (
         "disputed"
-        if agreement == "conflicting"
+        if agreement == "conflicting" or upper-lower > Decimal("0.05")
         else "corroborated"
-        if len(prices) >= 2 and known_conditions and fresh_times
+        if count >= 2 and known_conditions and fresh_times and lower == min(prices) and upper == max(prices)
         else "limited"
     )
-    return min(prices), max(prices), spread, agreement, quality, len(prices)
+    return lower, upper, spread, agreement, quality, count

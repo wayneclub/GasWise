@@ -40,6 +40,11 @@ export const zhCN: Record<MessageKey, string> = {
   "reward.explanation": "油泵付款 {purchase} · 预计返现 −{reward}，不是现场折扣。",
   "reward.total": "预计返现后总成本",
   'prefs.languageAuto': '跟随浏览器语言',
+  'payment.evidence': '付款判定：{kind} · {level}',
+  'payment.inferredCash': '可能现金价',
+  'payment.inferredCredit': '可能刷卡价',
+  'payment.samePrice': '现金／刷卡同价',
+  'payment.unresolved': '付款条件未判定',
   'payment.estimated': '估算',
   'payment.estimate': '刷卡估算 +{adjustment}/加仑 · 原报价 {raw}',
 

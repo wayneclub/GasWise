@@ -5877,6 +5877,57 @@
             ],
             "title": "Octane Inference"
           },
+          "payment_inference": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Inference"
+          },
+          "payment_history": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "maxItems": 240,
+            "title": "Payment History"
+          },
+          "comparison_price_min": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Price Min"
+          },
+          "comparison_price_max": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Price Max"
+          },
           "name": {
             "type": "string",
             "maxLength": 200,
@@ -6148,6 +6199,49 @@
               }
             ],
             "title": "Octane Inference"
+          },
+          "payment_inference": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Inference"
+          },
+          "payment_history": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "maxItems": 240,
+            "title": "Payment History"
+          },
+          "comparison_price_min": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Price Min"
+          },
+          "comparison_price_max": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison Price Max"
           },
           "name": {
             "type": "string",

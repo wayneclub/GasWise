@@ -28,6 +28,10 @@ class Station(Model):
     rating_source: str | None = None
     details: dict[str, Any] = Field(default_factory=dict)
     octane_inference: dict[str, Any] | None = None
+    payment_inference: dict[str, Any] | None = None
+    payment_history: list[dict[str, Any]] = Field(default_factory=list, max_length=240)
+    comparison_price_min: Decimal | None = Field(default=None, gt=0)
+    comparison_price_max: Decimal | None = Field(default=None, gt=0)
     name: str = Field(min_length=1, max_length=200)
     location: Point
     address: str | None = None

@@ -37,6 +37,11 @@ class SharedPricingCache:
         self.tasks = set()
         self.closed = False
 
+    async def payment_history(self, stations):
+        if not hasattr(self.store, "payment_history"):
+            return {}
+        return await self._db("payment_history", list({s.canonical_id for s in stations if s.canonical_id}), list({s.fuel_type for s in stations}))
+
     async def _db(self, method, *args):
         try:
             return await getattr(self.store, method)(*args)

@@ -259,3 +259,15 @@ it('starts one new transaction when a server restart invalidates the held snapsh
   expect(fetch.mock.calls.map(([url]) => url)).toEqual(['/api/v1/smart/search', '/api/v1/smart/refresh-prices', '/api/v1/smart/search'])
   expect(JSON.parse(String(fetch.mock.calls[2][1]?.body)).force_refresh).toBe(false)
 })
+
+it('shows payment inference separately from raw unknown payment in station details', async () => {
+  const data = structuredClone(demo)
+  const station = data.ranking!.recommendations!.best_value!.station!
+  station.payment_type = 'unknown'
+  station.payment_inference = { classification: 'cash', confidence: 'medium', basis: 'contemporaneous_price_match' }
+  vi.spyOn(globalThis, 'fetch').mockImplementation(() => respond(data))
+  render(<App />)
+  await screen.findByRole('heading', { name: station.name, level: 2 })
+  fireEvent.click(screen.getByRole('button', { name: 'View details' }))
+  expect(screen.getByRole('dialog', { name: 'Station details' }).textContent).toContain('Possible cash price')
+})

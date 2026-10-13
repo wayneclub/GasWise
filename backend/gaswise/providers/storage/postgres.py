@@ -32,6 +32,38 @@ class PostgresPricingCache:
             raise RuntimeError("Shared pricing PostgreSQL startup failed; check private configuration") from None
         return cls(pool)
 
+    async def payment_history(self, keys, fuel_types):
+        rows = await self.pool.fetch("""
+            SELECT * FROM (
+                SELECT canonical_id, source, station_id, fuel_type, payment_type,
+                       price_per_gallon, reported_at, first_seen_at, attributes,
+                       row_number() OVER (PARTITION BY canonical_id, fuel_type, payment_type,
+                           purchase_condition ORDER BY reported_at DESC) AS position
+                FROM gaswise.quote_history
+                WHERE canonical_id = ANY($1::text[]) AND fuel_type = ANY($2::text[]) AND reported_at >= now() - interval '30 days'
+                  AND payment_type IN ('cash','credit')
+            ) history WHERE position <= 30
+            ORDER BY canonical_id, position, reported_at DESC
+        """, keys, fuel_types)
+        result = {}
+        for row in rows:
+            try:
+                attrs = json.loads(row["attributes"])
+                if not isinstance(attrs, dict):
+                    continue
+            except (ValueError, TypeError):
+                continue
+            if not attrs.get("location") or not attrs.get("name"):
+                continue
+            quote = {**attrs, "id": row["station_id"], "canonical_id": row["canonical_id"],
+                     "source": row["source"], "fuel_type": row["fuel_type"], "payment_type": row["payment_type"],
+                     "price_per_gallon": str(row["price_per_gallon"]), "price_updated_at": row["reported_at"].isoformat(),
+                     "fetched_at": row["first_seen_at"].isoformat()}
+            bucket = result.setdefault(row["canonical_id"], [])
+            if len(bucket) < 240:
+                bucket.append(quote)
+        return result
+
     async def close(self):
         await self.pool.close()
 
@@ -87,7 +119,7 @@ class PostgresPricingCache:
 
     async def _observe(self, connection, quotes):
         now = datetime.now(UTC)
-        stations, prices = [], []
+        stations, prices, history = [], [], []
         for quote in quotes:
             source = quote.get("source", "unknown")
             station_id = str(quote["id"])
@@ -101,6 +133,18 @@ class PostgresPricingCache:
             condition = hashlib.sha256(json.dumps({k: quote.get(k) for k in (
                 "membership_required", "octane", "currency", "unit"
             )}, sort_keys=True).encode()).hexdigest()
+            # Exclude retrieval time from identity: duplicate searches must not
+            # look like new price reports. Unknown-time observations get daily buckets.
+            identity = (source, station_id, quote["fuel_type"], quote["payment_type"],
+                        condition, str(quote["price_per_gallon"]),
+                        reported.isoformat() if reported else fetched.date().isoformat())
+            observation = hashlib.sha256(json.dumps(identity).encode()).hexdigest()
+            attributes = {k: quote.get(k) for k in (
+                "name", "address", "location", "membership_required", "octane", "currency", "unit"
+            )}
+            history.append((observation, source, station_id, quote.get("canonical_id"),
+                            quote["fuel_type"], quote["payment_type"], condition,
+                            quote["price_per_gallon"], reported, fetched, json.dumps(attributes)))
             prices.append((source, station_id, quote["fuel_type"], quote["payment_type"], condition,
                            json.dumps(quote), reported, fetched, expires))
         # Pipeline batches instead of making two network round-trips per quote.
@@ -124,6 +168,16 @@ class PostgresPricingCache:
                     quotes.reported_at IS NULL OR EXCLUDED.reported_at >= quotes.reported_at
                     OR quotes.expires_at <= now())
             """, prices)
+
+        if history:
+            await connection.executemany("""
+                INSERT INTO gaswise.quote_history
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8::numeric,$9,$10,$10,$11::jsonb)
+                ON CONFLICT (observation_key) DO UPDATE
+                SET first_seen_at=LEAST(quote_history.first_seen_at, EXCLUDED.first_seen_at),
+                    last_seen_at=GREATEST(quote_history.last_seen_at, EXCLUDED.last_seen_at),
+                    canonical_id=COALESCE(EXCLUDED.canonical_id,quote_history.canonical_id)
+            """, history)
 
     async def mappings(self, source, ids):
         rows = await self.pool.fetch("""
@@ -159,6 +213,7 @@ class PostgresPricingCache:
         """, source, float(retry_seconds or 120))
 
     async def cleanup(self):
+        await self.pool.execute("DELETE FROM gaswise.quote_history WHERE last_seen_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.quotes WHERE expires_at <= now()")
         await self.pool.execute("""
             DELETE FROM gaswise.query_cache WHERE

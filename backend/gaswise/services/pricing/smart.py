@@ -541,6 +541,12 @@ class SmartService:
             stations = tag_top_tier(stations, self.top_tier.index)
         if self.shared_cache is not None:
             await self.shared_cache.observe(stations)
+            if hasattr(self.shared_cache, "payment_history"):
+                try:
+                    history = await self.shared_cache.payment_history(stations)
+                    stations = [s.model_copy(update={"payment_history": history.get(s.canonical_id, [])}) for s in stations]
+                except ProviderError:
+                    warnings.append("Station payment history unavailable; no history estimate used.")
         now = datetime.now(UTC)
         snapshot = SmartSnapshot(
             query=search,

@@ -116,7 +116,7 @@ export function assess(result: SmartResult, primary: StrategyKey = 'best_value')
   if (comparison?.quality === 'disputed') {
     lower('low')
     reasons.push({ key: 'reason.disputed' })
-  } else if (comparison && comparison.eligible_source_count >= 2) {
+  } else if (comparison?.quality === 'corroborated' && comparison.eligible_source_count >= 2) {
     positives.push({ key: 'good.corroborated', vars: { count: comparison.eligible_source_count } })
   }
   if (usable < 3) {

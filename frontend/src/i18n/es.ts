@@ -40,6 +40,11 @@ export const es: Record<MessageKey, string> = {
   "reward.explanation": "Pago en surtidor {purchase} · reembolso estimado −{reward}; no es un descuento inmediato.",
   "reward.total": "Costo estimado tras reembolso",
   'prefs.languageAuto': 'Idioma del navegador',
+  'payment.evidence': 'Evidencia de pago: {kind} · {level}',
+  'payment.inferredCash': 'Posible precio en efectivo',
+  'payment.inferredCredit': 'Posible precio con tarjeta',
+  'payment.samePrice': 'Mismo precio',
+  'payment.unresolved': 'Pago sin determinar',
   'payment.estimated': 'Estimado',
   'payment.estimate': 'Tarjeta estimada +{adjustment}/gal · fuente {raw}',
 

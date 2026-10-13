@@ -2353,6 +2353,18 @@ export interface components {
             octane_inference?: {
                 [key: string]: unknown;
             } | null;
+            /** Payment Inference */
+            payment_inference?: {
+                [key: string]: unknown;
+            } | null;
+            /** Payment History */
+            payment_history?: {
+                [key: string]: unknown;
+            }[];
+            /** Comparison Price Min */
+            comparison_price_min?: number | string | null;
+            /** Comparison Price Max */
+            comparison_price_max?: number | string | null;
             /** Name */
             name: string;
             location: components["schemas"]["Point"];
@@ -2441,6 +2453,18 @@ export interface components {
             octane_inference?: {
                 [key: string]: unknown;
             } | null;
+            /** Payment Inference */
+            payment_inference?: {
+                [key: string]: unknown;
+            } | null;
+            /** Payment History */
+            payment_history?: {
+                [key: string]: unknown;
+            }[];
+            /** Comparison Price Min */
+            comparison_price_min?: string | null;
+            /** Comparison Price Max */
+            comparison_price_max?: string | null;
             /** Name */
             name: string;
             location: components["schemas"]["Point"];

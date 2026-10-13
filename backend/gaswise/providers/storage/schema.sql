@@ -39,3 +39,23 @@ CREATE TABLE IF NOT EXISTS gaswise.source_limits (
     blocked_until timestamptz,
     failure_count integer NOT NULL DEFAULT 0
 );
+
+-- Analytical observations are independent of the short-lived serving cache.
+CREATE TABLE IF NOT EXISTS gaswise.quote_history (
+    observation_key text PRIMARY KEY,
+    source text NOT NULL,
+    station_id text NOT NULL,
+    canonical_id text,
+    fuel_type text NOT NULL,
+    payment_type text NOT NULL,
+    purchase_condition text NOT NULL,
+    price_per_gallon numeric NOT NULL,
+    reported_at timestamptz,
+    first_seen_at timestamptz NOT NULL,
+    last_seen_at timestamptz NOT NULL,
+    attributes jsonb NOT NULL
+);
+CREATE INDEX IF NOT EXISTS quote_history_station_time
+    ON gaswise.quote_history (source, station_id, fuel_type, reported_at);
+CREATE INDEX IF NOT EXISTS quote_history_canonical_time
+    ON gaswise.quote_history (canonical_id, fuel_type, reported_at);
