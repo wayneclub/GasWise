@@ -40,7 +40,7 @@ describe('Decide', () => {
     render(<App />)
 
     expect(await screen.findByRole('heading', { name: 'Chevron', level: 2 })).toBeInTheDocument()
-    expect(screen.getByText(/\$2.05 more · vs Arco/)).toBeInTheDocument()
+    expect(screen.queryByText(/\$2.05 more · vs Arco/)).not.toBeInTheDocument()
     expect(screen.getByText('$2.05 more')).toBeInTheDocument()
     expect(screen.getByText('vs Arco (cheapest)')).toBeInTheDocument()
     expect(screen.getByText('Saves 19 min')).toBeInTheDocument()

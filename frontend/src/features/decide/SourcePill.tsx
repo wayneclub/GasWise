@@ -13,8 +13,8 @@ export function SourcePill({source,unavailable=false,href}:{source:string;unavai
 }
 
 /** Show the selected quote and every source actually referenced for this station. */
-export function StationSources({source,row}:{source:string;row?:RankedStation|null}) {
+export function StationSources({source,row,selectedOnly=false}:{source:string;row?:RankedStation|null;selectedOnly?:boolean}) {
   const {t}=useI18n()
-  const sources=[...new Set([source,...(row?.price_comparison?.evidence.map(e=>e.source) ?? [])].filter(Boolean))]
+  const sources=[...new Set([source,...(selectedOnly ? [] : row?.price_comparison?.evidence.map(e=>e.source) ?? [])].filter(Boolean))]
   return <span className="inline-flex flex-wrap items-center gap-1.5">{sources.map(value=><span key={value} title={t(value===source?'station.selectedSource':'station.referenceSource',{source:sourceLabel(value)})}><SourcePill source={value} href={row ? stationSourceUrl(value,value===source ? row.station.id : row.price_comparison?.evidence.find(e=>e.source===value)?.provider_station_id ?? '',row.station) : undefined}/>{value===source && sources.length>1 ? <span className="ml-1 text-[10px] text-muted">{t('station.selectedQuote')}</span> : null}</span>)}</span>
 }
