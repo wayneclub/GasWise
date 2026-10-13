@@ -18,6 +18,7 @@ from gaswise.contracts.common import Point, Station
 from gaswise.contracts.sources import MAPS_WEB_PAGE_SIZE, MapsWebPrices, MapsWebSearch, MapsWebStation
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.identity import membership_for_name
+from gaswise.providers.google.session_renewal import renew_session
 
 # Verified website numeric values and labels; do not infer pump octane from them.
 WEB_FUEL_TYPES = {1: "diesel", 3: "regular", 4: "midgrade", 5: "premium"}
@@ -168,6 +169,10 @@ class MapsWebProvider:
             raise ProviderError("google_maps_web_unavailable")
         if not response.text.startswith(")]}'"):
             raise ProviderError("google_maps_web_unexpected_response")
+        try:
+            renew_session(self.session_file, response.headers, request_cookie=headers.get("Cookie"))
+        except (OSError, ValueError, KeyError, TypeError):
+            raise ProviderError("google_maps_web_session_renewal_failed") from None
         try:
             return json.loads(response.text.split("\n", 1)[1])
         except (ValueError, IndexError):

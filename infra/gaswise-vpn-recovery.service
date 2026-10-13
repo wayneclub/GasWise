@@ -1,0 +1,12 @@
+[Unit]
+Description=Recover GasWise existing US VPN after sustained failure
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/apps/gaswise
+ExecStart=/usr/bin/python3 /home/ubuntu/apps/gaswise/recover_gasbuddy_vpn.py
+TimeoutStartSec=120
+UMask=0077
