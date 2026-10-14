@@ -29,8 +29,8 @@ test('serves the built app without service credentials', async () => {
   assert.match(result.headers.get('content-type'), /text\/html/)
   assert.ok(!(await result.text()).includes('gateway-test-token'))
   const csp = result.headers.get('content-security-policy')
-  assert.match(csp, /script-src 'self' https:\/\/static.cloudflareinsights.com;/)
-  assert.match(csp, /connect-src 'self' https:\/\/cloudflareinsights.com;/)
+  assert.match(csp, /script-src 'self' https:\/\/static.cloudflareinsights.com https:\/\/www.googletagmanager.com;/)
+  assert.match(csp, /connect-src 'self' https:\/\/cloudflareinsights.com https:\/\/www.googletagmanager.com https:\/\/\*.google-analytics.com https:\/\/\*.google.com;/)
   assert.doesNotMatch(csp, /unsafe-eval|script-src[^;]*unsafe-inline/)
 })
 test('injects server authentication and strips browser authorization', async () => {

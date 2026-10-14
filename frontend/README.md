@@ -58,6 +58,22 @@ Design read: a mobile-first decision tool for drivers about to refuel, trust-fir
 
 ## Production
 
+### Analytics
+
+The dedicated `GasWise` GA4 property uses `GasWise Web` (stream `16126067526`),
+Measurement ID `G-C9VZE31GQK`, Los Angeles reporting time and USD. The public ID is
+not a service credential. `public/analytics.js` loads Google tag only on
+`gaswise.wayneclub.com`, once per page load, outside React's StrictMode lifecycle.
+The gateway permits the Google Analytics endpoints required by its CSP without
+allowing inline executable scripts or eval.
+
+Enhanced measurement is disabled in the stream. The tag records standard page
+measurement; no custom vehicle, location, fuel-search or parts events are sent.
+Queries/fragments are removed from page/referrer URLs. Cookies use the GasWise
+hostname and `gaswise` prefix. Google signals, advertising personalization and
+advertising consent are disabled. This is basic analytics without a visitor
+consent interface; add a consent solution if consent-gated collection is required.
+
 ### Search visibility
 
 `index.html` includes the title `GasWise — Fuel smarter. Save more.`, a search

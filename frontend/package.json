@@ -12,7 +12,7 @@
     "typecheck": "tsc -b",
     "gen:api": "npx -y openapi-typescript@7.13.0 ../contracts/openapi.json -o src/api/schema.d.ts",
     "start": "node server.mjs",
-    "test:gateway": "node --test gateway.test.mjs"
+    "test:gateway": "node --test gateway.test.mjs analytics.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
