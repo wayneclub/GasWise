@@ -1,11 +1,12 @@
+import { CaretDownIcon, GasPumpIcon } from '@phosphor-icons/react'
 import { SourcePill } from './SourcePill'
 import { SharedCacheStatus } from './SharedCacheStatus'
 import { SearchContext } from './SearchContext'
 import { useEffect, useRef, useState } from 'react'
 import { Segmented, Stepper } from '../../components/ui'
 import { type MessageKey, useI18n } from '../../i18n'
-import { age, gallons, sourceLabel } from '../../lib/format'
-import { type Prefs } from '../../lib/prefs'
+import { age, fuelKey, gallons, sourceLabel } from '../../lib/format'
+import { effectiveFuel, type Prefs } from '../../lib/prefs'
 import { assess, PRIORITY_STRATEGY, picks, tradeoff } from '../../lib/recommend'
 import { messageId } from '../../lib/errorMessages'
 import { useFuelSession } from '../../lib/session'
@@ -21,6 +22,7 @@ const DOWNTOWN_LA = { lat: 34.0522, lng: -118.2437 }
 export function Decide({ prefs, update, onSettings, active = true }: { active?: boolean; prefs: Prefs; update: (change: Partial<Prefs>) => void; onSettings: () => void }) {
   const { t } = useI18n()
   const session = useFuelSession(prefs, active)
+  const [fillOpen, setFillOpen] = useState(false)
   const [locationOpen, setLocationOpen] = useState(false)
   const [locationLabel, setLocationLabel] = useState<string | null>(null)
   const { start } = session
@@ -47,6 +49,12 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pb-12 lg:max-w-5xl">
+      {!session.origin ? <div className="experience-intro pt-7 pb-2">
+        <span className="mb-3 grid size-12 place-items-center rounded-2xl bg-accent-soft text-accent"><GasPumpIcon size={26} weight="duotone" /></span>
+        <h1 className="text-3xl font-semibold tracking-tight">{t('experience.locationTitle')}</h1>
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">{t('experience.locationLead')}</p>
+      </div> : null}
+      {hero ? <h1 className="sr-only">{t('experience.ready')}</h1> : null}
       <SearchContext prefs={prefs} label={locationLabel} source={session.originKind} permission={session.locationPermission} locating={phase === 'locating'} searching={phase === 'searching'}
         onLocate={() => void start({ userInitiated: true })} onChange={() => setLocationOpen(open => !open)} onSettings={onSettings} onRefresh={() => void session.refresh()}>
         {locationOpen || !session.origin ? <>
@@ -57,7 +65,13 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="flex flex-col gap-4">
-          <section aria-label={t('decide.yourFill')} className="liquid-panel rounded-box p-4">
+          <section aria-label={t('decide.yourFill')} className="fill-panel rounded-box border border-line bg-surface">
+            {hero ? <button type="button" aria-expanded={fillOpen} aria-controls="fill-controls" onClick={() => setFillOpen(!fillOpen)} className="flex min-h-14 w-full items-center gap-3 rounded-box px-4 py-3 text-left focus-visible:outline-accent">
+              <GasPumpIcon size={20} className="shrink-0 text-accent" />
+              <span className="min-w-0 flex-1"><span className="block text-xs text-muted">{t('decide.yourFill')}</span><span className="block text-sm font-medium">{t(fuelKey(effectiveFuel(prefs)))} · {gallons(prefs.gallons,t)} · {t(prefs.payment === 'cash_or_credit' ? 'prefs.all' : prefs.payment === 'cash' ? 'prefs.cash' : 'prefs.card')}</span></span>
+              <span className="sr-only">{t('experience.editFill')}</span><CaretDownIcon size={16} className={`shrink-0 text-muted transition ${fillOpen ? 'rotate-180' : ''}`} />
+            </button> : null}
+            <div id="fill-controls" hidden={!!hero && !fillOpen} className={`p-4 ${hero ? 'border-t border-line' : ''}`}>
             <div className="grid grid-cols-1 items-center min-[420px]:grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-3">
               <h2 className="text-sm font-semibold">{t('decide.yourFill')}</h2>
               <Stepper label={t('ui.gallons')} value={prefs.gallons} min={1} max={30} step={1} format={(value)=>gallons(value,t)} onChange={(gallons)=>update({gallons})} className="w-full" />
@@ -78,6 +92,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
                 </label>
               </div>
             </details>
+            </div>
           </section>
 
           {session.expired ? (

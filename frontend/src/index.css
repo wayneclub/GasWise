@@ -155,3 +155,24 @@ body::before {
   .liquid-control, .liquid-selection { box-shadow: none; }
   .liquid-tab[aria-selected='true'] { outline: 2px solid Highlight; }
 }
+
+/* The recommendation is the visual anchor; comparison and settings stay quiet. */
+.hero-spotlight {
+  --color-ink: #fcfbf8;
+  --color-muted: #d0dfd3;
+  --color-faint: #b9cfbe;
+  --color-accent: #bfe4c4;
+  --color-accent-soft: #315c43;
+  --color-sunken: #315c43;
+  --color-line: #63856b;
+  color: #fcfbf8;
+  background:
+    radial-gradient(ellipse at 100% 0%, #416e50 0%, transparent 65%),
+    #234b35;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.hero-spotlight a.bg-ink { color: #234b35; background: #fcfbf8; }
+.hero-spotlight a:focus-visible { outline: 2px solid #fcfbf8; outline-offset: 4px; }
+.hero-spotlight > .bg-sunken { margin-top: 12px; padding: 0; background: transparent; }
+.hero-spotlight > .bg-sunken > p:first-child { font-size: 21px; line-height: 1.35; }
+.fill-panel { box-shadow: none; }

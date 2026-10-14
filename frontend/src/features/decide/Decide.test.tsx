@@ -108,6 +108,10 @@ describe('Decide', () => {
     render(<App />)
     await screen.findByRole('heading', { name: 'Chevron', level: 2 })
 
+    expect(screen.getByRole('button', { name: /Edit this fill/ })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('button', { name: 'Increase gallons' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Edit this fill/ }))
+    expect(screen.getByRole('button', { name: /Edit this fill/ })).toHaveAttribute('aria-expanded', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Increase gallons' }))
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     const [url, init] = fetchMock.mock.calls[1]
@@ -130,6 +134,7 @@ describe('Decide', () => {
       .mockImplementation(() => respond(demo))
     render(<App />)
     await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+    fireEvent.click(screen.getByRole('button', { name: /Edit this fill/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Increase gallons' }))
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     fireEvent.click(screen.getByRole('button', { name: 'Increase gallons' }))

@@ -1,3 +1,4 @@
+import { CopyAddress } from '../../components/CopyAddress'
 import { PriceHistory } from './PriceHistory'
 import {googleStationUrl,stationSourceUrl} from '../../lib/stationLinks'
 import { SourcePill, StationSources } from './SourcePill'
@@ -50,7 +51,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
   }
   return <Sheet open={open} onClose={onClose} title={t('station.details')}>
     <div className="flex flex-col gap-4">
-      <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-xl font-semibold"><a href={googleStationUrl(station)} target="_blank" rel="noreferrer" className="underline decoration-line underline-offset-4">{station.name}</a></h3>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div><p className="mt-1 text-sm text-muted">{station.address}</p></div>
+      <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-xl font-semibold"><a href={googleStationUrl(station)} target="_blank" rel="noreferrer" className="underline decoration-line underline-offset-4">{station.name}</a></h3>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div><CopyAddress address={station.address} className="mt-1 w-full text-sm text-muted" /></div>
       <StationRating station={station} />
       {station.rating != null ? <p className="text-xs text-faint">{t('station.ratingNote', { source: station.rating_source ?? 'Google Maps' })}</p> : null}
       {station.top_tier_brand ? <div className="flex items-start gap-3 rounded-control bg-sunken p-3">

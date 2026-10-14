@@ -187,6 +187,7 @@ it('keeps stale costs labeled with their actual gallons when a snapshot expires'
     .mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ detail: 'snapshot_expired' }), { status: 409 })))
   render(<App />)
   await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+  fireEvent.click(screen.getByRole('button', { name: /Edit this fill/ }))
   fireEvent.click(screen.getByRole('button', { name: 'Increase gallons' }))
   await screen.findByText(/These prices expired/)
   expect(within(screen.getByRole('region', { name: 'Chevron' })).getByText(/Estimated total for 10 gal/)).toBeInTheDocument()
@@ -309,6 +310,7 @@ it('switches cash/card on the main screen through rerank, without acquiring pric
   const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))
   render(<App />)
   await screen.findByRole('heading', {name:'Chevron',level:2})
+  fireEvent.click(screen.getByRole('button', { name: /Edit this fill/ }))
   fireEvent.click(screen.getByRole('radio',{name:'Cash'}))
   await waitFor(()=>expect(fetch).toHaveBeenCalledTimes(2))
   expect(fetch.mock.calls[1][0]).toBe('/api/v1/smart/rerank')
@@ -347,4 +349,16 @@ it('does not restore a cleared identity from an outstanding vehicle lookup', asy
   await act(async () => { finish(new Response(JSON.stringify({status:'resolved',vehicle:car}))) })
   expect(save).not.toHaveBeenCalled()
   expect(update).not.toHaveBeenCalled()
+})
+
+
+it('guides missing vehicle identity to settings before exposing the parts form', () => {
+  const onChooseCar = vi.fn()
+  const fetch = vi.spyOn(globalThis, 'fetch')
+  render(english(<VehicleIdentityContext.Provider value={{ identity: null, setIdentity: () => {} }}><Parts vehicle={null} onChooseCar={onChooseCar} /></VehicleIdentityContext.Provider>))
+  expect(screen.getByRole('heading', { name: 'Start with your car' })).toBeInTheDocument()
+  expect(screen.queryByRole('textbox', { name: 'Part name or keyword' })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Add your car' }))
+  expect(onChooseCar).toHaveBeenCalledOnce()
+  expect(fetch).not.toHaveBeenCalled()
 })

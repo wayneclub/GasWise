@@ -87,3 +87,11 @@ Fuel search samples five overlapping Maps website viewports inside an 8 km radiu
 Vehicle identification is managed in global Settings and reused by both tabs. Address/city/US ZIP lookup uses `/v1/locations/resolve` through Google Maps website HTTP search, explicit submit and bounded requests. It reuses the existing validated Maps session and does not call Places API or silently switch providers. Location and vehicle identifiers stay in memory. GPS permission is separate from successful coordinate acquisition; failures expose address/ZIP recovery. Destination settings accept the same location search.
 
 Unspecified-payment quotes are included by default in the app. Credit/all-payment ranking applies the user-assumed $0.20/gal adjustment; cash mode adds none. `price_per_gallon` and evidence remain the original source quote, while `comparison_price_per_gallon` and `payment_price_adjustment` identify the estimate. This is not evidence that a station accepts cards or charges that surcharge. Users can disable estimated quotes in Settings. TOP TIER uses a compact text badge, not a large logo.
+
+## Decision experience
+
+With a recommendation available, fill controls collapse to a fuel/amount/payment summary. The green recommendation surface leads with the money/time trade-off, retains price confidence and payment provenance before navigation, and keeps details and cost breakdown available. Ranking amounts label whether they include time cost, fuel costs, or driving time.
+
+Station addresses are buttons in recommendations, leaderboards, comparisons, nearby stations and details. Tapping copies the full source address, even when the displayed text is abbreviated, and shows localized feedback. A denied or unavailable clipboard exposes the complete address for manual selection. Parts without VIN/plate identity offers one vehicle setup action before showing the search form.
+
+Validation: 89 frontend tests, production build, and local browser checks at desktop, 390px and 320px widths. Browser fuel checks used synthetic demo stations with a fixed test location; clipboard contents were read back after clicks in the recommendation, leaderboard and detail sheet. These checks do not establish production deployment or live upstream pricing.

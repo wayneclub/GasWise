@@ -447,4 +447,20 @@ export const es: Record<MessageKey, string> = {
   "amenity.DELIVERIES": "Entregas",
   "amenity.WIFI": "Wi-Fi",
   "amenity.DRIVE_THROUGH": "Servicio desde el coche",
+  "experience.locationTitle": "¿Dónde vas a cargar combustible?",
+  "experience.locationLead": "Compara combustible y conducción para encontrar una parada que valga la pena.",
+  "experience.editFill": "Ajustar esta carga",
+  "experience.ready": "Tu próxima parada",
+  "board.withTime": "Incluye el costo del tiempo",
+  "board.fuelCost": "Combustible de carga y viaje",
+  "board.driveTime": "Tiempo de conducción",
+  "board.costGuide": "El importe incluye combustible y el valor de tu tiempo. No es el importe que pagas.",
+  "parts.startTitle": "Empieza con tu auto",
+  "parts.startLead": "Añade un VIN o matrícula para verificar piezas con la configuración exacta de tu auto.",
+  "parts.addCar": "Añadir auto",
+
+  "address.copy": "Copiar dirección: {address}",
+  "address.copied": "Dirección copiada",
+  "address.failed": "No se pudo copiar. Selecciona la dirección de abajo para copiarla manualmente.",
+
 }

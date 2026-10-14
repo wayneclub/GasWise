@@ -1,3 +1,4 @@
+import { CarIcon, FunnelIcon, WindIcon, DiscIcon } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../../api/client'
 import type { PartsResult, PartsSearchResult } from '../../api/types'
@@ -46,18 +47,25 @@ export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; 
   const checkedName = decoded ? [decoded.year, decoded.make, decoded.model, decoded.trim, decoded.engine_liters ? `${Number(decoded.engine_liters).toFixed(1)}L` : ''].filter(Boolean).join(' ') : ''
   return <main className="mx-auto w-full max-w-2xl px-4 pb-12 pt-6">
     <h1 className="text-2xl font-semibold tracking-tight">{t('parts.title')}</h1>
-    <p className="mt-2 text-sm leading-relaxed text-muted">{t(mode === 'search' ? 'parts.searchLead' : 'parts.productLead')}</p>
+    {identity ? <p className="mt-2 text-sm leading-relaxed text-muted">{t(mode === 'search' ? 'parts.searchLead' : 'parts.productLead')}</p> : null}
+    {!identity ? <section className="mt-6 rounded-box border border-line bg-surface p-6 sm:p-8">
+      <span className="grid size-14 place-items-center rounded-2xl bg-accent-soft text-accent"><CarIcon size={32} weight="duotone" /></span>
+      <h2 className="mt-5 text-xl font-semibold">{t('parts.startTitle')}</h2>
+      {vehicle ? <p className="mt-2 text-sm font-medium">{vehicle.label}</p> : null}
+      <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">{t('parts.startLead')}</p>
+      <Button className="mt-6" onClick={onChooseCar}><CarIcon size={18} />{t('parts.addCar')}</Button>
+    </section> : <>
     <div className="mt-5"><Segmented label={t('parts.title')} value={mode} options={[{ value: 'search', label: t('parts.searchMode') }, { value: 'product', label: t('parts.checkMode') }]} onChange={(value) => { invalidate(); setMode(value) }} /></div>
     <details open={!result && !searchResult} className="mt-5 rounded-box border border-line bg-surface p-5">
       <summary className="cursor-pointer text-sm font-medium">{t('parts.edit')}</summary>
       <div className="mt-4">
-      {vehicle ? <p className="text-sm font-medium">{t('parts.car', { name: vehicle.label })}</p> : <Button variant="ghost" onClick={onChooseCar}>{t('parts.back')}</Button>}
+      {vehicle ? <p className="text-sm font-medium">{t('parts.car', { name: vehicle.label })}</p> : null}
       <p className="mt-2 text-xs leading-relaxed text-muted">{t('parts.identityNeeded')}</p>
       <form className="mt-5 flex flex-col gap-5" onSubmit={(event) => { event.preventDefault(); if ((identity && validIdentity(identity)) && (mode === 'search' ? keyword.trim().length >= 2 : isAmazonProduct(url.trim()))) void search() }}>
         <div className="rounded-control bg-sunken p-3"><p className="text-sm">{identity ? t('vehicle.sharedReady') : t('vehicle.sharedMissing')}</p><Button variant="ghost" onClick={onChooseCar}>{t('vehicle.openSettings')}</Button></div>
         {mode === 'search' ? <Field label={t('parts.keyword')}>
           <TextInput aria-label={t('parts.keyword')} value={keyword} maxLength={100} onChange={(e) => { invalidate(); setKeyword(e.target.value) }} />
-          <div className="flex flex-wrap gap-2">{([{ value: 'oil filter', label: 'parts.oilFilter' }, { value: 'engine air filter', label: 'parts.airFilter' }, { value: 'cabin air filter', label: 'parts.cabinFilter' }, { value: 'brake pads', label: 'parts.brakePads' }] as const).map((choice) => <Button key={choice.value} variant="ghost" className={`h-8 px-2 text-xs ${keyword === choice.value ? 'bg-sunken text-ink' : ''}`} onClick={() => { invalidate(); setKeyword(choice.value) }}>{t(choice.label)}</Button>)}</div>
+          <div className="flex flex-wrap gap-2">{([{ value: 'oil filter', label: 'parts.oilFilter', icon: FunnelIcon }, { value: 'engine air filter', label: 'parts.airFilter', icon: WindIcon }, { value: 'cabin air filter', label: 'parts.cabinFilter', icon: WindIcon }, { value: 'brake pads', label: 'parts.brakePads', icon: DiscIcon }] as const).map((choice) => <Button key={choice.value} variant="ghost" className={`h-auto min-h-11 px-3 text-xs ${keyword === choice.value ? 'bg-sunken text-ink' : ''}`} onClick={() => { invalidate(); setKeyword(choice.value) }}><choice.icon size={18} />{t(choice.label)}</Button>)}</div>
         </Field> : <Field label={t('parts.url')}><TextInput type="url" aria-label={t('parts.url')} value={url} placeholder="https://www.amazon.com/dp/…" onChange={(e) => { invalidate(); setUrl(e.target.value) }} /></Field>}
         <Button type="submit" className="h-auto min-h-11 py-2" style={{ whiteSpace: 'normal' }} disabled={pending || !(identity && validIdentity(identity)) || (mode === 'search' ? keyword.trim().length < 2 : !isAmazonProduct(url.trim()))}>{pending ? t(mode === 'search' ? 'parts.finding' : 'parts.pending') : t(mode === 'search' ? 'parts.find' : 'parts.submit')}</Button>
       </form>
@@ -104,5 +112,6 @@ export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; 
       </div>
       {result.warnings?.length || result.reasons?.length ? <details className="rounded-box border border-line bg-surface p-5"><summary className="cursor-pointer text-sm font-medium">{t('parts.restrictions')}</summary><ul className="mt-3 space-y-2 text-xs leading-relaxed text-muted">{[...(result.reasons ?? []), ...(result.warnings ?? [])].map((warning, i) => <li key={i}>{warning}</li>)}</ul></details> : null}
     </section> : null}
+    </>}
   </main>
 }

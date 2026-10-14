@@ -1,3 +1,4 @@
+import { CopyAddress } from '../../components/CopyAddress'
 import { SourcePill } from './SourcePill'
 import { useState } from 'react'
 import type { SmartResult } from '../../api/types'
@@ -50,7 +51,7 @@ export function NearbyStations({ result, navApp, onExpandRoutes, allowUnknownPay
       {[...stations].slice(0, visible).map(([key, s]) => <article key={key} className="rounded-box border border-line bg-surface p-4">
         <div className="flex items-start justify-between gap-3"><div className="flex min-w-0 flex-wrap items-center gap-1.5"><h3 className="font-medium">{s.name}</h3>{s.top_tier_brand ? <TopTierBadge brand={s.top_tier_brand} /> : null}</div><span className="shrink-0 text-sm num">{perGallon(comparisonPrice({ ...s, price_per_gallon: s.price_per_gallon! }))}</span></div>
         {s.comparison_price_per_gallon ? <span className="text-[10px] text-caution">{t('payment.estimated')}</span> : null}
-        <p className="mt-1 truncate text-xs text-muted">{s.address}</p><div className="mt-1"><SourcePill source={s.source ?? ''}/></div>
+        <CopyAddress address={s.address} className="mt-1 w-full text-xs text-muted" /><div className="mt-1"><SourcePill source={s.source ?? ''}/></div>
         <div className="mt-2"><StationRating station={s} /></div>
         {s.price_per_gallon ? <p className="mt-1 text-xs text-muted">{t(s.payment_type === 'cash' ? 'prefs.cash' : s.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</p> : null}
         <p className="mt-2 text-xs text-muted">{t(reasonKey(coverage?.station_statuses[key] ?? 'routed'))}</p>

@@ -1,3 +1,4 @@
+import { CopyAddress } from '../../components/CopyAddress'
 import {googleStationUrl} from '../../lib/stationLinks'
 import { StationSources } from './SourcePill'
 import { RegionalPrice } from './RegionalPrice'
@@ -39,7 +40,7 @@ export function StationList({ rows, navApp = 'google', tripMode = 'round_trip' }
             {rows.map((row) => (
               <tr key={`${row.station.source}:${row.station.id}`} className="align-top">
                 <td className="py-3 pl-5 pr-2">
-                  <div className="flex flex-wrap items-center gap-1.5"><a href={googleStationUrl(row.station)} target="_blank" rel="noreferrer" className="font-medium underline decoration-line underline-offset-4">{row.station.name}</a><button type="button" onClick={()=>setSelected(row)} aria-label={`${t('station.view')} ${row.station.name}`} className="text-xs underline">{t('station.view')}</button>{row.station.top_tier_brand ? <TopTierBadge brand={row.station.top_tier_brand} /> : null}</div><StationRating station={row.station} /><RegionalPrice row={row}/>
+                  <div className="flex flex-wrap items-center gap-1.5"><a href={googleStationUrl(row.station)} target="_blank" rel="noreferrer" className="font-medium underline decoration-line underline-offset-4">{row.station.name}</a><button type="button" onClick={()=>setSelected(row)} aria-label={`${t('station.view')} ${row.station.name}`} className="text-xs underline">{t('station.view')}</button>{row.station.top_tier_brand ? <TopTierBadge brand={row.station.top_tier_brand} /> : null}</div><CopyAddress address={row.station.address} display={row.station.address?.split(',')[0]} className="w-full text-xs text-muted" /><StationRating station={row.station} /><RegionalPrice row={row}/>
                   {row?.route.source === "straight_line_estimate" ? <p className="text-xs text-caution">{t("coverage.estimated_route")}</p> : null}
                   <StationSources source={row.station.source} row={row}/><p className="num mt-1 text-[12px] text-muted">
                     {t(tripMode==='on_route'?'route.extraTime':'pick.roundTrip',{time:minutes(row.extra_travel_minutes,t)})} · {t('age.updated',{age:age(row.station.price_updated_at,t)})}

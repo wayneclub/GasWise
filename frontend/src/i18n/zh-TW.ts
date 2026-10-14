@@ -447,4 +447,20 @@ export const zhTW: Record<MessageKey, string> = {
   "amenity.DELIVERIES": "配送服務",
   "amenity.WIFI": "Wi-Fi",
   "amenity.DRIVE_THROUGH": "得來速",
+  "experience.locationTitle": "你在哪裡加油？",
+  "experience.locationLead": "一起比較油價與開車成本，找出值得去的加油站。",
+  "experience.editFill": "調整這次加油",
+  "experience.ready": "這次加油，值得去哪？",
+  "board.withTime": "含時間成本",
+  "board.fuelCost": "加油與行車油費",
+  "board.driveTime": "開車時間",
+  "board.costGuide": "排序金額包含加油、行車油費與時間成本，並非實際付款金額。",
+  "parts.startTitle": "先加入你的車",
+  "parts.startLead": "加入 VIN 或車牌，才能依照你的確切車輛配置核對零件。",
+  "parts.addCar": "加入車輛",
+
+  "address.copy": "複製地址：{address}",
+  "address.copied": "地址已複製",
+  "address.failed": "無法複製，請選取下方地址手動複製。",
+
 }

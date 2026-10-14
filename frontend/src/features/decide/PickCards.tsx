@@ -1,3 +1,4 @@
+import { CopyAddress } from '../../components/CopyAddress'
 import {googleStationUrl} from '../../lib/stationLinks'
 import { StationSources } from './SourcePill'
 import { RegionalPrice } from './RegionalPrice'
@@ -158,7 +159,8 @@ export function HeroPick({
   const opening = openingLabel(station)
   const Icon = ICON[pick.keys[0]]
   return (
-    <section aria-labelledby="hero-pick" className="rounded-box border border-line bg-surface p-5 shadow-raised">
+    <section aria-labelledby="hero-pick" className="hero-pick rounded-box border border-line bg-surface shadow-raised">
+      <div className="hero-spotlight rounded-box p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-1.5 text-[13px] font-medium text-muted">
           <Icon size={16} weight="fill" className="shrink-0 text-accent" />
@@ -166,11 +168,13 @@ export function HeroPick({
         </p>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2"><h2 id="hero-pick" className="text-[26px] font-semibold leading-tight tracking-tight">
+      <Verdict pick={pick} row={row} trade={trade} tripMode={tripMode} />
+
+      <div className="mt-4 flex flex-wrap items-center gap-2"><h2 id="hero-pick" className="text-[26px] font-semibold leading-tight tracking-tight">
         <a href={googleStationUrl(station)} target="_blank" rel="noreferrer" className="underline decoration-line underline-offset-4">{station.name}</a>
       </h2>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div>
       <div className="mt-1 flex min-w-0 items-center gap-2 text-[13px] text-muted">
-        {station.address ? <p className="min-w-0 truncate">{station.address}</p> : null}
+        <CopyAddress address={station.address} className="min-w-0 flex-1" />
         <span className="shrink-0"><StationRating station={station} /></span>
       </div>
 
@@ -183,26 +187,7 @@ export function HeroPick({
           {t('pick.totalFor', { gallons: gal(gallons, t) })} <span className="num font-medium text-ink">≈ {usd(pick.recommendation.actual_fuel_cost)}</span>
         </p>
       ) : null}
-      {row ? <RegionalPrice row={row}/> : null}
-      {station.comparison_price_per_gallon ? <p className="mt-1 text-xs text-caution">{t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
-      {row?.price_comparison && ['cash','credit'].every(payment=>row.price_comparison!.evidence.some(e=>e.payment_type===payment && e.source===station.source && e.price_updated_at && Date.now()-new Date(e.price_updated_at).getTime()<=24*60*60*1000)) ? <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">{(['cash','credit'] as const).map(payment => {
-        const quote = row.price_comparison?.evidence.filter(e => e.payment_type === payment && e.source === station.source && e.price_updated_at && Date.now()-new Date(e.price_updated_at).getTime() <= 24*60*60*1000).sort((a,b)=>new Date(b.price_updated_at!).getTime()-new Date(a.price_updated_at!).getTime())[0]
-        return quote ? <span key={payment} className="rounded-full border border-line px-2 py-0.5">{t(payment === 'cash'?'prefs.cash':'prefs.card')} {perGallon(quote.price_per_gallon)}</span> : null
-      })}</div> : null}
-
-      <Verdict pick={pick} row={row} trade={trade} tripMode={tripMode} />
-
-      {pick.recommendation.top_tier_preferred_over && station.top_tier_brand ? (
-        <p className="mt-3 flex items-center gap-2 rounded-control bg-accent-soft px-3 py-2 text-[13px] text-accent">
-          <TopTierBadge brand={station.top_tier_brand} />
-          <span>{t('topTier.preferred', {
-            amount: usd(pick.recommendation.top_tier_preferred_over.extra_cost),
-            name: pick.recommendation.top_tier_preferred_over.station_name,
-            margin: usd(pick.recommendation.top_tier_preferred_over.margin),
-          })}</span>
-        </p>
-      ) : null}
-
+      {station.comparison_price_per_gallon ? <p className="mt-1 text-xs text-[#ffe0a8]">{t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
       {assessment.positives.length || assessment.reasons.length ? <div className="mt-4 flex flex-wrap items-center gap-1.5">
         {assessment.positives.map((signal) => (
           <span key={signal.key} className="flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent">
@@ -230,6 +215,25 @@ export function HeroPick({
         <NavigationArrowIcon size={18} weight="fill" />
         {t('pick.navigate')}
       </LinkButton>
+      </div>
+      <div className="px-5 pb-4 pt-3">
+      {row ? <RegionalPrice row={row}/> : null}
+
+      {row?.price_comparison && ['cash','credit'].every(payment=>row.price_comparison!.evidence.some(e=>e.payment_type===payment && e.source===station.source && e.price_updated_at && Date.now()-new Date(e.price_updated_at).getTime()<=24*60*60*1000)) ? <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">{(['cash','credit'] as const).map(payment => {
+        const quote = row.price_comparison?.evidence.filter(e => e.payment_type === payment && e.source === station.source && e.price_updated_at && Date.now()-new Date(e.price_updated_at).getTime() <= 24*60*60*1000).sort((a,b)=>new Date(b.price_updated_at!).getTime()-new Date(a.price_updated_at!).getTime())[0]
+        return quote ? <span key={payment} className="rounded-full border border-line px-2 py-0.5">{t(payment === 'cash'?'prefs.cash':'prefs.card')} {perGallon(quote.price_per_gallon)}</span> : null
+      })}</div> : null}
+
+      {pick.recommendation.top_tier_preferred_over && station.top_tier_brand ? (
+        <p className="mt-3 flex items-center gap-2 rounded-control bg-accent-soft px-3 py-2 text-[13px] text-accent">
+          <TopTierBadge brand={station.top_tier_brand} />
+          <span>{t('topTier.preferred', {
+            amount: usd(pick.recommendation.top_tier_preferred_over.extra_cost),
+            name: pick.recommendation.top_tier_preferred_over.station_name,
+            margin: usd(pick.recommendation.top_tier_preferred_over.margin),
+          })}</span>
+        </p>
+      ) : null}
 
       <div className="mt-2 grid grid-cols-2 items-start gap-2"><button type="button" className="w-full rounded-control py-2 text-sm font-medium text-ink hover:bg-sunken" onClick={() => setDetailsOpen(true)}>{t('station.view')}</button>
       <StationDetails station={station} row={row} open={detailsOpen} onClose={() => setDetailsOpen(false)} navApp={navApp} tripMode={tripMode} />
@@ -259,6 +263,7 @@ export function HeroPick({
           ) : null}
         </div>
       ) : null}
+      </div>
       </div>
     </section>
   )

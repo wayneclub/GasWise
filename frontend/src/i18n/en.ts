@@ -447,6 +447,22 @@ export const en = {
   "amenity.DELIVERIES": "Deliveries",
   "amenity.WIFI": "Wi-Fi",
   "amenity.DRIVE_THROUGH": "Drive-through",
+  "experience.locationTitle": "Where are you filling up?",
+  "experience.locationLead": "Compare fuel and driving costs to find a stop worth the trip.",
+  "experience.editFill": "Edit this fill",
+  "experience.ready": "Your next fuel stop",
+  "board.withTime": "Including time cost",
+  "board.fuelCost": "Fuel + driving fuel",
+  "board.driveTime": "Driving time",
+  "board.costGuide": "Ranking includes fuel, driving fuel and the value of your time. It is not the amount you pay.",
+  "parts.startTitle": "Start with your car",
+  "parts.startLead": "Add a VIN or plate to check parts against your exact vehicle configuration.",
+  "parts.addCar": "Add your car",
+
+  "address.copy": "Copy address: {address}",
+  "address.copied": "Address copied",
+  "address.failed": "Could not copy. Select the address below to copy manually.",
+
 }
 
 export type MessageKey = keyof typeof en
