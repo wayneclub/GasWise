@@ -21,7 +21,7 @@ const upstream = new URL(process.env.GASWISE_API_URL || 'http://127.0.0.1:8000')
 if (!['http:', 'https:'].includes(upstream.protocol) || upstream.username || upstream.password) throw new Error('Invalid GASWISE_API_URL')
 const dist = await realpath(resolve(root, 'dist'))
 const allowed = new Set(['/v1/prices/history', '/v1/locations/resolve', '/v1/smart/search', '/v1/smart/rerank', '/v1/smart/routes', '/v1/smart/refresh-prices', '/v1/vehicles/resolve', '/v1/vehicles/vin', '/v1/vehicles/plate', '/v1/parts/fitment', '/v1/parts/search'])
-const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ico': 'image/x-icon' }
+const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ico': 'image/x-icon' }
 const limits = new Map()
 const windowMs = 60000
 function json(response, status, detail) {

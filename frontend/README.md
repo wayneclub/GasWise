@@ -58,6 +58,22 @@ Design read: a mobile-first decision tool for drivers about to refuel, trust-fir
 
 ## Production
 
+### Search visibility
+
+`index.html` includes the title `GasWise — Fuel smarter. Save more.`, a search
+description, the production canonical URL, Open Graph/Twitter metadata and
+WebSite/WebApplication JSON-LD. These are present in the initial HTML response.
+`public/robots.txt` permits the public site and excludes API crawling;
+`public/sitemap.xml` lists the single public URL (tabs and settings have no
+separate URLs). Vite copies both files and `favicon.svg` into `dist/`; the gateway
+serves text and XML with the corresponding content types.
+
+After deployment, verify `/`, `/robots.txt` and `/sitemap.xml` over public HTTPS.
+Submit `https://gaswise.wayneclub.com/sitemap.xml` in Google Search Console and
+request indexing for the homepage using URL Inspection. Search Console ownership
+verification must use the actual token supplied by Google. Metadata and a sitemap
+help discovery; Google controls indexing, timing, titles and snippets.
+
 A runnable same-origin gateway is included. With the backend on port 8000:
 
 ```sh
