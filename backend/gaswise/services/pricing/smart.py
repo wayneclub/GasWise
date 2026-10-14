@@ -25,6 +25,7 @@ from gaswise.domain.pricing.comparison import (
 from gaswise.domain.pricing.identity import inventory_match, located_inventory_match, site_match
 from gaswise.domain.pricing.payment import snapshot_history
 from gaswise.domain.pricing.route_estimates import estimate_route
+from gaswise.domain.pricing.shared_cache import background_acquisition
 from gaswise.domain.pricing.top_tier import tag_top_tier
 from gaswise.domain.vehicles.fuel_policy import check_vehicle_fuel, resolve_fuel_query
 from gaswise.services.pricing.cache import TTLCache
@@ -143,6 +144,7 @@ class SmartService:
         self.inflight = {}
         self.waiters = {}
         self.source_slots = {"gasbuddy": asyncio.Semaphore(1), "maps": asyncio.Semaphore(6), "waze": asyncio.Semaphore(2), "aaa": asyncio.Semaphore(1)}
+        self.background_gasbuddy_slot = asyncio.Semaphore(1)
         self.route_slots = asyncio.Semaphore(4)
         self.cache = TTLCache()
         self.failures = TTLCache(capacity=64)
@@ -161,7 +163,8 @@ class SmartService:
         if self.shared_cache is not None and source in {"gasbuddy", "maps", "waze"}:
             # Forced refresh cannot bypass the cross-user freshness window or source budgets.
             async def shared_operation():
-                async with source_slot:
+                slot = self.background_gasbuddy_slot if source == "gasbuddy" and background_acquisition.get() else source_slot
+                async with slot:
                     return await operation()
             if self.hot_refresh is not None:
                 self.hot_refresh.observe(source, key, shared_operation)

@@ -172,3 +172,27 @@ had completed at the time of this check; long-term rejection-rate improvement is
 not established. The first smoke attempt rejected differing observations; the
 version-aware smoke now checks timestamp invariance within the same source-cache
 version, allowing changes when a source refresh has completed.
+
+## GasBuddy background pagination across minute windows
+
+GasBuddy background acquisition now preserves its cursor and accumulated pages
+when the local minute budget is exhausted. It waits for the remaining database
+window (at most 60 seconds per sleep) and charges the next request atomically
+before sending it. A single request's budget wait is bounded to three minutes.
+Daily-budget exhaustion, shared cooldown, rejection and database failure stop the
+acquisition immediately; no rejected HTTP request is retried. Cancellation
+interrupts a wait and releases the existing cache lease. Lease heartbeats continue
+while acquisition waits.
+
+One reusable background anonymous HTTP session and one background GasBuddy source
+slot keep those waits separate from foreground transport and concurrency locks.
+Both lanes share the existing database total counters and rejection cooldowns;
+the extra lane never grants extra upstream allowance or switches identity in
+response to source refusal. The background session uses the same configured
+transport/proxy and normal session expiry. Shutdown closes both sessions.
+
+`check_gasbuddy_background_pages.py` makes one explicitly authorized live
+three-page city query under the real shared background budgets, with no other
+provider acquisitions, routes or station details. It prints only station/quote
+counts and charged HTTP totals. Bootstrap consumes one request in addition to
+pages, so a cold three-page query normally costs four background HTTP calls.

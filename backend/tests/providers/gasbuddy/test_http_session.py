@@ -1,4 +1,5 @@
 import asyncio
+import json
 from datetime import UTC, datetime
 
 import httpx
@@ -210,3 +211,63 @@ async def test_coordinate_search_places_quotes_and_stops_paging_past_the_radius(
     assert pages == [None, "p2"]
     assert {q.id: q.location.lat for q in result.prices} == {"near": 34.0045, "edge": 34.054}
     assert not any("ZIP search" in warning for warning in result.warnings)
+
+
+async def test_background_three_pages_resume_cursor_next_window_and_keep_foreground_session_free():
+    from gaswise.contracts.sources import GasBuddySearch
+    from gaswise.domain.pricing.shared_cache import background_acquisition
+    from gaswise.providers.storage.request_budget import RequestBudget
+
+    now, sleeps, cursors, clients = [0], [], [], []
+    class Store:
+        count = 0
+        day_count = 0
+        async def consume(self, source, limit, **options):
+            if options.get("background"):
+                if self.count >= 2:
+                    raise ProviderError("gasbuddy_background_budget_exhausted")
+                self.count += 1
+                self.day_count += 1
+        async def budget_state(self, source):
+            return {"window_seconds": 60, "background_day_used": self.day_count, "blocked_seconds": 0}
+
+    store = Store()
+    async def sleep(delay):
+        sleeps.append(delay)
+        now[0] += delay
+        store.count = 0
+
+    def handler(request):
+        if request.method == "GET":
+            return httpx.Response(200, text='window.gbcsrf = "fixture-token";')
+        cursor = json.loads(request.content)["variables"].get("cursor")
+        cursors.append(cursor)
+        index = 0 if cursor is None else int(cursor)
+        return httpx.Response(200, json={"data": {"locationBySearchTerm": {"stations": {
+            "cursor": {"next": str(index + 1) if index < 2 else None},
+            "results": [{"id": str(index)}],
+        }}}})
+
+    def factory():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        clients.append(client)
+        return client
+
+    worker = GasBuddyHTTPSession(client_factory=factory)
+    worker.request_budget = RequestBudget(store, {"gasbuddy": 12}, sleep=sleep, clock=lambda: now[0])
+    token = background_acquisition.set(True)
+    try:
+        _, listing = await worker.snapshot(GasBuddySearch(search="Los Angeles, CA", max_pages=3), "", 1)
+        assert cursors == [None, "1", "2"]
+        assert sleeps == [60]
+        assert listing["_page_requests"] == 3
+        assert len(listing["results"]) == 3
+        assert store.day_count == 4  # Bootstrap + three pages, not duplicated pages.
+        assert worker._client is None  # Background never owns the foreground transport.
+    finally:
+        background_acquisition.reset(token)
+    await worker.snapshot(GasBuddySearch(search="Los Angeles, CA", max_pages=1), "", 1)
+    assert worker._client is not None
+    assert len(clients) == 2
+    await worker.close()
+    assert all(client.is_closed for client in clients)

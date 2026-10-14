@@ -218,10 +218,11 @@ class PostgresPricingCache:
             SELECT CASE WHEN now()-window_start < interval '60 seconds' THEN request_count ELSE 0 END AS used,
                    CASE WHEN now()-window_start < interval '60 seconds' THEN background_count ELSE 0 END AS background_used,
                    CASE WHEN now()-background_day_start < interval '24 hours' THEN background_day_count ELSE 0 END AS background_day_used,
+                   GREATEST(0, EXTRACT(EPOCH FROM window_start + interval '60 seconds'-now())) AS window_seconds,
                    GREATEST(0, EXTRACT(EPOCH FROM blocked_until-now())) AS blocked_seconds
             FROM gaswise.source_limits WHERE source=$1
         """, source)
-        return dict(row) if row else {"used": 0, "background_used": 0, "background_day_used": 0, "blocked_seconds": 0}
+        return dict(row) if row else {"used": 0, "background_used": 0, "background_day_used": 0, "window_seconds": 0, "blocked_seconds": 0}
 
     async def consume(self, source, limit, *, background=False, background_daily_limit=100):
         async with self.pool.acquire() as connection, connection.transaction():
@@ -238,8 +239,9 @@ class PostgresPricingCache:
             day_used = 0 if day_reset else row["background_day_count"]
             if used >= limit:
                 raise ProviderError(f"{source}_request_budget_exhausted")
-            if background and (used >= max(1, limit // 2) or bg_used >= max(1, limit // 5)
-                               or day_used >= background_daily_limit):
+            if background and day_used >= background_daily_limit:
+                raise ProviderError(f"{source}_background_daily_budget_exhausted")
+            if background and (used >= max(1, limit // 2) or bg_used >= max(1, limit // 5)):
                 raise ProviderError(f"{source}_background_budget_exhausted")
             await connection.execute("""
                 UPDATE gaswise.source_limits SET request_count=$2, background_count=$4,

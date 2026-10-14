@@ -16,6 +16,7 @@ from gaswise.contracts.search import Search
 from gaswise.contracts.sources import gasbuddy_variables
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.comparison import distance_meters
+from gaswise.domain.pricing.shared_cache import background_acquisition
 from gaswise.providers.gasbuddy.web import PRICE_QUERY
 
 LANDING = "https://www.gasbuddy.com/"
@@ -54,6 +55,8 @@ class GasBuddyHTTPSession:
             )
         )
         self.request_budget = None
+        self._background_worker = None
+        self._is_background_worker = False
         self._client = None
         self._csrf = None
         self._created_at = 0
@@ -79,6 +82,13 @@ class GasBuddyHTTPSession:
         self._expiry_task = asyncio.create_task(self._expire_idle_session(self._client))
 
     async def snapshot(self, query: Search, _url: str, fuel: int):
+        if background_acquisition.get() and not self._is_background_worker:
+            if self._background_worker is None:
+                self._background_worker = GasBuddyHTTPSession(
+                    session_seconds=self.session_seconds, client_factory=self._factory)
+                self._background_worker._is_background_worker = True
+            self._background_worker.request_budget = self.request_budget
+            return await self._background_worker.snapshot(query, _url, fuel)
         async with self._lock:
             try:
                 if self._client is None or time.monotonic() - self._created_at >= self.session_seconds:
@@ -158,4 +168,6 @@ class GasBuddyHTTPSession:
             await client.aclose()
 
     async def close(self):
+        if self._background_worker is not None:
+            await self._background_worker.close()
         await self._discard_session()

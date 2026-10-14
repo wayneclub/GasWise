@@ -209,3 +209,33 @@ async def test_stale_shared_refresh_inherits_background_budget_after_step_return
     assert seen == [False, True]
     assert warmer.paces["waze"].loads == 1
     await shared.close()
+
+
+async def test_waiting_background_gasbuddy_does_not_occupy_foreground_source_slot():
+    from gaswise.domain.pricing.shared_cache import background_acquisition
+    from gaswise.services.pricing.smart import SmartService
+
+    class Cache:
+        async def get(self, source, key, operation):
+            return await operation(), False
+
+    service = SmartService(b"test-secret", "prices_only", shared_cache=Cache())
+    started, release = asyncio.Event(), asyncio.Event()
+
+    async def background():
+        started.set()
+        await release.wait()
+        return []
+
+    async def foreground():
+        return ["foreground-completed"]
+
+    token = background_acquisition.set(True)
+    task = asyncio.create_task(service.cached("gasbuddy:background", background))
+    background_acquisition.reset(token)
+    try:
+        await asyncio.wait_for(started.wait(), 1)
+        assert await asyncio.wait_for(service.cached("gasbuddy:foreground", foreground), 1) == (["foreground-completed"], False)
+    finally:
+        release.set()
+        await task

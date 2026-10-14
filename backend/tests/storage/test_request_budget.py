@@ -59,3 +59,72 @@ async def test_background_http_requests_use_separate_shared_allowance():
     await budget.before("maps")
     assert store.calls == [("maps", 60, {"background": True, "background_daily_limit": 40}),
                            ("maps", 60, {})]
+
+
+async def test_background_minute_wait_does_not_retry_daily_limit_or_foreground():
+    from gaswise.domain.pricing.shared_cache import background_acquisition
+
+    class Store:
+        error = "gasbuddy_background_budget_exhausted"
+        calls = 0
+
+        async def consume(self, *args, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                raise ProviderError(self.error)
+
+        async def budget_state(self, source):
+            return {"window_seconds": 30, "blocked_seconds": 0, "background_day_used": 0}
+
+    sleeps = []
+
+    async def sleep(delay):
+        sleeps.append(delay)
+
+    store = Store()
+    budget = RequestBudget(store, {"gasbuddy": 12}, sleep=sleep)
+    token = background_acquisition.set(True)
+    try:
+        await budget.before("gasbuddy")
+        assert store.calls == 2 and sleeps == [30.05]
+        store.calls = 0
+        store.error = "gasbuddy_background_daily_budget_exhausted"
+        with pytest.raises(ProviderError, match="daily_budget"):
+            await budget.before("gasbuddy")
+        assert store.calls == 1 and sleeps == [30.05]
+    finally:
+        background_acquisition.reset(token)
+    store.calls = 0
+    store.error = "gasbuddy_request_budget_exhausted"
+    with pytest.raises(ProviderError, match="request_budget"):
+        await budget.before("gasbuddy")
+    assert store.calls == 1
+
+
+async def test_background_wait_has_deadline_and_respects_shared_cooldown():
+    from gaswise.domain.pricing.shared_cache import background_acquisition
+
+    class Store:
+        blocked = 0
+        async def consume(self, *args, **kwargs):
+            raise ProviderError("gasbuddy_background_budget_exhausted")
+        async def budget_state(self, source):
+            return {"window_seconds": 60, "blocked_seconds": self.blocked, "background_day_used": 0}
+
+    now, sleeps = [0], []
+    async def sleep(delay):
+        sleeps.append(delay)
+        now[0] += delay
+    store = Store()
+    budget = RequestBudget(store, {"gasbuddy": 12}, sleep=sleep, clock=lambda: now[0])
+    token = background_acquisition.set(True)
+    try:
+        with pytest.raises(ProviderError, match="wait_exhausted"):
+            await budget.before("gasbuddy")
+        assert sleeps == [60, 60, 60]
+        store.blocked = 120
+        with pytest.raises(ProviderError, match="background_budget"):
+            await budget.before("gasbuddy")
+        assert len(sleeps) == 3
+    finally:
+        background_acquisition.reset(token)
