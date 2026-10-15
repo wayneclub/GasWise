@@ -39,12 +39,13 @@ class PostgresPricingCache:
             await connection.execute("UPDATE gaswise.base_collection_jobs SET enabled=false WHERE NOT(id=ANY($1::text[]))", [job["id"] for job in jobs])
             for job in jobs:
                 await connection.execute("""
-                    INSERT INTO gaswise.base_collection_jobs(id,base,source,fuel,descriptor,population_priority)
-                    VALUES($1,$2,$3,$4,$5::jsonb,$6) ON CONFLICT(id) DO UPDATE SET enabled=true,
+                    INSERT INTO gaswise.base_collection_jobs(id,base,source,fuel,descriptor,population_priority,mandatory,request_reserve)
+                    VALUES($1,$2,$3,$4,$5::jsonb,$6,$7,$8) ON CONFLICT(id) DO UPDATE SET enabled=true,
                     next_due=CASE WHEN base_collection_jobs.descriptor IS DISTINCT FROM EXCLUDED.descriptor
                                   THEN now() ELSE base_collection_jobs.next_due END,
-                    descriptor=EXCLUDED.descriptor,population_priority=EXCLUDED.population_priority
-                """, job["id"], job["base"], job["source"], job["fuel"], json.dumps(job["descriptor"]), job["population_priority"])
+                    descriptor=EXCLUDED.descriptor,population_priority=EXCLUDED.population_priority,
+                    mandatory=EXCLUDED.mandatory,request_reserve=EXCLUDED.request_reserve
+                """, job["id"], job["base"], job["source"], job["fuel"], json.dumps(job["descriptor"]), job["population_priority"], job.get("mandatory", False), job.get("request_reserve", 1))
 
     async def base_jobs_pending(self, source):
         return await self.pool.fetchval("SELECT EXISTS(SELECT 1 FROM gaswise.base_collection_jobs WHERE enabled AND source=$1 AND next_due<=now())", source)
@@ -53,7 +54,9 @@ class PostgresPricingCache:
         return await self.pool.fetchval("""
             UPDATE gaswise.base_collection_jobs SET lease_owner=$1,lease_until=now()+interval '15 minutes'
             WHERE id=(SELECT id FROM gaswise.base_collection_jobs WHERE enabled AND next_due<=now() AND source=ANY($2::text[])
-                      AND (lease_until IS NULL OR lease_until<=now()) ORDER BY next_due,population_priority DESC,id
+                      AND (lease_until IS NULL OR lease_until<=now()) ORDER BY mandatory DESC,
+                      (10*ln(1+population_priority)/ln(10) + 2*GREATEST(0,EXTRACT(EPOCH FROM (now()-next_due))/3600)
+                       + CASE WHEN last_success IS NULL THEN 30 ELSE 0 END) DESC,next_due,id
                       FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id
         """, owner, sources)
 
@@ -76,7 +79,10 @@ class PostgresPricingCache:
         """, job_id, owner, float(delay), error, quotes, stations)
 
     async def base_job_status(self):
-        rows = await self.pool.fetch("SELECT id,base,source,fuel,next_due,last_success,failures,last_error,quote_count,station_count FROM gaswise.base_collection_jobs WHERE enabled ORDER BY base,fuel,source")
+        rows = await self.pool.fetch("""SELECT id,base,source,fuel,next_due,last_success,failures,last_error,quote_count,station_count,mandatory,request_reserve,
+            (10*ln(1+population_priority)/ln(10) + 2*GREATEST(0,EXTRACT(EPOCH FROM (now()-next_due))/3600)
+             + CASE WHEN last_success IS NULL THEN 30 ELSE 0 END)::float AS priority_score,
+            (mandatory AND next_due<=now()) AS mandatory_due FROM gaswise.base_collection_jobs WHERE enabled ORDER BY mandatory DESC,priority_score DESC,base,fuel,source""")
         return [dict(row) for row in rows]
 
     async def price_history(self, canonical_id, source, station_id, fuel_type, days):
@@ -307,7 +313,7 @@ class PostgresPricingCache:
                 "daily_review_requests": row["daily_review_requests"],
             }
 
-    async def consume(self, source, limit, *, background=False, background_daily_limit=100):
+    async def consume(self, source, limit, *, background=False, background_daily_limit=100, mandatory=False):
         async with self.pool.acquire() as connection, connection.transaction():
             await connection.execute("INSERT INTO gaswise.source_limits(source) VALUES($1) ON CONFLICT DO NOTHING", source)
             row = await connection.fetchrow("""
@@ -326,6 +332,13 @@ class PostgresPricingCache:
                 raise ProviderError(f"{source}_request_budget_exhausted")
             if background and day_used >= background_daily_limit:
                 raise ProviderError(f"{source}_background_daily_budget_exhausted")
+            if background and not mandatory:
+                reserved = await connection.fetchval("""
+                    SELECT COALESCE(SUM(request_reserve),0) FROM gaswise.base_collection_jobs
+                    WHERE enabled AND mandatory AND source=$1 AND next_due <= $2 + interval '24 hours'
+                """, source, row["clock"] if day_reset else row["background_day_start"])
+                if day_used >= max(0, background_daily_limit - reserved):
+                    raise ProviderError(f"{source}_mandatory_budget_reserved")
             if background and (used >= max(1, limit // 2) or bg_used >= max(1, limit // 5)):
                 raise ProviderError(f"{source}_background_budget_exhausted")
             await connection.execute("""

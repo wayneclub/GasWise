@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from gaswise.contracts.common import Point
 from gaswise.contracts.sources import GasBuddySearch, GooglePriceSearch, MapsWebSearch
 from gaswise.domain.pricing.collection_bases import BASE_CATALOG, BASES
-from gaswise.domain.pricing.shared_cache import background_acquisition
+from gaswise.domain.pricing.shared_cache import background_acquisition, mandatory_acquisition
 from gaswise.services.pricing.discovery import shared_viewport
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,8 @@ class BaseCollection:
     async def initialize(self):
         populations = {base["id"]: base["population_2026"] or 0 for base in BASE_CATALOG["bases"]}
         descriptors = [{"id": job.id, "population_priority": populations[job.base], "base": job.base, "source": job.source,
-                        "fuel": job.fuel, "descriptor": job.query.model_dump(mode="json")}
+                        "fuel": job.fuel, "mandatory": job.base == "la",
+                        "request_reserve": 4 if job.source == "gasbuddy" else (3 if job.source == "waze" else 1 + job.query.detail_limit), "descriptor": job.query.model_dump(mode="json")}
                        for job in self.jobs.values()]
         await self.cache._db("configure_base_jobs", descriptors)
 
@@ -92,6 +93,7 @@ class BaseCollection:
             return False
         completed = False
         token = background_acquisition.set(True)
+        mandatory_token = mandatory_acquisition.set(job.base == "la")
         try:
             state = await self.cache.budget_state(job.source)
             if (state.get("blocked_seconds", 0) or state["background_day_used"] >= (state.get("daily_limit") or self.daily_limit)
@@ -124,6 +126,7 @@ class BaseCollection:
             return False
         finally:
             background_acquisition.reset(token)
+            mandatory_acquisition.reset(mandatory_token)
             if not completed:
                 try:
                     await self.cache._db("finish_base_job", job.id, owner, 60, "interrupted", 0, 0)
@@ -134,7 +137,10 @@ class BaseCollection:
         return {"enabled": True, "interval_seconds": self.interval,
                 "radius_meters": 10000, "coverage": "partial",
                 "base_count": len({job.base for job in self.jobs.values()}),
-                "total_jobs": len(self.jobs), "schedule": "budgeted_rotation",
+                "total_jobs": len(self.jobs), "schedule": "weighted_rotation",
+                "mandatory_bases": ["la"] if any(job.base == "la" for job in self.jobs.values()) else [],
+                "score_policy": {"population_log_weight": 10, "overdue_hour_weight": 2, "never_sampled_bonus": 30},
+                "mandatory_target_seconds": self.interval,
                 "jobs": await self.cache._db("base_job_status")}
 
     async def run(self):

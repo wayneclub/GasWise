@@ -6,7 +6,7 @@ from email.utils import parsedate_to_datetime
 from time import monotonic
 
 from gaswise.domain.ports import ProviderError
-from gaswise.domain.pricing.shared_cache import background_acquisition
+from gaswise.domain.pricing.shared_cache import background_acquisition, mandatory_acquisition
 
 
 def retry_seconds(headers):
@@ -34,7 +34,8 @@ class RequestBudget:
             try:
                 if background_acquisition.get():
                     await self.store.consume(source, self.limits[source], background=True,
-                                             background_daily_limit=self.background_daily_limit)
+                                             background_daily_limit=self.background_daily_limit,
+                                             **({"mandatory": True} if mandatory_acquisition.get() else {}))
                 else:
                     await self.store.consume(source, self.limits[source])
                 return

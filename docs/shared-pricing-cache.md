@@ -280,3 +280,20 @@ same policy settings.
 and retained daily counts against isolated temporary database rows with zero
 provider HTTP calls. Fixture review timestamps do not prove a natural clean day
 or that higher limits improve coverage or avoid provider protection.
+
+### Weighted city rotation
+
+LA's five source/fuel jobs are mandatory targets at the configured collection interval
+(24 hours in production). Due LA jobs precede optional cities. Optional jobs score
+`10 × log10(1 + population) + 2 × overdue hours + 30 if never sampled`.
+Unbounded waiting credit lets smaller cities eventually outrank larger cities;
+these are scheduling weights, not measured fuel-purchase rankings.
+
+Within each source's rolling daily budget, pending LA jobs due before the window
+ends reserve conservative HTTP allowances: GasBuddy 4 per grade, Maps 1 plus
+configured details, Waze 3. Each outgoing optional background request checks the
+reservation under the shared source row lock, including hot-query warming.
+Mandatory jobs still obey the source's daily/minute ceilings and cooldowns.
+Provider failures can therefore miss the target; authenticated refresh status
+exposes `mandatory_due`, `priority_score`, last success and errors for inspection.
+The target covers the existing bounded city samples, not every station in LA.
