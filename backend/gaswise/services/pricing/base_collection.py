@@ -78,6 +78,8 @@ class BaseCollection:
         for source in {job.source for job in self.jobs.values()}:
             state = await self.cache.budget_state(source)
             if (not state.get("blocked_seconds", 0) and state["background_day_used"] < (state.get("daily_limit") or self.daily_limit)
+                    and (state.get("mandatory_due", False) or state["background_day_used"] <
+                         (state.get("daily_limit") or self.daily_limit) - state.get("mandatory_reserved_requests", 0))
                     and state["used"] < max(1, self.limits[source] // 2)
                     and state.get("background_used", 0) < max(1, self.limits[source] // 5)):
                 available.append(source)
@@ -118,9 +120,11 @@ class BaseCollection:
             return True
         except asyncio.CancelledError:
             raise
-        except Exception:
+        except Exception as error:
             # Deliberately exclude transport messages, query data and secrets.
-            await self.cache._db("finish_base_job", job.id, owner, 3600, "collection_failed", 0, 0)
+            deferred = str(error).endswith("_mandatory_budget_reserved")
+            await self.cache._db("finish_base_job", job.id, owner, 60 if deferred else 3600,
+                                 "source_budget_deferred" if deferred else "collection_failed", 0, 0)
             completed = True
             logger.warning("Fixed base collection deferred for %s", job.id)
             return False

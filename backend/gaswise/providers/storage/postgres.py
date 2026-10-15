@@ -300,7 +300,15 @@ class PostgresPricingCache:
             row = await self._review_daily(connection, row)
             age = (row["clock"] - row["window_start"]).total_seconds()
             day_age = (row["clock"] - row["background_day_start"]).total_seconds()
+            reservation = await connection.fetchrow("""
+                SELECT COALESCE(SUM(request_reserve),0) AS requests,
+                    COALESCE(bool_or(next_due<=now()),false) AS due
+                FROM gaswise.base_collection_jobs WHERE enabled AND mandatory AND source=$1
+                    AND next_due <= $2::timestamptz + interval '24 hours'
+            """, source, row["clock"] if day_age >= 86400 else row["background_day_start"])
             return {
+                "mandatory_reserved_requests": reservation["requests"],
+                "mandatory_due": reservation["due"],
                 "used": row["request_count"] if age < 60 else 0,
                 "background_used": row["background_count"] if age < 60 else 0,
                 "background_day_used": row["background_day_count"] if day_age < 86400 else 0,
