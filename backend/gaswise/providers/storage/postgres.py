@@ -335,7 +335,7 @@ class PostgresPricingCache:
             if background and not mandatory:
                 reserved = await connection.fetchval("""
                     SELECT COALESCE(SUM(request_reserve),0) FROM gaswise.base_collection_jobs
-                    WHERE enabled AND mandatory AND source=$1 AND next_due <= $2 + interval '24 hours'
+                    WHERE enabled AND mandatory AND source=$1 AND next_due <= $2::timestamptz + interval '24 hours'
                 """, source, row["clock"] if day_reset else row["background_day_start"])
                 if day_used >= max(0, background_daily_limit - reserved):
                     raise ProviderError(f"{source}_mandatory_budget_reserved")
