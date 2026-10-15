@@ -82,3 +82,5 @@ CREATE TABLE IF NOT EXISTS gaswise.base_collection_jobs (
     quote_count integer NOT NULL DEFAULT 0,
     station_count integer NOT NULL DEFAULT 0
 );
+
+ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS population_priority integer NOT NULL DEFAULT 0;

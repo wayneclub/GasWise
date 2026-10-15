@@ -18,7 +18,7 @@ class Cache:
         if method == "configure_base_jobs":
             self.jobs = {job["id"]: job for job in args[0]}
         elif method == "claim_base_job":
-            return next(iter(self.jobs), None)
+            return next((key for key, job in self.jobs.items() if job["source"] in args[1]), None)
         elif method == "finish_base_job":
             self.saved.append(args)
             self.jobs.pop(args[0], None)
@@ -72,7 +72,8 @@ async def test_busy_source_does_not_send_network_request_or_mark_success():
     cache.used = 6
     assert not await collector.step()
     assert provider.calls == []
-    assert cache.saved[0][3] == "source_budget_deferred"
+    assert not cache.saved
+    assert len(cache.jobs) == 6
     assert not background_acquisition.get()
 
 
@@ -95,3 +96,39 @@ async def test_cancellation_releases_job_without_marking_completion():
         await collector.step()
     assert cache.saved[0][3] == "interrupted"
     assert not background_acquisition.get()
+
+
+def test_socal_catalog_covers_population_centers_and_corridor_supplements():
+    from pydantic import ValidationError
+
+    from gaswise.app.settings import Settings
+    from gaswise.domain.pricing.collection_bases import BASE_CATALOG, BASES
+
+    assert len(Settings(base_collection_preset="socal").base_collection_bases) == 85
+    assert len(BASES) == 85
+    assert len({base["census_geoid"] for base in BASE_CATALOG["bases"]}) == 85
+    assert sum(base["selection_reason"] == "population_100000_plus" for base in BASE_CATALOG["bases"]) == 49
+    assert {"la", "irvine", "sd", "industry", "rowland-heights", "barstow", "baker", "el-centro"} <= BASES.keys()
+    assert all(32 < lat < 36 and -122 < lng < -114 for lat, lng in BASES.values())
+    with pytest.raises(ValidationError):
+        Settings(base_collection_bases=["unknown-city"])
+    with pytest.raises(ValidationError):
+        Settings(base_collection_bases=["la", "la"])
+
+
+async def test_all_bases_have_jobs_even_without_foreground_requests():
+    from gaswise.domain.pricing.collection_bases import BASES
+    collector, cache, provider = setup()
+    expanded = BaseCollection(collector.service, list(BASES))
+    await expanded.initialize()
+    assert len(cache.jobs) == 170  # This fixture enables only GasBuddy.
+    assert len({job["base"] for job in cache.jobs.values()}) == 85
+
+
+def test_all_fuel_waze_job_uses_distinct_cache_namespace_and_no_duplicate_grade_query():
+    collector, cache, provider = setup()
+    collector.service.waze = object()
+    expanded = BaseCollection(collector.service, ["la"])
+    jobs = [job for job in expanded.jobs.values() if job.source == "waze"]
+    assert len(jobs) == 1 and jobs[0].fuel == "all"
+    assert jobs[0].raw_key.startswith("waze:all-fuels-v1:")

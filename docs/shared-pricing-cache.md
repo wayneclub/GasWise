@@ -202,13 +202,13 @@ pages, so a cold three-page query normally costs four background HTTP calls.
 Enable `GASWISE_BASE_COLLECTION_ENABLED=true` with shared PostgreSQL and live mode.
 `GASWISE_BASE_COLLECTION_BASES=["la","irvine","sd"]` selects public city-centre
 sampling bases for Los Angeles, Irvine and San Diego. Each base uses a fixed
-10-km H3-snapped query circle, Regular and Premium, and the configured GasBuddy,
+10-km H3-snapped query circle, Regular/Premium (and native Waze fuel grades), and configured GasBuddy,
 Maps-web and Waze providers. This samples bounded source results, not entire cities.
 GasBuddy permits three pages and preserves both payment variants; Maps permits
 three Premium detail requests. No routes, vehicle identities or visitor searches
 are required. Premium does not establish 91 octane or a known payment basis.
 
-Eighteen jobs (three cities × two fuels × three available sources) are persisted
+Five jobs per base (GasBuddy and Maps Regular/Premium, Waze all-reported-fuels) are persisted
 in `gaswise.base_collection_jobs`. New jobs are due immediately; each successful
 job becomes due after 24 hours (`GASWISE_BASE_COLLECTION_INTERVAL_SECONDS`, minimum
 86400). Existing schedules survive restart; startup only upserts configuration.
@@ -232,3 +232,14 @@ Fresh cached results can satisfy an initial job; stale entries must finish refre
 before the job is marked successful. Authentication/session failures remain explicit.
 `/v1/sources/refresh-status` now includes each base job's next due time, last success,
 retry state and last quote/station counts. None of these require foreground traffic.
+
+### Expanded SoCal registry
+
+The [SoCal research and full base list](socal-base-research.md) defines 85 public
+bases across eight counties. `GASWISE_BASE_COLLECTION_BASES` accepts their validated
+IDs; source catalog data ships in the wheel. `GASWISE_BASE_COLLECTION_PRESET=socal`
+selects all 85; `custom` uses the configured list (default original three). Older
+releases ignore the preset and retain their original three-city configuration. Available sources are checked
+before leasing a job so exhausted-source work keeps its place across days.
+The source daily allowances are shared with hot warming and are not increased.
+The 24-hour interval is a target after success, not a full-registry daily guarantee.

@@ -167,7 +167,7 @@ class WazeProvider:
                 except (ValueError, TypeError, KeyError, OverflowError, OSError):
                     raise ProviderError("waze_invalid_response") from None
 
-    async def stations(self, query):
+    async def stations(self, query, *, all_fuels=False):
         rows = await self.prices(query)
         stations = []
         try:
@@ -180,7 +180,12 @@ class WazeProvider:
                 rating = rating if type(rating) in (float, int) and math.isfinite(rating) and 0 <= rating <= 5 else None
                 count = count if type(count) is int and count >= 0 else None
                 for price in row["prices"]:
-                    if price["fuel_type"] != "gas_" + query.fuel_type or not price["price"]:
+                    if not isinstance(price["fuel_type"], str):
+                        continue
+                    fuel_type = price["fuel_type"].removeprefix("gas_")
+                    if fuel_type not in {"regular", "midgrade", "premium", "diesel"}:
+                        continue
+                    if (not all_fuels and fuel_type != query.fuel_type) or not price["price"]:
                         continue
                     if price["price"] <= 0:
                         continue
@@ -206,7 +211,7 @@ class WazeProvider:
                                 if x
                             ),
                             price_per_gallon=Decimal(str(price["price"])),
-                            fuel_type=query.fuel_type,
+                            fuel_type=fuel_type,
                             price_updated_at=price["updated_at"],
                             fetched_at=datetime.now(UTC),
                             source="waze",

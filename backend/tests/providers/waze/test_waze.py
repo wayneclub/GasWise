@@ -219,3 +219,17 @@ def test_closed_business_overrides_weekly_open_hours():
     assert details["google_attributes"]["rating"] == 4.2
     assert details["google_attributes"]["ratings_count"] == 604
     assert details["google_attributes"]["business_status"] == "temporarily_closed"
+
+
+async def test_history_collection_keeps_native_fuel_labels_with_one_request(tmp_path):
+    calls = []
+    def handler(request):
+        calls.append(request.url.path)
+        return response(fuel_response())
+    source = provider(tmp_path, handler, uid="valid-fixture-uid")
+    async with source.client:
+        rows = await source.stations(QUERY.model_copy(update={"fuel_type": "regular"}), all_fuels=True)
+    assert len(calls) == 1
+    assert len(rows) == 1 and rows[0].fuel_type == "premium"
+    assert rows[0].payment_type == "unknown" and rows[0].octane is None
+    assert rows[0].price_updated_at.isoformat() == "2026-10-09T06:24:25+00:00"

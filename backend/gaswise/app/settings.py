@@ -29,7 +29,8 @@ class Settings(BaseSettings):
     )
     database_url: SecretStr = SecretStr("")
     base_collection_enabled: bool = False
-    base_collection_bases: list[Literal["la", "irvine", "sd"]] = Field(default_factory=lambda: ["la", "irvine", "sd"], min_length=1, max_length=3)
+    base_collection_preset: Literal["custom", "socal"] = "custom"
+    base_collection_bases: list[str] = Field(default_factory=lambda: ["la", "irvine", "sd"], min_length=1, max_length=200)
     base_collection_interval_seconds: int = Field(default=86400, ge=86400, le=604800)
     hot_pricing_refresh_enabled: bool = False
     hot_pricing_refresh_daily_requests: int = Field(default=100, ge=1, le=1000)
@@ -75,6 +76,21 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173"]
     refresh_seconds: int = Field(default=300, ge=60, le=3600)
     max_concurrent_searches: int = Field(default=2, ge=1, le=20)
+
+    @model_validator(mode="after")
+    def expand_collection_preset(self):
+        if self.base_collection_preset == "socal":
+            from gaswise.domain.pricing.collection_bases import BASES
+            self.base_collection_bases = list(BASES)
+        return self
+
+    @field_validator("base_collection_bases")
+    @classmethod
+    def valid_collection_bases(cls, value):
+        from gaswise.domain.pricing.collection_bases import BASES
+        if len(set(value)) != len(value) or any(base not in BASES for base in value):
+            raise ValueError("Fixed collection bases must be unique configured public base IDs")
+        return value
 
     @field_validator("maps_web_session_file", "top_tier_cache_file", mode="before")
     @classmethod

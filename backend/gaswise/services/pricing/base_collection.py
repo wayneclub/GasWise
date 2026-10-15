@@ -7,15 +7,12 @@ from dataclasses import dataclass
 
 from gaswise.contracts.common import Point
 from gaswise.contracts.sources import GasBuddySearch, GooglePriceSearch, MapsWebSearch
+from gaswise.domain.pricing.collection_bases import BASE_CATALOG, BASES
 from gaswise.domain.pricing.shared_cache import background_acquisition
 from gaswise.services.pricing.discovery import shared_viewport
 
 logger = logging.getLogger(__name__)
-BASES = {
-    "la": (34.052235, -118.243683),
-    "irvine": (33.684567, -117.826505),
-    "sd": (32.715736, -117.161087),
-}
+
 
 
 @dataclass
@@ -29,7 +26,8 @@ class CollectionJob:
 
     @property
     def raw_key(self):
-        return self.source + ":" + self.query.model_dump_json()
+        namespace = "waze:all-fuels-v1:" if self.source == "waze" else self.source + ":"
+        return namespace + self.query.model_dump_json()
 
 
 def collection_jobs(service, bases):
@@ -46,9 +44,10 @@ def collection_jobs(service, bases):
                 ("waze", service.waze, GooglePriceSearch(
                     origin=centre, radius_meters=radius, fuel_type=fuel)),
             ):
-                if provider is not None:
-                    job_id = f"{base}:{fuel}:{source}"
-                    jobs[job_id] = CollectionJob(job_id, base, source, fuel, query, provider)
+                if provider is not None and not (source == "waze" and fuel == "premium"):
+                    job_fuel = "all" if source == "waze" else fuel
+                    job_id = f"{base}:{job_fuel}:{source}"
+                    jobs[job_id] = CollectionJob(job_id, base, source, job_fuel, query, provider)
     return jobs
 
 
@@ -62,7 +61,8 @@ class BaseCollection:
         self.daily_limit = daily_limit
 
     async def initialize(self):
-        descriptors = [{"id": job.id, "base": job.base, "source": job.source,
+        populations = {base["id"]: base["population_2026"] or 0 for base in BASE_CATALOG["bases"]}
+        descriptors = [{"id": job.id, "population_priority": populations[job.base], "base": job.base, "source": job.source,
                         "fuel": job.fuel, "descriptor": job.query.model_dump(mode="json")}
                        for job in self.jobs.values()]
         await self.cache._db("configure_base_jobs", descriptors)
@@ -71,8 +71,19 @@ class BaseCollection:
         return await self.cache._db("base_jobs_pending", source)
 
     async def step(self):
+        # Skip exhausted sources without moving their due dates behind newer jobs.
+        # Thus older, unvisited bases keep priority across days and restarts.
+        available = []
+        for source in {job.source for job in self.jobs.values()}:
+            state = await self.cache.budget_state(source)
+            if (not state.get("blocked_seconds", 0) and state["background_day_used"] < self.daily_limit
+                    and state["used"] < max(1, self.limits[source] // 2)
+                    and state.get("background_used", 0) < max(1, self.limits[source] // 5)):
+                available.append(source)
+        if not available:
+            return False
         owner = uuid.uuid4().hex
-        job_id = await self.cache._db("claim_base_job", owner)
+        job_id = await self.cache._db("claim_base_job", owner, available)
         if job_id is None:
             return False
         job = self.jobs.get(job_id)
@@ -94,7 +105,7 @@ class BaseCollection:
                 slot = self.service.background_gasbuddy_slot if job.source == "gasbuddy" else self.service.source_slots[job.source]
                 async with slot:
                     if job.source == "waze":
-                        return await job.provider.stations(job.query)
+                        return await job.provider.stations(job.query, all_fuels=True)
                     return await job.provider.prices(job.query)
 
             result, _ = await self.cache.get(job.source, job.raw_key, load, wait_refresh=True)
@@ -122,6 +133,8 @@ class BaseCollection:
     async def status(self):
         return {"enabled": True, "interval_seconds": self.interval,
                 "radius_meters": 10000, "coverage": "partial",
+                "base_count": len({job.base for job in self.jobs.values()}),
+                "total_jobs": len(self.jobs), "schedule": "budgeted_rotation",
                 "jobs": await self.cache._db("base_job_status")}
 
     async def run(self):

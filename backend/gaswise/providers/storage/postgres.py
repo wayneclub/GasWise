@@ -38,23 +38,23 @@ class PostgresPricingCache:
             await connection.execute("UPDATE gaswise.base_collection_jobs SET enabled=false WHERE NOT(id=ANY($1::text[]))", [job["id"] for job in jobs])
             for job in jobs:
                 await connection.execute("""
-                    INSERT INTO gaswise.base_collection_jobs(id,base,source,fuel,descriptor)
-                    VALUES($1,$2,$3,$4,$5::jsonb) ON CONFLICT(id) DO UPDATE SET enabled=true,
+                    INSERT INTO gaswise.base_collection_jobs(id,base,source,fuel,descriptor,population_priority)
+                    VALUES($1,$2,$3,$4,$5::jsonb,$6) ON CONFLICT(id) DO UPDATE SET enabled=true,
                     next_due=CASE WHEN base_collection_jobs.descriptor IS DISTINCT FROM EXCLUDED.descriptor
                                   THEN now() ELSE base_collection_jobs.next_due END,
-                    descriptor=EXCLUDED.descriptor
-                """, job["id"], job["base"], job["source"], job["fuel"], json.dumps(job["descriptor"]))
+                    descriptor=EXCLUDED.descriptor,population_priority=EXCLUDED.population_priority
+                """, job["id"], job["base"], job["source"], job["fuel"], json.dumps(job["descriptor"]), job["population_priority"])
 
     async def base_jobs_pending(self, source):
         return await self.pool.fetchval("SELECT EXISTS(SELECT 1 FROM gaswise.base_collection_jobs WHERE enabled AND source=$1 AND next_due<=now())", source)
 
-    async def claim_base_job(self, owner):
+    async def claim_base_job(self, owner, sources):
         return await self.pool.fetchval("""
             UPDATE gaswise.base_collection_jobs SET lease_owner=$1,lease_until=now()+interval '15 minutes'
-            WHERE id=(SELECT id FROM gaswise.base_collection_jobs WHERE enabled AND next_due<=now()
-                      AND (lease_until IS NULL OR lease_until<=now()) ORDER BY next_due,id
+            WHERE id=(SELECT id FROM gaswise.base_collection_jobs WHERE enabled AND next_due<=now() AND source=ANY($2::text[])
+                      AND (lease_until IS NULL OR lease_until<=now()) ORDER BY next_due,population_priority DESC,id
                       FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id
-        """, owner)
+        """, owner, sources)
 
     async def finish_base_job(self, job_id, owner, delay, error, quotes, stations):
         await self.pool.execute("""
