@@ -10,6 +10,7 @@ from pydantic import SecretStr
 
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.cache_policy import prune_quotes, public_quotes, quote_expiry
+from gaswise.domain.pricing.daily_ramp import reviewed_limit
 from gaswise.domain.pricing.shared_cache import CachedQuery
 
 
@@ -57,6 +58,13 @@ class PostgresPricingCache:
         """, owner, sources)
 
     async def finish_base_job(self, job_id, owner, delay, error, quotes, stations):
+        if error == "collection_failed":
+            await self.pool.execute("""
+                UPDATE gaswise.source_limits SET last_collection_failure_at=now(),
+                    daily_review_at=CASE WHEN adaptive_daily_limit IS NULL THEN daily_review_at ELSE now() END,
+                    daily_review_requests=0
+                WHERE source=(SELECT source FROM gaswise.base_collection_jobs WHERE id=$1 AND lease_owner=$2)
+            """, job_id, owner)
         await self.pool.execute("""
             UPDATE gaswise.base_collection_jobs SET next_due=now()+$3*interval '1 second',
             lease_owner=NULL,lease_until=NULL,last_error=$4,
@@ -252,16 +260,52 @@ class PostgresPricingCache:
         """, source, ids)
         return {row["station_id"]: row["canonical_id"] for row in rows}
 
+    async def configure_daily_ramp(self, sources, initial, floor, ceiling):
+        async with self.pool.acquire() as connection, connection.transaction():
+            for source in sources:
+                await connection.execute("""
+                    INSERT INTO gaswise.source_limits(source,adaptive_daily_limit,adaptive_daily_floor,
+                        adaptive_daily_max,daily_review_at) VALUES($1,$2,$3,$4,now())
+                    ON CONFLICT(source) DO UPDATE SET
+                        adaptive_daily_limit=LEAST($4,GREATEST($3,COALESCE(source_limits.adaptive_daily_limit,$2))),
+                        adaptive_daily_floor=$3,adaptive_daily_max=$4,
+                        daily_review_at=COALESCE(source_limits.daily_review_at,now())
+                """, source, initial, floor, ceiling)
+
+    async def disable_daily_ramp(self, sources):
+        await self.pool.execute("UPDATE gaswise.source_limits SET adaptive_daily_limit=NULL WHERE source=ANY($1::text[])", sources)
+
+    async def _review_daily(self, connection, row):
+        row = dict(row)
+        limit = reviewed_limit(row)
+        if limit is not None:
+            await connection.execute("""
+                UPDATE gaswise.source_limits SET adaptive_daily_limit=$2,daily_review_at=now(),
+                    daily_review_requests=0 WHERE source=$1
+            """, row["source"], limit)
+            row.update(adaptive_daily_limit=limit, daily_review_at=row["clock"], daily_review_requests=0)
+        return row
+
     async def budget_state(self, source):
-        row = await self.pool.fetchrow("""
-            SELECT CASE WHEN now()-window_start < interval '60 seconds' THEN request_count ELSE 0 END AS used,
-                   CASE WHEN now()-window_start < interval '60 seconds' THEN background_count ELSE 0 END AS background_used,
-                   CASE WHEN now()-background_day_start < interval '24 hours' THEN background_day_count ELSE 0 END AS background_day_used,
-                   GREATEST(0, EXTRACT(EPOCH FROM window_start + interval '60 seconds'-now())) AS window_seconds,
-                   GREATEST(0, EXTRACT(EPOCH FROM blocked_until-now())) AS blocked_seconds
-            FROM gaswise.source_limits WHERE source=$1
-        """, source)
-        return dict(row) if row else {"used": 0, "background_used": 0, "background_day_used": 0, "window_seconds": 0, "blocked_seconds": 0}
+        async with self.pool.acquire() as connection, connection.transaction():
+            row = await connection.fetchrow("SELECT *,now() AS clock FROM gaswise.source_limits WHERE source=$1 FOR UPDATE", source)
+            if row is None:
+                return {"used": 0,"background_used": 0,"background_day_used": 0,"window_seconds": 0,"blocked_seconds": 0}
+            row = await self._review_daily(connection, row)
+            age = (row["clock"] - row["window_start"]).total_seconds()
+            day_age = (row["clock"] - row["background_day_start"]).total_seconds()
+            return {
+                "used": row["request_count"] if age < 60 else 0,
+                "background_used": row["background_count"] if age < 60 else 0,
+                "background_day_used": row["background_day_count"] if day_age < 86400 else 0,
+                "window_seconds": max(0,60-age),
+                "blocked_seconds": max(0,(row["blocked_until"]-row["clock"]).total_seconds()) if row["blocked_until"] else 0,
+                "daily_limit": row["adaptive_daily_limit"],
+                "daily_ramp_floor": row["adaptive_daily_floor"] if row["adaptive_daily_limit"] is not None else None,
+                "daily_ramp_max": row["adaptive_daily_max"] if row["adaptive_daily_limit"] is not None else None,
+                "daily_review_at": row["daily_review_at"],
+                "daily_review_requests": row["daily_review_requests"],
+            }
 
     async def consume(self, source, limit, *, background=False, background_daily_limit=100):
         async with self.pool.acquire() as connection, connection.transaction():
@@ -269,6 +313,8 @@ class PostgresPricingCache:
             row = await connection.fetchrow("""
                 SELECT *, now() AS clock FROM gaswise.source_limits WHERE source=$1 FOR UPDATE
             """, source)
+            row = await self._review_daily(connection, row)
+            background_daily_limit = row["adaptive_daily_limit"] or background_daily_limit
             if row["blocked_until"] and row["blocked_until"] > row["clock"]:
                 raise ProviderError(f"{source}_rate_limited")
             reset = (row["clock"] - row["window_start"]).total_seconds() >= 60
@@ -286,17 +332,23 @@ class PostgresPricingCache:
                 UPDATE gaswise.source_limits SET request_count=$2, background_count=$4,
                 window_start=CASE WHEN $3 THEN now() ELSE window_start END,
                 background_day_count=$5,
-                background_day_start=CASE WHEN $6 THEN now() ELSE background_day_start END WHERE source=$1
-            """, source, used + 1, reset, bg_used + int(background), day_used + int(background), day_reset)
+                background_day_start=CASE WHEN $6 THEN now() ELSE background_day_start END,
+                daily_review_requests=CASE WHEN $7 THEN daily_review_requests+1 ELSE daily_review_requests END,
+                background_last_request_at=CASE WHEN $7 THEN now() ELSE background_last_request_at END WHERE source=$1
+            """, source, used + 1, reset, bg_used + int(background), day_used + int(background), day_reset, background)
 
     async def cooldown(self, source, retry_seconds=None):
         await self.pool.execute("""
-            INSERT INTO gaswise.source_limits(source,blocked_until,failure_count)
-            VALUES($1, now() + $2 * interval '1 second', 1)
+            INSERT INTO gaswise.source_limits(source,blocked_until,failure_count,last_rejection_at)
+            VALUES($1, now() + $2 * interval '1 second', 1,now())
             ON CONFLICT(source) DO UPDATE SET
             blocked_until=GREATEST(source_limits.blocked_until,
                 now() + GREATEST($2, LEAST(3600, 120 * power(2, LEAST(source_limits.failure_count,5)))) * interval '1 second'),
-            failure_count=LEAST(source_limits.failure_count+1,6)
+            failure_count=LEAST(source_limits.failure_count+1,6),last_rejection_at=now(),
+            adaptive_daily_limit=CASE WHEN source_limits.adaptive_daily_limit IS NULL THEN NULL
+                ELSE GREATEST(source_limits.adaptive_daily_floor,source_limits.adaptive_daily_limit/2) END,
+            daily_review_at=CASE WHEN source_limits.adaptive_daily_limit IS NULL THEN source_limits.daily_review_at ELSE now() END,
+            daily_review_requests=0
         """, source, float(retry_seconds or 120))
 
     async def cleanup(self):

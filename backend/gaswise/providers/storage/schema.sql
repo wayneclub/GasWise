@@ -84,3 +84,12 @@ CREATE TABLE IF NOT EXISTS gaswise.base_collection_jobs (
 );
 
 ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS population_priority integer NOT NULL DEFAULT 0;
+
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS adaptive_daily_limit integer;
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS adaptive_daily_floor integer;
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS adaptive_daily_max integer;
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS daily_review_at timestamptz;
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS daily_review_requests integer NOT NULL DEFAULT 0;
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS last_rejection_at timestamptz;
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS last_collection_failure_at timestamptz;
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS background_last_request_at timestamptz;

@@ -135,3 +135,34 @@ async def test_existing_postgres_background_caps_are_shared_and_foreground_keeps
         await store.pool.execute("DELETE FROM gaswise.source_limits WHERE source=$1", source)
         await other.close()
         await store.close()
+
+
+async def test_daily_ramp_persists_reviews_keeps_usage_and_reduces_after_rejection():
+    store = await PostgresPricingCache.connect(os.environ["GASWISE_TEST_DATABASE_URL"])
+    other = await PostgresPricingCache.connect(os.environ["GASWISE_TEST_DATABASE_URL"])
+    source = "integration_ramp_" + uuid.uuid4().hex
+    try:
+        await store.configure_daily_ramp([source], 80, 40, 800)
+        await store.pool.execute("""UPDATE gaswise.source_limits SET daily_review_at=now()-interval '25 hours',
+            daily_review_requests=80,background_last_request_at=now(),background_day_count=80 WHERE source=$1""", source)
+        await asyncio.gather(store.budget_state(source), other.budget_state(source))
+        assert (await store.budget_state(source))["daily_limit"] == 160
+        assert (await store.budget_state(source))["background_day_used"] == 80
+        await other.configure_daily_ramp([source], 80, 40, 800)
+        assert (await store.budget_state(source))["daily_limit"] == 160
+        await store.consume(source, 100, background=True, background_daily_limit=80)
+        assert (await store.budget_state(source))["background_day_used"] == 81
+        await other.cooldown(source, 120)
+        assert (await store.budget_state(source))["daily_limit"] == 80
+        await other.cooldown(source, 120)
+        await other.cooldown(source, 120)
+        assert (await store.budget_state(source))["daily_limit"] == 40
+        assert (await store.budget_state(source))["background_day_used"] == 81
+        with pytest.raises(ProviderError, match="rate_limited"):
+            await store.consume(source, 100, background=True)
+        await store.disable_daily_ramp([source])
+        assert (await store.budget_state(source))["daily_limit"] is None
+    finally:
+        await store.pool.execute("DELETE FROM gaswise.source_limits WHERE source=$1", source)
+        await other.close()
+        await store.close()

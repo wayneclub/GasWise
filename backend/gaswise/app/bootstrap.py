@@ -225,6 +225,11 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
                 "maps": settings.maps_requests_per_minute,
                 "waze": settings.waze_requests_per_minute,
             }, background_daily_limit=settings.hot_pricing_refresh_daily_requests)
+            if settings.pricing_daily_ramp_enabled:
+                await store.configure_daily_ramp(list(budget.limits), settings.hot_pricing_refresh_daily_requests,
+                                                 settings.pricing_daily_ramp_floor, settings.pricing_daily_ramp_max)
+            else:
+                await store.disable_daily_ramp(list(budget.limits))
             price_worker.request_budget = budget
             maps_web.request_budget = budget
             if website_router is not None:

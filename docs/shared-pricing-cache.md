@@ -243,3 +243,40 @@ releases ignore the preset and retain their original three-city configuration. A
 before leasing a job so exhausted-source work keeps its place across days.
 The source daily allowances are shared with hot warming and are not increased.
 The 24-hour interval is a target after success, not a full-registry daily guarantee.
+
+## Adaptive daily allowance
+
+`GASWISE_PRICING_DAILY_RAMP_ENABLED=true` enables a persistent, per-source ramp.
+The expanded production pilot starts at 80 actual background HTTP attempts per
+rolling 24 hours, keeps floor 40 (`GASWISE_PRICING_DAILY_RAMP_FLOOR`) and ceiling
+800 (`GASWISE_PRICING_DAILY_RAMP_MAX`). The existing
+`GASWISE_HOT_PRICING_REFRESH_DAILY_REQUESTS` is the initial/static fallback allowance.
+These are operator limits, not provider-published safe limits.
+
+PostgreSQL serializes reviews under the existing source row lock. After a full
+24-hour review interval, a source doubles only if at least 75% of its current
+allowance was actually attempted during that review and no source rejection or
+fixed-collection failure occurred. At most one step is applied per review, even
+across workers or after long downtime. Idle/underused sources hold their allowance.
+The path from 80 is 160, 320, 640, then 800, subject to those conditions.
+
+HTTP 401/403/429 or explicit challenge immediately halves the current allowance,
+with floor 40, starts a new observation interval and retains the existing shared
+cooldown. Fixed-collection failures restart the clean observation interval without raising the allowance. Review attempt
+counters are separate from rolling daily usage: increasing, decreasing or restarting
+never resets spent daily requests, and earlier-window requests do not count again
+as new review activity. If usage already exceeds a reduced allowance, proactive
+acquisition stops until the daily usage window permits it.
+
+Both fixed-base collection and hot warming read the effective database allowance;
+each actual HTTP call enforces it atomically. Minute totals, the background 20%
+minute slice, the 50% foreground reservation, foreground allowance and source
+cooldowns are unchanged. The status endpoint exposes effective allowance, floor,
+ceiling, review timestamp and review attempt count per source. Disabling the policy
+at startup restores the configured static allowance. All workers should use the
+same policy settings.
+
+`check_daily_ramp.py` verifies concurrent review, restart reuse, immediate reduction,
+and retained daily counts against isolated temporary database rows with zero
+provider HTTP calls. Fixture review timestamps do not prove a natural clean day
+or that higher limits improve coverage or avoid provider protection.

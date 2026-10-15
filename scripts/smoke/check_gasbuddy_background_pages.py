@@ -19,7 +19,7 @@ async def main():
     settings = Settings(hot_pricing_refresh_enabled=False, top_tier_refresh_enabled=False)
     async with build_services(settings, ProviderOverrides()) as services:
         before = await services.smart.shared_cache.budget_state("gasbuddy")
-        if before["blocked_seconds"] or before["background_day_used"] > settings.hot_pricing_refresh_daily_requests - 4:
+        if before["blocked_seconds"] or before["background_day_used"] > (before.get("daily_limit") or settings.hot_pricing_refresh_daily_requests) - 4:
             raise SystemExit("Canary deferred: source cooldown or insufficient daily background budget")
         query = GasBuddySearch(search="Los Angeles, CA", max_pages=3, max_results=100,
                                include_payment_variants=True, payment_type="cash_or_credit")
@@ -37,7 +37,7 @@ async def main():
             "distinct_source_station_ids": len({quote.id for quote in result.prices}),
             "background_http_charged": after["background_day_used"] - before["background_day_used"],
             "background_daily_used": after["background_day_used"],
-            "background_daily_limit": settings.hot_pricing_refresh_daily_requests,
+            "background_daily_limit": after.get("daily_limit") or settings.hot_pricing_refresh_daily_requests,
             "partial": result.partial,
             "evidence": "one live city query; station updates are not unique daily city coverage",
         }, indent=2))

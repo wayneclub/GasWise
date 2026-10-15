@@ -49,7 +49,7 @@ class RequestBudget:
                     state = await self.store.budget_state(source)
                 except Exception:
                     raise ProviderError("shared_pricing_budget_unavailable") from None
-                if state.get("blocked_seconds", 0) or state["background_day_used"] >= self.background_daily_limit:
+                if state.get("blocked_seconds", 0) or state["background_day_used"] >= (state.get("daily_limit") or self.background_daily_limit):
                     raise
                 delay = min(60, max(.1, float(state.get("window_seconds", 60)) + .05))
                 if self.clock() + delay > deadline:

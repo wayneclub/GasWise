@@ -95,7 +95,7 @@ class HotQueryRefresh:
                 blocked = float(state.get("blocked_seconds") or 0)
                 if (blocked > 0 or state["used"] >= max(1, self.limits[query.source] // 2)
                         or state.get("background_used", 0) >= max(1, self.limits[query.source] // 5)
-                        or state.get("background_day_used", 0) >= self.daily_limit):
+                        or state.get("background_day_used", 0) >= (state.get("daily_limit") or self.daily_limit)):
                     pace.deferred += 1
                     pace.not_before = now + max(60, blocked)
                     continue
@@ -138,7 +138,7 @@ class HotQueryRefresh:
             sources[source] = {
                 **state, "minute_limit": self.limits[source],
                 "background_minute_limit": max(1, self.limits[source] // 5),
-                "background_daily_limit": self.daily_limit,
+                "background_daily_limit": state.get("daily_limit") or self.daily_limit,
                 "backoff_seconds": max(0, round(pace.not_before - self.clock())),
                 "completed_loads": pace.loads, "errors": pace.errors, "deferred": pace.deferred,
             }

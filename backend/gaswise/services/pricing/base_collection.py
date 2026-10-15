@@ -76,7 +76,7 @@ class BaseCollection:
         available = []
         for source in {job.source for job in self.jobs.values()}:
             state = await self.cache.budget_state(source)
-            if (not state.get("blocked_seconds", 0) and state["background_day_used"] < self.daily_limit
+            if (not state.get("blocked_seconds", 0) and state["background_day_used"] < (state.get("daily_limit") or self.daily_limit)
                     and state["used"] < max(1, self.limits[source] // 2)
                     and state.get("background_used", 0) < max(1, self.limits[source] // 5)):
                 available.append(source)
@@ -94,7 +94,7 @@ class BaseCollection:
         token = background_acquisition.set(True)
         try:
             state = await self.cache.budget_state(job.source)
-            if (state.get("blocked_seconds", 0) or state["background_day_used"] >= self.daily_limit
+            if (state.get("blocked_seconds", 0) or state["background_day_used"] >= (state.get("daily_limit") or self.daily_limit)
                     or state["used"] >= max(1, self.limits[job.source] // 2)
                     or state.get("background_used", 0) >= max(1, self.limits[job.source] // 5)):
                 await self.cache._db("finish_base_job", job.id, owner, 900, "source_budget_deferred", 0, 0)

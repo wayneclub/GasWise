@@ -43,7 +43,7 @@ before claiming jobs, preserving their old due dates. The oldest due jobs run
 first; population breaks ties within the same initial batch. Restarts do not reset
 completed jobs' schedules. Fixed work takes precedence over extra hot-query warming.
 
-At the existing 40 background HTTP/source/24-hour allowance, a full 170-query
+At the original 40 background HTTP/source/24-hour reference allowance, a full 170-query
 GasBuddy pass at a cold four HTTP/query would require about 17 allowance days.
 A Waze pass is 85 queries, at least three allowance days at one HTTP/query,
 before authentication/failure overhead. Bootstrap reuse or early pagination stops
@@ -63,3 +63,8 @@ safe limits and are not automatically increased by adding cities.
 | San Diego | 9 | Carlsbad, Chula Vista, El Cajon, Encinitas, Escondido, Oceanside, San Diego, San Marcos, Vista |
 | Santa Barbara | 4 | Buellton, Goleta, Santa Barbara, Santa Maria |
 | Ventura | 5 | Camarillo, Oxnard, San Buenaventura (Ventura), Simi Valley, Thousand Oaks |
+
+The later [adaptive daily allowance](shared-pricing-cache.md#adaptive-daily-allowance)
+starts at 80 and increases only after a clean, sufficiently utilized review day.
+Live effective limits and achieved coverage must be checked, not inferred from
+the 800-attempt operator ceiling.
