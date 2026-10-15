@@ -28,6 +28,9 @@ class Settings(BaseSettings):
         hide_input_in_errors=True,
     )
     database_url: SecretStr = SecretStr("")
+    base_collection_enabled: bool = False
+    base_collection_bases: list[Literal["la", "irvine", "sd"]] = Field(default_factory=lambda: ["la", "irvine", "sd"], min_length=1, max_length=3)
+    base_collection_interval_seconds: int = Field(default=86400, ge=86400, le=604800)
     hot_pricing_refresh_enabled: bool = False
     hot_pricing_refresh_daily_requests: int = Field(default=100, ge=1, le=1000)
     hot_pricing_refresh_max_queries: int = Field(default=20, ge=1, le=100)

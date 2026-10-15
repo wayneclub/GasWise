@@ -64,3 +64,21 @@ CREATE INDEX IF NOT EXISTS quote_history_station_time
     ON gaswise.quote_history (source, station_id, fuel_type, reported_at);
 CREATE INDEX IF NOT EXISTS quote_history_canonical_time
     ON gaswise.quote_history (canonical_id, fuel_type, reported_at);
+
+-- Fixed public city-base collection; no visitor-derived locations or credentials.
+CREATE TABLE IF NOT EXISTS gaswise.base_collection_jobs (
+    id text PRIMARY KEY,
+    base text NOT NULL,
+    source text NOT NULL,
+    fuel text NOT NULL,
+    descriptor jsonb NOT NULL,
+    enabled boolean NOT NULL DEFAULT true,
+    next_due timestamptz NOT NULL DEFAULT now(),
+    lease_owner text,
+    lease_until timestamptz,
+    last_success timestamptz,
+    failures integer NOT NULL DEFAULT 0,
+    last_error text,
+    quote_count integer NOT NULL DEFAULT 0,
+    station_count integer NOT NULL DEFAULT 0
+);

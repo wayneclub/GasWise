@@ -42,9 +42,10 @@ async def hot_refresh_status(
     *, services: Services = Depends(get_services),
     operations: OperationRunner = Depends(get_operations),
 ):
-    if services.smart.hot_refresh is None:
-        return {"enabled": False}
-    return await operations.run(services.smart.hot_refresh.status)
+    result = await operations.run(services.smart.hot_refresh.status) if services.smart.hot_refresh else {"enabled": False}
+    if services.smart.base_collection:
+        result["base_collection"] = await operations.run(services.smart.base_collection.status)
+    return result
 
 
 @router.get("/v1/sources/aaa/averages", response_model=AAASnapshot, dependencies=[Depends(authorize)])

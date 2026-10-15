@@ -141,6 +141,7 @@ class SmartService:
         self.aaa = aaa
         self.shared_cache = shared_cache
         self.hot_refresh = None
+        self.base_collection = None
         self.inflight = {}
         self.waiters = {}
         self.source_slots = {"gasbuddy": asyncio.Semaphore(1), "maps": asyncio.Semaphore(6), "waze": asyncio.Semaphore(2), "aaa": asyncio.Semaphore(1)}

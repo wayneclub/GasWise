@@ -42,6 +42,7 @@ class HotQueryRefresh:
         self.clock = clock
         self.limits = limits or {"gasbuddy": 12, "maps": 60, "waze": 20}
         self.daily_limit = daily_limit
+        self.priority_check = None
         self.queries = {}
         self.paces = {source: SourcePace() for source in self.limits}
 
@@ -88,6 +89,8 @@ class HotQueryRefresh:
         for query in sorted(eligible, key=lambda item: (item.last_attempt, -len(item.uses))):
             pace = self.paces[query.source]
             try:
+                if self.priority_check and await self.priority_check(query.source):
+                    continue
                 state = await self.cache.budget_state(query.source)
                 blocked = float(state.get("blocked_seconds") or 0)
                 if (blocked > 0 or state["used"] >= max(1, self.limits[query.source] // 2)

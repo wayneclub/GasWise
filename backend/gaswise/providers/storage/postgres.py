@@ -32,6 +32,45 @@ class PostgresPricingCache:
             raise RuntimeError("Shared pricing PostgreSQL startup failed; check private configuration") from None
         return cls(pool)
 
+    async def configure_base_jobs(self, jobs):
+        async with self.pool.acquire() as connection, connection.transaction():
+            await connection.execute("SELECT pg_advisory_xact_lock(743103132)")
+            await connection.execute("UPDATE gaswise.base_collection_jobs SET enabled=false WHERE NOT(id=ANY($1::text[]))", [job["id"] for job in jobs])
+            for job in jobs:
+                await connection.execute("""
+                    INSERT INTO gaswise.base_collection_jobs(id,base,source,fuel,descriptor)
+                    VALUES($1,$2,$3,$4,$5::jsonb) ON CONFLICT(id) DO UPDATE SET enabled=true,
+                    next_due=CASE WHEN base_collection_jobs.descriptor IS DISTINCT FROM EXCLUDED.descriptor
+                                  THEN now() ELSE base_collection_jobs.next_due END,
+                    descriptor=EXCLUDED.descriptor
+                """, job["id"], job["base"], job["source"], job["fuel"], json.dumps(job["descriptor"]))
+
+    async def base_jobs_pending(self, source):
+        return await self.pool.fetchval("SELECT EXISTS(SELECT 1 FROM gaswise.base_collection_jobs WHERE enabled AND source=$1 AND next_due<=now())", source)
+
+    async def claim_base_job(self, owner):
+        return await self.pool.fetchval("""
+            UPDATE gaswise.base_collection_jobs SET lease_owner=$1,lease_until=now()+interval '15 minutes'
+            WHERE id=(SELECT id FROM gaswise.base_collection_jobs WHERE enabled AND next_due<=now()
+                      AND (lease_until IS NULL OR lease_until<=now()) ORDER BY next_due,id
+                      FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id
+        """, owner)
+
+    async def finish_base_job(self, job_id, owner, delay, error, quotes, stations):
+        await self.pool.execute("""
+            UPDATE gaswise.base_collection_jobs SET next_due=now()+$3*interval '1 second',
+            lease_owner=NULL,lease_until=NULL,last_error=$4,
+            last_success=CASE WHEN $4::text IS NULL THEN now() ELSE last_success END,
+            failures=CASE WHEN $4::text IS NULL THEN 0 ELSE failures+1 END,
+            quote_count=CASE WHEN $4::text IS NULL THEN $5 ELSE quote_count END,
+            station_count=CASE WHEN $4::text IS NULL THEN $6 ELSE station_count END
+            WHERE id=$1 AND lease_owner=$2
+        """, job_id, owner, float(delay), error, quotes, stations)
+
+    async def base_job_status(self):
+        rows = await self.pool.fetch("SELECT id,base,source,fuel,next_due,last_success,failures,last_error,quote_count,station_count FROM gaswise.base_collection_jobs WHERE enabled ORDER BY base,fuel,source")
+        return [dict(row) for row in rows]
+
     async def price_history(self, canonical_id, source, station_id, fuel_type, days):
         rows = await self.pool.fetch("""
             SELECT source, station_id, payment_type, purchase_condition,

@@ -64,14 +64,14 @@ class SharedPricingCache:
             result.warnings.append("Cached source data is older than the refresh window; background refresh is subject to source limits. Original report times are unchanged.")
         return result
 
-    async def get(self, source, raw_key, operation):
+    async def get(self, source, raw_key, operation, *, wait_refresh=False):
         # Versioned adapter/query keys exclude visitors, sessions, vehicle options and routes.
         key = hashlib.sha256(("pricing-v1:" + raw_key).encode()).hexdigest()
         record = await self._db("read", key)
         if record and record.fresh:
             record_check(source, record.fetched_at, "fresh")
             return self.decode(source, record.payload), True
-        if record and record.usable:
+        if record and record.usable and not wait_refresh:
             record_check(source, record.fetched_at, "stale")
             owner = uuid.uuid4().hex
             if not self.closed and await self._db("claim", key, source, owner):

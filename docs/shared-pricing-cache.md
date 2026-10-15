@@ -196,3 +196,39 @@ three-page city query under the real shared background budgets, with no other
 provider acquisitions, routes or station details. It prints only station/quote
 counts and charged HTTP totals. Bootstrap consumes one request in addition to
 pages, so a cold three-page query normally costs four background HTTP calls.
+
+## Fixed city bases for history, independent of search traffic
+
+Enable `GASWISE_BASE_COLLECTION_ENABLED=true` with shared PostgreSQL and live mode.
+`GASWISE_BASE_COLLECTION_BASES=["la","irvine","sd"]` selects public city-centre
+sampling bases for Los Angeles, Irvine and San Diego. Each base uses a fixed
+10-km H3-snapped query circle, Regular and Premium, and the configured GasBuddy,
+Maps-web and Waze providers. This samples bounded source results, not entire cities.
+GasBuddy permits three pages and preserves both payment variants; Maps permits
+three Premium detail requests. No routes, vehicle identities or visitor searches
+are required. Premium does not establish 91 octane or a known payment basis.
+
+Eighteen jobs (three cities × two fuels × three available sources) are persisted
+in `gaswise.base_collection_jobs`. New jobs are due immediately; each successful
+job becomes due after 24 hours (`GASWISE_BASE_COLLECTION_INTERVAL_SECONDS`, minimum
+86400). Existing schedules survive restart; startup only upserts configuration.
+Removed/disabled sources/bases stop being scheduled without deleting price history.
+A 15-minute owner lease and atomic claim prevent duplicate job execution across
+workers; interrupted work releases its lease, or becomes reclaimable after expiry.
+
+The worker drains initial due work at ten-second spacing after successful jobs,
+then checks idle/deferred work once a minute. Provider minute/day caps, pressure
+checks, cooldown and GasBuddy's bounded cross-window waits remain in force. Failed
+loads retry after an hour; budget deferrals after 15 minutes. A source's due base
+jobs take priority over extra demand-driven warming; they do not share the bounded
+hot-query registry. The 40/day deployment allowance is shared by both collectors,
+not added to it, so completion is not guaranteed under rejection or exhausted caps.
+
+The existing shared cache saves public station/quote observations and the
+90-day `quote_history` as part of acquisition. Same source reports are deduplicated;
+re-observation updates last_seen, not original report time or a fabricated daily
+price point. Serving cache expiry does not delete historical observations.
+Fresh cached results can satisfy an initial job; stale entries must finish refreshing
+before the job is marked successful. Authentication/session failures remain explicit.
+`/v1/sources/refresh-status` now includes each base job's next due time, last success,
+retry state and last quote/station counts. None of these require foreground traffic.

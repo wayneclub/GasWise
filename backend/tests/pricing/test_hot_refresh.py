@@ -239,3 +239,19 @@ async def test_waiting_background_gasbuddy_does_not_occupy_foreground_source_slo
     finally:
         release.set()
         await task
+
+
+async def test_pending_fixed_collection_gets_priority_over_extra_hot_warming():
+    now = [0]
+    cache = Cache()
+    warmer = HotQueryRefresh(cache, clock=lambda: now[0])
+    async def pending(source):
+        return True
+    async def load():
+        pytest.fail("Fixed source jobs should keep priority")
+    warmer.priority_check = pending
+    for _ in range(12):
+        warmer.observe("maps", "one", load)
+    now[0] = 900
+    assert not await warmer.step()
+    assert not cache.calls

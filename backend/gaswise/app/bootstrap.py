@@ -32,6 +32,7 @@ from gaswise.providers.vehicles.specifications import SpecificationProvider
 from gaswise.providers.vehicles.vin import VinProvider
 from gaswise.providers.waze.provider import WazeProvider
 from gaswise.services.parts.fitment import PartsProvider
+from gaswise.services.pricing.base_collection import BaseCollection
 from gaswise.services.pricing.hot_refresh import HotQueryRefresh
 from gaswise.services.pricing.search import SearchService
 from gaswise.services.pricing.shared_cache import SharedPricingCache
@@ -251,6 +252,21 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             shared_cache=shared_cache,
         )
         stack.push_async_callback(smart.close)
+        if settings.base_collection_enabled:
+            if shared_cache is None or settings.mode == "demo":
+                raise ValueError("Fixed base collection requires shared PostgreSQL and live mode")
+            smart.base_collection = BaseCollection(
+                smart, settings.base_collection_bases, interval=settings.base_collection_interval_seconds,
+                limits=budget.limits, daily_limit=settings.hot_pricing_refresh_daily_requests)
+            await smart.base_collection.initialize()
+            base_task = asyncio.create_task(smart.base_collection.run())
+
+            async def stop_base_collection():
+                base_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await base_task
+
+            stack.push_async_callback(stop_base_collection)
         if settings.hot_pricing_refresh_enabled:
             if shared_cache is None or settings.mode == "demo":
                 raise ValueError("Hot pricing refresh requires shared PostgreSQL cache and live mode")
@@ -261,6 +277,7 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
                 limits=budget.limits,
                 daily_limit=settings.hot_pricing_refresh_daily_requests,
             )
+            smart.hot_refresh.priority_check = smart.base_collection.pending if smart.base_collection else None
             hot_task = asyncio.create_task(smart.hot_refresh.run())
 
             async def stop_hot_refresh():

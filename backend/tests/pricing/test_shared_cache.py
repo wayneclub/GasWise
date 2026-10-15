@@ -66,3 +66,25 @@ async def test_database_read_failure_never_falls_back_to_repeated_source_fetches
         pytest.fail("Upstream must not be called when the shared cache cannot be consulted")
     with pytest.raises(ProviderError,match="shared_pricing_cache_unavailable"):
         await SharedPricingCache(Broken()).get("waze","public-cell",source)
+
+
+async def test_fixed_collection_waits_for_stale_refresh_before_completion():
+    store = Store()
+    cache = SharedPricingCache(store)
+    async def initial():
+        return []
+    await cache.get("waze", "fixed-base", initial)
+    next(iter(store.entries.values())).fresh = False
+    started, release = asyncio.Event(), asyncio.Event()
+    async def refresh():
+        started.set()
+        await release.wait()
+        return []
+    task = asyncio.create_task(cache.get("waze", "fixed-base", refresh, wait_refresh=True))
+    await asyncio.wait_for(started.wait(), 1)
+    assert not task.done()
+    assert not cache.tasks  # Synchronous completion, not stale-while-revalidate.
+    release.set()
+    assert await task == ([], False)
+    assert next(iter(store.entries.values())).fresh
+    await cache.close()

@@ -1,0 +1,134 @@
+"""Persistent fixed public city-base sampling, independent of visitor searches."""
+
+import asyncio
+import logging
+import uuid
+from dataclasses import dataclass
+
+from gaswise.contracts.common import Point
+from gaswise.contracts.sources import GasBuddySearch, GooglePriceSearch, MapsWebSearch
+from gaswise.domain.pricing.shared_cache import background_acquisition
+from gaswise.services.pricing.discovery import shared_viewport
+
+logger = logging.getLogger(__name__)
+BASES = {
+    "la": (34.052235, -118.243683),
+    "irvine": (33.684567, -117.826505),
+    "sd": (32.715736, -117.161087),
+}
+
+
+@dataclass
+class CollectionJob:
+    id: str
+    base: str
+    source: str
+    fuel: str
+    query: object
+    provider: object
+
+    @property
+    def raw_key(self):
+        return self.source + ":" + self.query.model_dump_json()
+
+
+def collection_jobs(service, bases):
+    jobs = {}
+    for base in bases:
+        centre, radius = shared_viewport(Point(lat=BASES[base][0], lng=BASES[base][1]), 10000)
+        for fuel in ("regular", "premium"):
+            for source, provider, query in (
+                ("gasbuddy", service.gasbuddy, GasBuddySearch(
+                    origin=centre, radius_meters=radius, fuel_type=fuel, max_pages=3,
+                    max_results=100, payment_type="cash_or_credit", include_payment_variants=True)),
+                ("maps", service.maps_web, MapsWebSearch(
+                    origin=centre, radius_meters=radius, fuel_type=fuel, detail_limit=3 if fuel == "premium" else 0)),
+                ("waze", service.waze, GooglePriceSearch(
+                    origin=centre, radius_meters=radius, fuel_type=fuel)),
+            ):
+                if provider is not None:
+                    job_id = f"{base}:{fuel}:{source}"
+                    jobs[job_id] = CollectionJob(job_id, base, source, fuel, query, provider)
+    return jobs
+
+
+class BaseCollection:
+    def __init__(self, service, bases, *, interval=86400, limits=None, daily_limit=40):
+        self.service = service
+        self.cache = service.shared_cache
+        self.jobs = collection_jobs(service, bases)
+        self.interval = interval
+        self.limits = limits or {"gasbuddy": 12, "maps": 60, "waze": 20}
+        self.daily_limit = daily_limit
+
+    async def initialize(self):
+        descriptors = [{"id": job.id, "base": job.base, "source": job.source,
+                        "fuel": job.fuel, "descriptor": job.query.model_dump(mode="json")}
+                       for job in self.jobs.values()]
+        await self.cache._db("configure_base_jobs", descriptors)
+
+    async def pending(self, source):
+        return await self.cache._db("base_jobs_pending", source)
+
+    async def step(self):
+        owner = uuid.uuid4().hex
+        job_id = await self.cache._db("claim_base_job", owner)
+        if job_id is None:
+            return False
+        job = self.jobs.get(job_id)
+        if job is None:
+            await self.cache._db("finish_base_job", job_id, owner, 3600, "configuration_changed", 0, 0)
+            return False
+        completed = False
+        token = background_acquisition.set(True)
+        try:
+            state = await self.cache.budget_state(job.source)
+            if (state.get("blocked_seconds", 0) or state["background_day_used"] >= self.daily_limit
+                    or state["used"] >= max(1, self.limits[job.source] // 2)
+                    or state.get("background_used", 0) >= max(1, self.limits[job.source] // 5)):
+                await self.cache._db("finish_base_job", job.id, owner, 900, "source_budget_deferred", 0, 0)
+                completed = True
+                return False
+
+            async def load():
+                slot = self.service.background_gasbuddy_slot if job.source == "gasbuddy" else self.service.source_slots[job.source]
+                async with slot:
+                    if job.source == "waze":
+                        return await job.provider.stations(job.query)
+                    return await job.provider.prices(job.query)
+
+            result, _ = await self.cache.get(job.source, job.raw_key, load, wait_refresh=True)
+            quotes = result if job.source == "waze" else result.prices if job.source == "gasbuddy" else result.all_prices or result.stations
+            await self.cache._db("finish_base_job", job.id, owner, self.interval, None,
+                                 len(quotes), len({quote.id for quote in quotes}))
+            completed = True
+            return True
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            # Deliberately exclude transport messages, query data and secrets.
+            await self.cache._db("finish_base_job", job.id, owner, 3600, "collection_failed", 0, 0)
+            completed = True
+            logger.warning("Fixed base collection deferred for %s", job.id)
+            return False
+        finally:
+            background_acquisition.reset(token)
+            if not completed:
+                try:
+                    await self.cache._db("finish_base_job", job.id, owner, 60, "interrupted", 0, 0)
+                except Exception:
+                    logger.warning("Fixed base lease release deferred to expiry")
+
+    async def status(self):
+        return {"enabled": True, "interval_seconds": self.interval,
+                "radius_meters": 10000, "coverage": "partial",
+                "jobs": await self.cache._db("base_job_status")}
+
+    async def run(self):
+        while True:
+            try:
+                progressed = await self.step()
+            except Exception:
+                logger.warning("Fixed base collection database unavailable")
+                progressed = False
+            await asyncio.sleep(10 if progressed else 60)
