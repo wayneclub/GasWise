@@ -7,7 +7,7 @@ export function PaymentNotice({ station }: { station: StationSummary }) {
   if (station.payment_type !== 'unknown') return null
   const classification = station.payment_inference?.classification
   const isGoogle = station.source === 'google_maps_web' || station.source === 'google_places'
-  return <div className="mt-2 space-y-1 text-xs text-caution">
+  return <div className="mt-2 space-y-1 text-xs text-muted">
     {isGoogle ? <p>{t('payment.mapsNote')}</p> : null}
     {classification === 'cash' || classification === 'credit' || classification === 'same_price'
       ? <p>{t('payment.matchNote', { kind: t(classification === 'cash' ? 'payment.inferredCash' : classification === 'credit' ? 'payment.inferredCredit' : 'payment.samePrice') })}</p>
