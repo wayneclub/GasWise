@@ -297,3 +297,15 @@ Mandatory jobs still obey the source's daily/minute ceilings and cooldowns.
 Provider failures can therefore miss the target; authenticated refresh status
 exposes `mandatory_due`, `priority_score`, last success and errors for inspection.
 The target covers the existing bounded city samples, not every station in LA.
+
+### GasBuddy task pacing
+
+`GASWISE_GASBUDDY_BACKGROUND_PACING_ENABLED` defaults to true. PostgreSQL reserves
+one optional job start per `request_reserve × 86400 / effective_daily_limit`
+seconds, serialized across workers and retained through restarts. At 160 daily
+requests and a four-request job estimate this is 36 minutes. Due mandatory LA
+jobs bypass the start interval, while all HTTP minute/day caps and cooldowns remain.
+This spaces bounded jobs; it does not guarantee a precise daily station count.
+Local budget/minute-wait/reservation exhaustion is retried as a named deferral,
+without resetting the healthy-provider review. Actual acquisition failures and
+provider rejections retain their existing review/cooldown behavior.

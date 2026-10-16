@@ -50,15 +50,36 @@ class PostgresPricingCache:
     async def base_jobs_pending(self, source):
         return await self.pool.fetchval("SELECT EXISTS(SELECT 1 FROM gaswise.base_collection_jobs WHERE enabled AND source=$1 AND next_due<=now())", source)
 
+    async def configure_background_pacing(self, source, enabled):
+        await self.pool.execute("""
+            INSERT INTO gaswise.source_limits(source,background_job_pacing) VALUES($1,$2)
+            ON CONFLICT(source) DO UPDATE SET background_job_pacing=$2
+        """, source, enabled)
+
     async def claim_base_job(self, owner, sources):
-        return await self.pool.fetchval("""
-            UPDATE gaswise.base_collection_jobs SET lease_owner=$1,lease_until=now()+interval '15 minutes'
-            WHERE id=(SELECT id FROM gaswise.base_collection_jobs WHERE enabled AND next_due<=now() AND source=ANY($2::text[])
-                      AND (lease_until IS NULL OR lease_until<=now()) ORDER BY mandatory DESC,
-                      (10*ln(1+population_priority)/ln(10) + 2*GREATEST(0,EXTRACT(EPOCH FROM (now()-next_due))/3600)
-                       + CASE WHEN last_success IS NULL THEN 30 ELSE 0 END) DESC,next_due,id
-                      FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id
-        """, owner, sources)
+        async with self.pool.acquire() as connection, connection.transaction():
+            # Serialize job-start reservations across workers; never hold locks during HTTP.
+            await connection.fetch("SELECT source FROM gaswise.source_limits WHERE source=ANY($1::text[]) ORDER BY source FOR UPDATE", sources)
+            job = await connection.fetchrow("""
+                SELECT j.id,j.source,j.request_reserve FROM gaswise.base_collection_jobs j
+                WHERE enabled AND next_due<=now() AND source=ANY($1::text[])
+                  AND (lease_until IS NULL OR lease_until<=now())
+                  AND (mandatory OR NOT EXISTS(SELECT 1 FROM gaswise.source_limits l WHERE l.source=j.source
+                       AND l.background_job_pacing AND l.background_next_job_at>now()))
+                ORDER BY mandatory DESC,
+                    (10*ln(1+population_priority)/ln(10) + 2*GREATEST(0,EXTRACT(EPOCH FROM (now()-next_due))/3600)
+                     + CASE WHEN last_success IS NULL THEN 30 ELSE 0 END) DESC,next_due,id
+                FOR UPDATE SKIP LOCKED LIMIT 1
+            """, sources)
+            if job is None:
+                return None
+            await connection.execute("""UPDATE gaswise.base_collection_jobs SET lease_owner=$2,
+                lease_until=now()+interval '15 minutes' WHERE id=$1""", job["id"], owner)
+            await connection.execute("""UPDATE gaswise.source_limits SET
+                background_next_job_at=now()+($2::double precision*86400/GREATEST(1,adaptive_daily_limit))*interval '1 second'
+                WHERE source=$1 AND background_job_pacing AND adaptive_daily_limit IS NOT NULL""",
+                job["source"], job["request_reserve"])
+            return job["id"]
 
     async def finish_base_job(self, job_id, owner, delay, error, quotes, stations):
         if error == "collection_failed":
@@ -309,6 +330,10 @@ class PostgresPricingCache:
             return {
                 "mandatory_reserved_requests": reservation["requests"],
                 "mandatory_due": reservation["due"],
+                "background_job_pacing": row["background_job_pacing"],
+                "background_next_job_at": row["background_next_job_at"],
+                "background_pacing_seconds": max(0, (row["background_next_job_at"]-row["clock"]).total_seconds())
+                    if row["background_job_pacing"] and row["background_next_job_at"] else 0,
                 "used": row["request_count"] if age < 60 else 0,
                 "background_used": row["background_count"] if age < 60 else 0,
                 "background_day_used": row["background_day_count"] if day_age < 86400 else 0,

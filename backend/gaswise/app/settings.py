@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     base_collection_preset: Literal["custom", "socal"] = "custom"
     base_collection_bases: list[str] = Field(default_factory=lambda: ["la", "irvine", "sd"], min_length=1, max_length=200)
     base_collection_interval_seconds: int = Field(default=86400, ge=86400, le=604800)
+    gasbuddy_background_pacing_enabled: bool = True
     pricing_daily_ramp_enabled: bool = False
     pricing_daily_ramp_floor: int = Field(default=40, ge=1, le=1000)
     pricing_daily_ramp_max: int = Field(default=800, ge=1, le=1000)

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from gaswise.contracts.common import Point
 from gaswise.contracts.sources import GasBuddySearch, GooglePriceSearch, MapsWebSearch
+from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.collection_bases import BASE_CATALOG, BASES
 from gaswise.domain.pricing.shared_cache import background_acquisition, mandatory_acquisition
 from gaswise.services.pricing.discovery import shared_viewport
@@ -80,6 +81,7 @@ class BaseCollection:
             if (not state.get("blocked_seconds", 0) and state["background_day_used"] < (state.get("daily_limit") or self.daily_limit)
                     and (state.get("mandatory_due", False) or state["background_day_used"] <
                          (state.get("daily_limit") or self.daily_limit) - state.get("mandatory_reserved_requests", 0))
+                    and (state.get("mandatory_due", False) or not state.get("background_pacing_seconds", 0))
                     and state["used"] < max(1, self.limits[source] // 2)
                     and state.get("background_used", 0) < max(1, self.limits[source] // 5)):
                 available.append(source)
@@ -122,9 +124,13 @@ class BaseCollection:
             raise
         except Exception as error:
             # Deliberately exclude transport messages, query data and secrets.
-            deferred = str(error).endswith("_mandatory_budget_reserved")
+            reason = str(error)
+            local_reasons = {f"{job.source}_{suffix}" for suffix in (
+                "mandatory_budget_reserved", "background_daily_budget_exhausted", "background_budget_exhausted",
+                "request_budget_exhausted", "background_wait_exhausted")}
+            deferred = isinstance(error, ProviderError) and reason in local_reasons
             await self.cache._db("finish_base_job", job.id, owner, 60 if deferred else 3600,
-                                 "source_budget_deferred" if deferred else "collection_failed", 0, 0)
+                                 reason if deferred else "collection_failed", 0, 0)
             completed = True
             logger.warning("Fixed base collection deferred for %s", job.id)
             return False

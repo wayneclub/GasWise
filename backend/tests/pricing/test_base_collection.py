@@ -132,3 +132,30 @@ def test_all_fuel_waze_job_uses_distinct_cache_namespace_and_no_duplicate_grade_
     jobs = [job for job in expanded.jobs.values() if job.source == "waze"]
     assert len(jobs) == 1 and jobs[0].fuel == "all"
     assert jobs[0].raw_key.startswith("waze:all-fuels-v1:")
+
+@pytest.mark.parametrize("reason", ["background_daily_budget_exhausted", "background_budget_exhausted",
+                                   "request_budget_exhausted", "background_wait_exhausted", "mandatory_budget_reserved"])
+async def test_local_budget_deferrals_preserve_provider_health(reason):
+    from gaswise.domain.ports import ProviderError
+    collector, cache, provider = setup()
+    await collector.initialize()
+    async def deferred(*args, **kwargs):
+        raise ProviderError("gasbuddy_" + reason)
+    cache.get = deferred
+    assert not await collector.step()
+    assert cache.saved[0][2:4] == (60, "gasbuddy_" + reason)
+    assert not background_acquisition.get()
+
+
+async def test_pacing_pauses_optional_jobs_but_allows_due_mandatory_work():
+    collector, cache, provider = setup()
+    await collector.initialize()
+    state = {"used": 0, "background_day_used": 0, "background_pacing_seconds": 2000}
+    async def budget_state(source):
+        return state
+    cache.budget_state = budget_state
+    assert not await collector.step()
+    assert not provider.calls
+    state["mandatory_due"] = True
+    assert await collector.step()
+    assert len(provider.calls) == 1
