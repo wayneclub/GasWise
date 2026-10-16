@@ -28,6 +28,7 @@ export function StationList({ rows, navApp = 'google', tripMode = 'round_trip' }
         <CaretDownIcon size={16} className={`text-muted transition ${open ? 'rotate-180' : ''}`} />
       </button>
       {open ? (
+        <div><p className="border-t border-line px-5 py-3 text-xs text-muted">{t('pick.comparisonNote')}</p>
         <table className="w-full border-t border-line text-[14px]">
           <thead className="bg-sunken/50 text-xs text-muted">
             <tr>
@@ -46,12 +47,12 @@ export function StationList({ rows, navApp = 'google', tripMode = 'round_trip' }
                     {t(tripMode==='on_route'?'route.extraTime':'pick.roundTrip',{time:minutes(row.extra_travel_minutes,t)})} · {t('age.updated',{age:age(row.station.price_updated_at,t)})}
                   </p>
                 </td>
-                <td className="num py-3 pr-2 text-right">{perGallon(comparisonPrice(row.station))}{row.station.comparison_price_per_gallon ? <span className="mt-1 block text-[10px] text-caution">{t('payment.estimated')}</span> : null}</td>
+                <td className="num py-3 pr-2 text-right">{perGallon(comparisonPrice(row.station))}<span className="mt-1 block text-[10px] text-muted">{t(row.station.payment_type === 'cash' ? 'prefs.cash' : row.station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</span>{row.station.comparison_price_per_gallon ? <span className="mt-1 block text-[10px] text-caution">{t('payment.estimated')}</span> : null}</td>
                 <td className="num py-3 pr-5 text-right font-medium">{usd(row.actual_fuel_cost)}<div className="mt-2 h-1.5 w-full min-w-12 overflow-hidden rounded-full bg-sunken" aria-hidden="true"><div className="h-full rounded-full bg-accent/50" style={{ width: `${Math.min(100, 100 * Number(row.actual_fuel_cost) / Math.max(...rows.map((r) => Number(r.actual_fuel_cost))))}%` }}/></div></td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       ) : null}
       {selected ? <StationDetails station={selected.station} row={selected} open onClose={() => setSelected(null)} navApp={navApp} tripMode={tripMode} /> : null}
     </section>

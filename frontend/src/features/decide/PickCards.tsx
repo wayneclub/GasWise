@@ -1,15 +1,14 @@
+import { PaymentNotice } from './PaymentNotice'
 import { CopyAddress } from '../../components/CopyAddress'
 import {googleStationUrl} from '../../lib/stationLinks'
 import { StationSources } from './SourcePill'
 import { RegionalPrice } from './RegionalPrice'
 import {
-  CarIcon,
   CaretDownIcon,
   CheckCircleIcon,
   ClockCounterClockwiseIcon,
   CoinsIcon,
   EqualsIcon,
-  GasPumpIcon,
   LightningIcon,
   NavigationArrowIcon,
   PlusIcon,
@@ -80,11 +79,9 @@ function CostEquation({ row, tripMode }: { row: RankedStation; tripMode: 'round_
   return (
     <div className="mt-4 rounded-control bg-sunken px-3 py-2.5 text-[12px] text-muted">
       {row.route.source === "straight_line_estimate" ? <p className="text-xs text-caution">{t("coverage.estimated_route")}</p> : null}
-      <div className="flex items-center gap-2">
-      <GasPumpIcon size={16} className="shrink-0 text-ink" />
-      <span className={item}>{t(Number(row.credit_cashback_amount ?? 0) > 0 ? 'reward.netFill' : 'cost.fill')}<span className="num text-[14px] font-medium text-ink">{usd(row.net_purchase_cost ?? row.purchase_cost)}</span><span className="num whitespace-nowrap text-[11px] text-faint">{gal(Math.round(Number(row.purchase_cost) / Number(comparisonPrice(row.station))), t)}</span></span>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+      <span className={item}>{t(Number(row.credit_cashback_amount ?? 0) > 0 ? 'reward.netFill' : 'cost.fill')}<span className="num text-[14px] font-medium text-ink">{usd(row.net_purchase_cost ?? row.purchase_cost)}</span><span className="num whitespace-nowrap text-[11px] text-faint">{gal(Number(row.purchase_cost) / Number(comparisonPrice(row.station)), t)}</span></span>
       <PlusIcon size={12} className="shrink-0" />
-      <CarIcon size={16} className="shrink-0 text-ink" />
       <span className={item}>
         {t(tripMode === 'on_route' ? 'cost.tripRoute' : 'cost.trip')}
         <span className="num text-[14px] font-medium text-ink">{usd(row.detour_fuel_cost)}</span>
@@ -182,11 +179,12 @@ export function HeroPick({
         <span className="num text-[44px] font-semibold leading-none tracking-[-0.03em]">{perGallon(station.price_per_gallon)}</span>
         <span className="text-[16px] text-muted">{t('pick.perGallon')}</span>
       </p>
-      {pick.recommendation.actual_fuel_cost ? (
+      {row ? (
         <p className="mt-2 text-[13px] text-muted">
-          {t('pick.totalFor', { gallons: gal(gallons, t) })} <span className="num font-medium text-ink">≈ {usd(pick.recommendation.actual_fuel_cost)}</span>
+          {t(station.comparison_price_per_gallon ? 'pick.assumedPaymentFor' : 'pick.totalFor', { gallons: gal(gallons, t) })} <span className="num font-medium text-ink">≈ {usd(row.purchase_cost)}</span>
         </p>
       ) : null}
+      {row ? <p className="mt-1 text-xs text-faint">{t('pick.fillEstimate')}</p> : null}
       {station.comparison_price_per_gallon ? <p className="mt-1 text-xs text-[#ffe0a8]">{t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
       {assessment.positives.length || assessment.reasons.length ? <div className="mt-4 flex flex-wrap items-center gap-1.5">
         {assessment.positives.map((signal) => (
@@ -211,6 +209,7 @@ export function HeroPick({
         <span>{t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}{station.membership_required ? ` · ${t('station.member', { name: station.membership_required })}` : ''}</span>
       </div>
 
+      <PaymentNotice station={station} />
       <LinkButton href={navigationUrl(navApp, station.location.lat, station.location.lng)} className="mt-5 w-full">
         <NavigationArrowIcon size={18} weight="fill" />
         {t('pick.navigate')}
@@ -249,7 +248,7 @@ export function HeroPick({
             <CaretDownIcon size={14} className={`transition ${open ? 'rotate-180' : ''}`} />
           </button>
           {open ? (
-            <div className="col-span-2 mt-2 rounded-control bg-sunken px-4 py-3"><CostEquation row={row} tripMode={tripMode}/>{pick.keys[0] === 'best_value' ? <p className="mt-2 text-xs text-muted">{t('pick.estimatedWithTime')} <span className="num">{usd(row.price_comparison?.comparable_cost_max ?? row.generalized_trip_cost)}</span></p> : null}<p className="mt-1 text-xs text-faint">{t('pick.fillEstimate')}</p>{trade ? <p className="mt-2 text-xs text-muted">{t('compare.rate', {rate:usd(trade.perHour)})}</p> : null}      {pick.keys.length > 1 ? (
+            <div className="col-span-2 mt-2 rounded-control bg-sunken px-4 py-3"><CostEquation row={row} tripMode={tripMode}/>{pick.keys[0] === 'best_value' ? <p className="mt-2 text-xs text-muted">{t('pick.estimatedWithTime')} <span className="num">{usd(row.price_comparison?.comparable_cost_max ?? row.generalized_trip_cost)}</span></p> : null}<p className="mt-1 text-xs text-faint">{t('pick.comparisonNote')}</p>{trade ? <p className="mt-2 text-xs text-muted">{t('compare.rate', {rate:usd(trade.perHour)})}</p> : null}      {pick.keys.length > 1 ? (
         <p className="mt-2 flex flex-wrap gap-1.5">
           {pick.keys.slice(1).map((key) => (
             <span key={key} className="rounded-full bg-sunken px-2.5 py-0.5 text-[12px] text-muted">

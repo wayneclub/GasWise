@@ -315,3 +315,15 @@ def test_permanently_closed_marker_without_hours_cannot_be_ranked_as_open():
     assert result.inventory[0].open_now is False
     assert result.inventory[0].business_status == "permanently_closed"
     assert result.stations[0].business_status == "permanently_closed"
+
+
+def test_mixed_payment_photo_prices_remain_unknown_per_fuel():
+    row = record()
+    row[86] = [[
+        [f'${price}', kind, 1791544992, 'gallon', 0, 'USD', price, grade]
+        for kind, grade, price in [(3, 'Regular', 5.86), (4, 'Midgrade', 6.06), (5, 'Premium', 6.04), (1, 'Diesel', 8.0)]
+    ], 3]
+    result = MapsWebProvider.parse([row], query(fuel_type='premium'))
+    assert len(result.all_prices) == 4
+    assert {r.payment_type for r in result.all_prices} == {'unknown'}
+    assert str(result.stations[0].price_per_gallon) == '6.04'

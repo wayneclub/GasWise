@@ -1,5 +1,5 @@
 import { StrictMode } from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SmartResult } from '../../api/types'
 import App from '../../App'
@@ -53,10 +53,31 @@ describe('Decide', () => {
       'href',
       expect.stringContaining('destination=34.0602,-118.2437'),
     )
+    const hero = within(screen.getByRole('region', { name: 'Chevron' }))
+    expect(hero.getByText(/Estimated pump payment for 10 gal/)).toHaveTextContent('≈ $63.90')
+    expect(hero.getAllByText('Comparison cost')[0]).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe('/api/v1/smart/search')
     expect(JSON.parse(String(init?.body))).toMatchObject({ origin: { lat: 34.0522, lng: -118.2437 }, fuel_type: 'premium' })
+  })
+
+  it('keeps a Google quote unverified and labels a marked-up payment estimate as an assumption', async () => {
+    const result = structuredClone(demo)
+    const row = result.ranking!.results.find((r) => r.station.name === 'Chevron')!
+    Object.assign(row.station, { source: 'google_maps_web', payment_type: 'unknown', comparison_price_per_gallon: '6.59', payment_price_adjustment: '0.20', payment_inference: { classification: 'cash', confidence: 'medium' } })
+    Object.assign(row, { purchase_cost: '65.90', actual_fuel_cost: '66.30' })
+    for (const rec of Object.values(result.ranking!.recommendations!)) {
+      if (rec.station?.name === 'Chevron') rec.station = row.station
+    }
+    vi.spyOn(globalThis, 'fetch').mockImplementation(() => respond(result))
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+    const hero = within(screen.getByRole('region', { name: 'Chevron' }))
+    expect(hero.getByText(/Estimated with payment assumption for 10 gal/)).toHaveTextContent('≈ $65.90')
+    expect(hero.getByText(/This Google Maps quote has no payment terms/)).toBeInTheDocument()
+    expect(hero.getByText(/This is an inference; payment terms remain unverified/)).toBeInTheDocument()
+    expect(hero.getByText('Unconfirmed; check at the pump')).toBeInTheDocument()
   })
 
   it('changes the headline station when the priority changes', async () => {

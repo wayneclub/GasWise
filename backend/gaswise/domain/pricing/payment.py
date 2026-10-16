@@ -1,6 +1,6 @@
 """Explainable payment evidence, not calibrated probabilities or pump verification."""
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from statistics import median
 
 from gaswise.contracts.common import Station
@@ -11,6 +11,16 @@ def source_family(source):
     if source in {"gasbuddy", "gasbuddy_web"}:
         return "gasbuddy"
     return "maps_waze_feed" if source in {"google_maps_web", "google_places", "waze"} else source
+
+
+def payment_price_match(station: Station, peer: Station) -> bool:
+    """A rounded Maps quote is compatible evidence, never a recovered pump price."""
+    if station.source in {"google_maps_web", "google_places"}:
+        price = station.price_per_gallon
+        if price == price.quantize(Decimal("0.01")):
+            return peer.price_per_gallon.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) == price
+        return peer.price_per_gallon == price
+    return abs(peer.price_per_gallon-station.price_per_gallon) < Decimal("0.01")
 
 
 def infer_payment(station: Station, records: list[Station], history: list[Station], now: datetime):
@@ -25,12 +35,19 @@ def infer_payment(station: Station, records: list[Station], history: list[Statio
     def fresh(r, days=1):
         return r.price_updated_at is not None and 0 <= (now-r.price_updated_at).total_seconds() <= days*86400
     peers = [r for r in records if same(r) and fresh(r) and r.payment_type != "unknown"]
-    matches = {r.payment_type for r in peers if station.price_updated_at is not None
+    matched = [r for r in peers if station.price_updated_at is not None
                and abs((r.price_updated_at-station.price_updated_at).total_seconds()) <= 1800
-               and abs(r.price_per_gallon-station.price_per_gallon) < Decimal("0.01") }
+               and payment_price_match(station, r)]
+    matches = {r.payment_type for r in matched}
     if fresh(station) and matches:
-        result.update(classification="same_price" if len(matches)==2 else next(iter(matches)), confidence="medium", basis="contemporaneous_price_match")
+        ambiguous = len(matches) == 2 and len({r.price_per_gallon for r in matched}) > 1
+        result.update(classification="unknown" if ambiguous else "same_price" if len(matches)==2 else next(iter(matches)),
+                      confidence="low" if ambiguous else "medium", basis="ambiguous_price_match" if ambiguous else "contemporaneous_price_match")
+        result["matched_quotes"] = [{"source": r.source, "payment_type": r.payment_type,
+                                     "price_per_gallon": str(r.price_per_gallon)} for r in matched]
         result["reasons"].append("Price match is evidence, not verified payment terms.")
+        if station.source in {"google_maps_web", "google_places"}:
+            result["reasons"].append("Maps prices may be rounded to cents. Payment evidence applies only to this fuel grade; raw price and payment type are unchanged.")
     # Same-provider, same-conditions, close-time raw pairs; one observation per day.
     raw = [r for r in history if same(r) and fresh(r, 30) and r.payment_type in {"cash", "credit"} and r.comparison_price_per_gallon is None]
     daily = {}

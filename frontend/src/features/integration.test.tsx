@@ -190,7 +190,7 @@ it('keeps stale costs labeled with their actual gallons when a snapshot expires'
   fireEvent.click(screen.getByRole('button', { name: /Edit this fill/ }))
   fireEvent.click(screen.getByRole('button', { name: 'Increase gallons' }))
   await screen.findByText(/These prices expired/)
-  expect(within(screen.getByRole('region', { name: 'Chevron' })).getByText(/Estimated total for 10 gal/)).toBeInTheDocument()
+  expect(within(screen.getByRole('region', { name: 'Chevron' })).getByText(/Estimated pump payment for 10 gal/)).toBeInTheDocument()
 })
 
 it('uses a chosen ZIP location after a device location timeout', async () => {

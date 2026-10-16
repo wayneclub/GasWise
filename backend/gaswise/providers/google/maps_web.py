@@ -337,6 +337,8 @@ class MapsWebProvider:
                         price_updated_at=stamp,
                         fetched_at=now,
                         source="google_maps_web",
+                        # Each fuel row lacks payment terms; never inherit a sibling grade's terms.
+                        payment_type="unknown",
                         attribution=["Google Maps"],
                         **rating_fields,
                         membership_required=membership_for_name(row[11]),

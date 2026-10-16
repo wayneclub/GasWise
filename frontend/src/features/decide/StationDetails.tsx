@@ -1,3 +1,4 @@
+import { PaymentNotice } from './PaymentNotice'
 import { CopyAddress } from '../../components/CopyAddress'
 import { PriceHistory } from './PriceHistory'
 import {googleStationUrl,stationSourceUrl} from '../../lib/stationLinks'
@@ -67,6 +68,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
           {station.comparison_price_per_gallon && station.price_per_gallon ? <p className="mt-2 text-xs text-caution">{perGallon(comparisonPrice({ ...station, price_per_gallon: station.price_per_gallon }))} · {t('payment.estimate', { adjustment: usd(station.payment_price_adjustment), raw: perGallon(station.price_per_gallon) })}</p> : null}
           <p className="mt-2 text-sm">{t('station.payment')}: {t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</p>
           {station.payment_type === 'unknown' && station.payment_inference ? <p className="mt-1 text-xs text-caution">{t('payment.evidence', {kind: t(station.payment_inference.classification === 'cash' ? 'payment.inferredCash' : station.payment_inference.classification === 'credit' ? 'payment.inferredCredit' : station.payment_inference.classification === 'same_price' ? 'payment.samePrice' : 'payment.unresolved'), level: t(station.payment_inference.confidence === 'medium' ? 'confidence.medium' : 'confidence.low')})}</p> : null}
+          <PaymentNotice station={station} />
           {station.membership_required ? <p className="mt-1 text-sm text-caution">{t('station.member', { name: station.membership_required })}</p> : null}
           <div className="mt-2"><StationSources source={station.source ?? ''} row={row}/></div>
           <p className="text-xs text-muted">{t('age.updated', { age: age(station.price_updated_at, t) })}</p>
@@ -76,11 +78,13 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
       <p className="text-sm">{t('station.hours')}: {t(station.open_now === true ? 'hours.open' : station.open_now === false ? 'hours.closed' : 'hours.unknown')}</p>
       {row?.route.source === "straight_line_estimate" ? <p className="text-xs text-caution">{t("coverage.estimated_route")}</p> : null}
       {row ? <dl className="grid grid-cols-2 gap-2 border-t border-line pt-3 text-sm">
+        <dt>{t(station.comparison_price_per_gallon ? 'payment.assumedFill' : 'cost.fill')}</dt><dd className="text-right font-semibold num">{usd(row.purchase_cost)}</dd>
         <dt>{t('breakdown.total')}</dt><dd className="text-right font-semibold num">{usd(row.actual_fuel_cost)}</dd>
-        {Number(row.credit_cashback_amount ?? 0) > 0 ? <><dt>{t('cost.fill')}</dt><dd className="text-right num">{usd(row.purchase_cost)}</dd><dt>{t('prefs.cashback')}</dt><dd className="text-right num text-accent">−{usd(row.credit_cashback_amount)}</dd></> : null}
+        {Number(row.credit_cashback_amount ?? 0) > 0 ? <><dt>{t('prefs.cashback')}</dt><dd className="text-right num text-accent">−{usd(row.credit_cashback_amount)}</dd></> : null}
         <dt>{t('breakdown.detour', { distance: miles(row.detour_miles, t) })}</dt><dd className="text-right num">{usd(row.detour_fuel_cost)}</dd>
         <dt>{t('pick.driveLabel')}</dt><dd className="text-right num">{tripMode === 'on_route' ? t('route.extraTime', { time: minutes(row.extra_travel_minutes, t) }) : t('pick.roundTrip', { time: minutes(row.extra_travel_minutes, t) })}</dd>
       </dl> : null}
+      {row ? <p className="text-xs text-muted">{t('pick.comparisonNote')}</p> : null}
       {row?.price_comparison?.evidence.length ? <div className="rounded-control bg-sunken p-3 text-sm">
         {row.price_comparison.evidence.map((e, index) => <div key={`${e.source}:${e.payment_type}:${index}`} className="flex flex-wrap justify-between gap-2 border-b border-line py-2 last:border-0">
           <span className="flex flex-wrap items-center gap-2"><SourcePill source={e.source} href={stationSourceUrl(e.source,e.provider_station_id,station)}/>{t(e.payment_type === 'cash' ? 'prefs.cash' : e.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</span>

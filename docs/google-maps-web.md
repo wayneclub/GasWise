@@ -75,3 +75,21 @@ smart-search inventory, replacing paid Nearby discovery with one website search.
 Smart detail enrichment defaults to zero and is explicitly bounded by
 `maps_detail_limit` (0–5). Session failure never falls back to paid Places calls.
 See [three-source search and live acceptance](smart-search.md).
+
+## Rounded prices and payment terms
+
+A 2026-10-15 Fastrip photo comparison at 1400 Valinda Ave shows Maps Regular
+$5.86, Midgrade $6.06 and Diesel $8.00 consistent with rounded card prices
+$5.859/$6.059/$7.999, while Premium $6.04 is consistent with rounded cash
+$6.039, rather than card $6.159. The photos establish this example, not a
+universal Google policy or a synchronized provider API replay.
+
+Every Google fuel quote retains `payment_type=unknown` and the original numeric
+price. Never inherit payment terms from another grade or recover a guessed third
+decimal. Fresh same-station/same-grade payment evidence within 30 minutes may
+support an inference. Cent-valued Google quotes must equal a peer price rounded
+with decimal half-up rounding; a mere difference under one cent is insufficient.
+If distinct cash and card prices round to the same Maps price, payment remains
+unresolved. An inference does not overwrite raw payment terms or verify the pump.
+The UI explains this uncertainty; estimates using a payment markup are labeled
+as based on a payment assumption.

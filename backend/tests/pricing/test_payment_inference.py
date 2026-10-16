@@ -96,3 +96,51 @@ def test_new_unknown_conflict_widens_card_comparison_range():
     assert selected[0].station.payment_type == 'credit'
     assert comparable_prices(selected[0], NOW)[:2] == (Decimal('6.00'), Decimal('6.50'))
     assert any('Possible price change' in w for w in warnings)
+
+
+def test_fastrip_rounded_maps_evidence_is_per_grade_and_keeps_raw_terms():
+    # Photo-based synthetic rule replay, not a historical provider API replay.
+    rows = []
+    for grade, maps, cash, card in [
+        ('regular', '5.86', '5.739', '5.859'),
+        ('midgrade', '6.06', '5.939', '6.059'),
+        ('premium', '6.04', '6.039', '6.159'),
+        ('diesel', '8.00', '7.879', '7.999'),
+    ]:
+        base = quote(canonical_id='fastrip').model_copy(update={'fuel_type': grade})
+        rows.extend([
+            base.model_copy(update={'source': 'google_maps_web', 'payment_type': 'unknown', 'price_per_gallon': Decimal(maps)}),
+            base.model_copy(update={'source': 'gasbuddy_web', 'payment_type': 'cash', 'price_per_gallon': Decimal(cash)}),
+            base.model_copy(update={'source': 'gasbuddy_web', 'payment_type': 'credit', 'price_per_gallon': Decimal(card)}),
+        ])
+    for row in rows[::3]:
+        inferred = infer_payment(row, rows, [], NOW)
+        assert inferred['classification'] == ('cash' if row.fuel_type == 'premium' else 'credit')
+        assert inferred['basis'] == 'contemporaneous_price_match'
+        assert row.payment_type == 'unknown'
+        assert len(inferred['matched_quotes']) == 1
+    assert rows[6].price_per_gallon == Decimal('6.04')
+
+
+def test_maps_cent_match_rejects_nearby_but_differently_rounded_price():
+    raw = unknown().model_copy(update={'source': 'google_maps_web', 'price_per_gallon': Decimal('6.04')})
+    for price in ('6.031', '6.034', '6.045', '6.049'):
+        peer = quote(canonical_id='site', price=price)
+        assert infer_payment(raw, [peer], [], NOW)['classification'] == 'unknown'
+    assert infer_payment(raw, [quote(canonical_id='site', price='6.035')], [], NOW)['classification'] == 'credit'
+
+
+def test_rounded_maps_cash_and_card_collision_is_unresolved_not_same_price():
+    raw = unknown().model_copy(update={'source': 'google_maps_web', 'price_per_gallon': Decimal('6.04')})
+    cash = quote(canonical_id='site', price='6.039').model_copy(update={'payment_type': 'cash'})
+    card = quote(canonical_id='site', price='6.041')
+    inferred = infer_payment(raw, [cash, card], [], NOW)
+    assert inferred['classification'] == 'unknown'
+    assert inferred['basis'] == 'ambiguous_price_match'
+    assert inferred['confidence'] == 'low'
+    assert raw.payment_type == 'unknown'
+
+
+def test_maps_three_digit_price_is_not_treated_as_a_cent_rounded_quote():
+    raw = unknown().model_copy(update={'source': 'google_maps_web', 'price_per_gallon': Decimal('6.039')})
+    assert infer_payment(raw, [quote(canonical_id='site', price='6.041')], [], NOW)['classification'] == 'unknown'
