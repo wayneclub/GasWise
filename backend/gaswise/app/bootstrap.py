@@ -227,8 +227,12 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             }, background_daily_limit=settings.hot_pricing_refresh_daily_requests)
             await store.configure_background_pacing("gasbuddy", settings.gasbuddy_background_pacing_enabled)
             if settings.pricing_daily_ramp_enabled:
-                await store.configure_daily_ramp(list(budget.limits), settings.hot_pricing_refresh_daily_requests,
-                                                 settings.pricing_daily_ramp_floor, settings.pricing_daily_ramp_max)
+                for source in budget.limits:
+                    initial = settings.hot_pricing_refresh_daily_requests
+                    if source == "gasbuddy" and settings.gasbuddy_background_daily_requests is not None:
+                        initial = settings.gasbuddy_background_daily_requests
+                    await store.configure_daily_ramp([source], initial,
+                                                     settings.pricing_daily_ramp_floor, settings.pricing_daily_ramp_max)
             else:
                 await store.disable_daily_ramp(list(budget.limits))
             price_worker.request_budget = budget

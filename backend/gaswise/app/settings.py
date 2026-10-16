@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     base_collection_preset: Literal["custom", "socal"] = "custom"
     base_collection_bases: list[str] = Field(default_factory=lambda: ["la", "irvine", "sd"], min_length=1, max_length=200)
     base_collection_interval_seconds: int = Field(default=86400, ge=86400, le=604800)
+    gasbuddy_background_daily_requests: int | None = Field(default=None, ge=1, le=1000)
     gasbuddy_background_pacing_enabled: bool = True
     pricing_daily_ramp_enabled: bool = False
     pricing_daily_ramp_floor: int = Field(default=40, ge=1, le=1000)
@@ -85,6 +86,9 @@ class Settings(BaseSettings):
     def expand_collection_preset(self):
         if self.pricing_daily_ramp_enabled and not (self.pricing_daily_ramp_floor <= self.hot_pricing_refresh_daily_requests <= self.pricing_daily_ramp_max):
             raise ValueError("Daily ramp requires floor <= initial allowance <= maximum")
+        if self.pricing_daily_ramp_enabled and self.gasbuddy_background_daily_requests is not None and not (
+                self.pricing_daily_ramp_floor <= self.gasbuddy_background_daily_requests <= self.pricing_daily_ramp_max):
+            raise ValueError("GasBuddy daily allowance must be between ramp floor and maximum")
         if self.base_collection_preset == "socal":
             from gaswise.domain.pricing.collection_bases import BASES
             self.base_collection_bases = list(BASES)

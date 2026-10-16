@@ -309,3 +309,8 @@ This spaces bounded jobs; it does not guarantee a precise daily station count.
 Local budget/minute-wait/reservation exhaustion is retried as a named deferral,
 without resetting the healthy-provider review. Actual acquisition failures and
 provider rejections retain their existing review/cooldown behavior.
+
+`GASWISE_GASBUDDY_BACKGROUND_DAILY_REQUESTS` optionally overrides GasBuddy's initial
+adaptive allowance without changing Maps or Waze. Existing persisted limits are
+preserved on restart, including automatic downgrades; an operator increase is a
+separate guarded migration, never a daily-usage reset. Production uses 160.
