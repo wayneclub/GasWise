@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { PlateRequest, VinRequest } from '../api/types'
 import {loadIdentity, saveIdentity, supportsIdentityVault} from './identityVault'
+import {requestPersistentStorage} from './localProfile'
 
 export type VehicleIdentity = { kind: 'vin'; value: VinRequest } | { kind: 'plate'; value: PlateRequest }
 export const VehicleIdentityContext = createContext<{
@@ -27,7 +28,7 @@ export function useEncryptedVehicleIdentity() {
   const setIdentity=useCallback((value:VehicleIdentity|null)=>{
     setValue(value)
     if(!supportsIdentityVault()) return
-    void saveIdentity(value).then(()=>{setStorageStatus('encrypted');setStorageError(false)})
+    void saveIdentity(value).then(()=>{setStorageStatus('encrypted');setStorageError(false);if(value) void requestPersistentStorage()})
       .catch(()=>{setStorageStatus('session');setStorageError(true)})
   },[])
   return {identity,setIdentity,storageStatus,storageError,ready}

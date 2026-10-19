@@ -8,14 +8,17 @@ import { useVehicleIdentity } from '../../lib/vehicleIdentity'
 import type { Prefs } from '../../lib/prefs'
 import { TripForm } from './TripForm'
 import { VehiclePicker } from './VehiclePicker'
+import { PrivacyProfile } from './PrivacyProfile'
 
 export function PreferencesForm({
   prefs,
   update,
+  replace,
   advanced = false,
 }: {
   prefs: Prefs
   update: (change: Partial<Prefs>) => void
+  replace?: (prefs: Prefs) => void
   advanced?: boolean
 }) {
   const { identity, setIdentity, storageStatus, storageError } = useVehicleIdentity()
@@ -151,6 +154,7 @@ export function PreferencesForm({
         </Field>
       ) : null}
       </section>
+      {advanced && replace ? <PrivacyProfile prefs={prefs} replace={replace} /> : null}
     </div>
   )
 }

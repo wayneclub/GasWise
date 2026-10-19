@@ -25,6 +25,27 @@ their retention after an explicitly requested lookup.
   browser settings. Ordinary localStorage preferences have an explicit allowlist
   and never include VIN, plate, or destination coordinates.
 
+## Anonymous local profile and backup
+
+Each browser profile receives a random UUID in a separate origin-local IndexedDB
+database. It is a local namespace only: the frontend does not attach it to API
+requests, analytics events, pricing-cache keys or server logs. Different browsers,
+browser profiles and devices therefore have independent GasWise data; clearing site
+data creates a new local profile. It is not an identity for a human and cannot link
+the same person across devices.
+
+Settings can export the local profile, preferences and protected vehicle identity
+as one encrypted JSON backup. Encryption uses AES-256-GCM with a fresh IV and a key
+derived from the user-supplied password using PBKDF2-SHA-256, 310,000 iterations and
+a fresh 128-bit salt. Neither the password nor derived key is stored. Import verifies
+the authenticated ciphertext and validates the restored identity before replacing
+local data. GasWise cannot recover a forgotten backup password.
+
+After saving private vehicle data, exporting or importing, the frontend asks the
+browser for persistent storage when supported. The browser may decline. The settings
+page also provides one confirmed action that clears the vehicle identity, preferences,
+temporary search state and old local profile, then creates a new local profile.
+
 Encryption protects stored payload integrity and keeps identifiers out of
 plaintext browser storage. Because automatic unlock uses a key in the same
 browser profile, it is not password-based or hardware-backed protection against

@@ -467,6 +467,20 @@ export const en = {
   "address.copy": "Copy address: {address}",
   "address.copied": "Address copied",
   "address.failed": "Could not copy. Select the address below to copy manually.",
+  "privacy.title": "Private browser profile",
+  "privacy.description": "This anonymous profile, your preferences and vehicle identity stay in this browser. GasWise does not send the profile ID to its API.",
+  "privacy.profileId": "Local profile · {id}",
+  "privacy.passphrase": "Backup password",
+  "privacy.passphraseHint": "At least 8 characters. GasWise cannot recover this password.",
+  "privacy.backupFile": "Encrypted backup file",
+  "privacy.export": "Export encrypted backup",
+  "privacy.import": "Import backup",
+  "privacy.clearAll": "Clear all private data",
+  "privacy.clearConfirm": "Clear this browser’s GasWise vehicle identity, preferences, temporary searches and local profile? This cannot be undone without a backup.",
+  "privacy.exported": "Encrypted backup downloaded.",
+  "privacy.imported": "Private profile restored in this browser.",
+  "privacy.cleared": "Private browser data cleared and a new local profile created.",
+  "privacy.error": "The operation failed. Check the backup file and password, or verify that browser storage is available.",
 
 }
 

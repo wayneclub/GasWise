@@ -64,27 +64,31 @@ export const DEFAULT_PREFS: Prefs = {
 const KEY = 'gaswise.prefs.v1'
 
 // Only user choices live here. Fuel search recovery uses short-lived sessionStorage separately.
+export function normalizePrefs(value: unknown, restoreFuelSession = false): Prefs {
+  const parsed = value && typeof value === 'object' ? value as Partial<Prefs> : {}
+  const saved = Object.fromEntries(Object.keys(DEFAULT_PREFS).filter(key=>key in parsed).map(key=>[key,parsed[key as keyof Prefs]])) as Partial<Prefs>
+  const reward = Number(saved.creditCashbackPercent ?? 0)
+  saved.creditCashbackPercent = Number.isFinite(reward) ? String(Math.min(100, Math.max(0, reward))) : '0'
+  saved.timeValuePerHour = Math.min(500, Math.max(0, Number(saved.timeValuePerHour ?? 15) || 0))
+  saved.searchRadiusMiles = [2, 5, 10, 20].includes(saved.searchRadiusMiles ?? 5) ? saved.searchRadiusMiles ?? 5 : 5
+  const trip = restoreFuelSession ? loadFuelSession()?.result.snapshot.query : null
+  const destination = trip?.destination
+  const restoreTrip = trip?.trip_mode === 'on_route' && destination &&
+    Number.isFinite(destination.lat) && Math.abs(destination.lat) <= 90 &&
+    Number.isFinite(destination.lng) && Math.abs(destination.lng) <= 180
+  return { ...DEFAULT_PREFS, ...saved, locale: LOCALES.some((item) => item.value === saved.locale) ? saved.locale! : null, allowUnknownPayment: saved.paymentPolicyVersion === 2 ? saved.allowUnknownPayment ?? true : true, paymentPolicyVersion: 2, navApp: saved.navDefaultVersion === 2 ? saved.navApp ?? 'google' : 'google', navDefaultVersion: 2, tripMode: restoreTrip ? 'on_route' : 'round_trip', destination: restoreTrip ? destination : null }
+}
+
 export function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(KEY)
-    const parsed = raw ? JSON.parse(raw) as Partial<Prefs> : {}
-    const saved = Object.fromEntries(Object.keys(DEFAULT_PREFS).filter(key=>key in parsed).map(key=>[key,parsed[key as keyof Prefs]])) as Partial<Prefs>
-    const reward = Number(saved.creditCashbackPercent ?? 0)
-    saved.creditCashbackPercent = Number.isFinite(reward) ? String(Math.min(100, Math.max(0, reward))) : '0'
-    saved.timeValuePerHour = Math.min(500, Math.max(0, Number(saved.timeValuePerHour ?? 15) || 0))
-    saved.searchRadiusMiles = [2, 5, 10, 20].includes(saved.searchRadiusMiles ?? 5) ? saved.searchRadiusMiles ?? 5 : 5
-    const trip = loadFuelSession()?.result.snapshot.query
-    const destination = trip?.destination
-    const restoreTrip = trip?.trip_mode === 'on_route' && destination &&
-      Number.isFinite(destination.lat) && Math.abs(destination.lat) <= 90 &&
-      Number.isFinite(destination.lng) && Math.abs(destination.lng) <= 180
-    return { ...DEFAULT_PREFS, ...saved, locale: LOCALES.some((item) => item.value === saved.locale) ? saved.locale! : null, allowUnknownPayment: saved.paymentPolicyVersion === 2 ? saved.allowUnknownPayment ?? true : true, paymentPolicyVersion: 2, navApp: saved.navDefaultVersion === 2 ? saved.navApp ?? 'google' : 'google', navDefaultVersion: 2, tripMode: restoreTrip ? 'on_route' : 'round_trip', destination: restoreTrip ? destination : null }
+    return normalizePrefs(raw ? JSON.parse(raw) : {}, true)
   } catch {
     return DEFAULT_PREFS
   }
 }
 
-function savePrefs(prefs: Prefs) {
+export function savePrefs(prefs: Prefs) {
   try {
     const publicPrefs=Object.fromEntries(Object.keys(DEFAULT_PREFS).map(key=>[key,prefs[key as keyof Prefs]]))
     localStorage.setItem(KEY, JSON.stringify({ ...publicPrefs, paymentPolicyVersion: 2, tripMode: 'round_trip', destination: null }))
@@ -102,7 +106,12 @@ export function usePrefs() {
       return next
     })
   }, [])
-  return [prefs, update] as const
+  const replace = useCallback((value: Prefs) => {
+    const next = normalizePrefs(value)
+    setPrefs(next)
+    savePrefs(next)
+  }, [])
+  return [prefs, update, replace] as const
 }
 
 export function effectiveFuel(prefs: Prefs): FuelType {

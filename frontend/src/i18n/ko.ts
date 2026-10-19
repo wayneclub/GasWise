@@ -445,5 +445,19 @@ export const ko: Record<MessageKey, string> = {
   "parts.addCar": "차량 추가",
   "address.copy": "주소 복사: {address}",
   "address.copied": "주소 복사됨",
-  "address.failed": "복사하지 못했습니다. 아래 주소를 선택해 직접 복사하세요."
+  "address.failed": "복사하지 못했습니다. 아래 주소를 선택해 직접 복사하세요.",
+  "privacy.title": "브라우저 비공개 프로필",
+  "privacy.description": "익명 프로필, 환경설정, 차량 식별 정보는 이 브라우저에만 저장됩니다. GasWise는 프로필 ID를 API로 보내지 않습니다.",
+  "privacy.profileId": "로컬 프로필 · {id}",
+  "privacy.passphrase": "백업 비밀번호",
+  "privacy.passphraseHint": "8자 이상. GasWise는 이 비밀번호를 복구할 수 없습니다.",
+  "privacy.backupFile": "암호화된 백업 파일",
+  "privacy.export": "암호화 백업 내보내기",
+  "privacy.import": "백업 가져오기",
+  "privacy.clearAll": "모든 비공개 데이터 지우기",
+  "privacy.clearConfirm": "이 브라우저의 차량 식별 정보, 환경설정, 임시 검색 및 로컬 프로필을 지울까요? 백업이 없으면 되돌릴 수 없습니다.",
+  "privacy.exported": "암호화 백업을 다운로드했습니다.",
+  "privacy.imported": "이 브라우저에 비공개 프로필을 복원했습니다.",
+  "privacy.cleared": "비공개 데이터를 지우고 새 로컬 프로필을 만들었습니다.",
+  "privacy.error": "작업에 실패했습니다. 백업 파일과 비밀번호 또는 브라우저 저장소를 확인하세요."
 }

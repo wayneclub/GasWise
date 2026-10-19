@@ -445,5 +445,19 @@ export const ja: Record<MessageKey, string> = {
   "parts.addCar": "車両を追加",
   "address.copy": "住所をコピー：{address}",
   "address.copied": "住所をコピーしました",
-  "address.failed": "コピーできませんでした。下の住所を選択して手動でコピーしてください。"
+  "address.failed": "コピーできませんでした。下の住所を選択して手動でコピーしてください。",
+  "privacy.title": "ブラウザ内のプライベートプロフィール",
+  "privacy.description": "匿名プロフィール、設定、車両識別情報はこのブラウザだけに保存されます。GasWise はプロフィール ID を API に送信しません。",
+  "privacy.profileId": "ローカルプロフィール · {id}",
+  "privacy.passphrase": "バックアップ用パスワード",
+  "privacy.passphraseHint": "8文字以上。GasWise ではこのパスワードを復元できません。",
+  "privacy.backupFile": "暗号化バックアップファイル",
+  "privacy.export": "暗号化バックアップを書き出す",
+  "privacy.import": "バックアップを読み込む",
+  "privacy.clearAll": "すべての個人データを消去",
+  "privacy.clearConfirm": "このブラウザの車両識別情報、設定、一時検索、ローカルプロフィールを消去しますか？バックアップがなければ元に戻せません。",
+  "privacy.exported": "暗号化バックアップをダウンロードしました。",
+  "privacy.imported": "このブラウザにプロフィールを復元しました。",
+  "privacy.cleared": "個人データを消去し、新しいローカルプロフィールを作成しました。",
+  "privacy.error": "操作に失敗しました。ファイルとパスワード、またはブラウザストレージを確認してください。"
 }
