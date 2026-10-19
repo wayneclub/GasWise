@@ -83,6 +83,26 @@ it.each([
 })
 
 describe('service integration', () => {
+  it('switches language from the header across services without fetching prices again', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+    const header = within(screen.getByRole('banner'))
+    fireEvent.change(header.getByRole('combobox', { name: 'Language' }), { target: { value: 'ja' } })
+    expect(document.documentElement.lang).toBe('ja')
+    expect(header.getByRole('tab', { name: '給油を節約' })).toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('gaswise.prefs.v1')!).locale).toBe('ja')
+    fireEvent.click(header.getByRole('tab', { name: '自動車部品' }))
+    fireEvent.change(header.getByRole('combobox', { name: '言語' }), { target: { value: 'ko' } })
+    expect(document.documentElement.lang).toBe('ko')
+    expect(header.getByRole('tab', { name: '자동차 부품' })).toHaveAttribute('aria-selected', 'true')
+    fireEvent.click(header.getByRole('tab', { name: '주유비 절약' }))
+    expect(screen.getByRole('heading', { name: 'Chevron', level: 2 })).toBeInTheDocument()
+    expect(fetch).toHaveBeenCalledTimes(1)
+    fireEvent.click(header.getByRole('button', { name: '설정' }))
+    expect(header.getByRole('combobox', { name: '언어' })).toHaveValue('ko')
+  })
+
   it('supports all payment conditions and defaults legacy preferences to Google Maps', async () => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))
     render(<App />)

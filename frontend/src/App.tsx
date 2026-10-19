@@ -1,10 +1,10 @@
-import { GasPumpIcon, GearSixIcon, WrenchIcon } from '@phosphor-icons/react'
+import { GasPumpIcon, GearSixIcon, GlobeIcon, WrenchIcon } from '@phosphor-icons/react'
 import { PreferencesForm } from './features/setup/PreferencesForm'
 import { useState } from 'react'
 import { Decide } from './features/decide/Decide'
 import { Parts } from './features/parts/Parts'
 import { Setup } from './features/setup/Setup'
-import { useBrowserLocale, useI18n } from './i18n'
+import { LOCALES, useBrowserLocale, useI18n } from './i18n'
 import { I18nProvider } from './i18n/I18nProvider'
 import { usePrefs, type Prefs } from './lib/prefs'
 import { VehicleIdentityContext, useEncryptedVehicleIdentity } from './lib/vehicleIdentity'
@@ -15,14 +15,21 @@ function ServiceTabs({ prefs, update }: { prefs: Prefs; update: (change: Partial
   const [tab, setTab] = useState<'fuel' | 'parts'>('fuel')
   return <>
     <header className="liquid-nav">
-      <div className="mx-auto flex min-h-16 w-full max-w-5xl items-center gap-2 px-4 sm:gap-8">
+      <div className="mx-auto flex min-h-16 w-full max-w-5xl flex-wrap items-center gap-x-2 px-4 pt-2 sm:flex-nowrap sm:gap-4 sm:pt-0">
         <div className="flex shrink-0 items-center gap-2 font-semibold tracking-tight"><GasPumpIcon size={22} weight="fill" className="text-accent" /><span>GasWise</span></div>
-        <nav className="flex min-w-0 flex-1 items-center gap-1 self-stretch" role="tablist" aria-label="GasWise">
+        <nav className="order-last flex min-w-0 basis-full flex-1 items-center gap-1 self-stretch sm:order-none sm:basis-auto" role="tablist" aria-label="GasWise">
           {(['fuel', 'parts'] as const).map((key) => { const Icon = key === 'fuel' ? GasPumpIcon : WrenchIcon; return <button key={key} type="button" role="tab" id={`tab-${key}`} aria-controls={`panel-${key}`} aria-selected={!settingsOpen && tab === key}
             className={`liquid-tab relative flex min-h-14 min-w-0 flex-1 items-center justify-center gap-2 whitespace-normal sm:whitespace-nowrap px-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-accent sm:flex-none sm:px-5 ${!settingsOpen && tab === key ? 'text-accent' : 'text-muted hover:text-ink'}`}
             onKeyDown={(event) => { if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) { event.preventDefault(); const next = event.key === 'Home' ? 'fuel' : event.key === 'End' ? 'parts' : key === 'fuel' ? 'parts' : 'fuel'; setTab(next); setSettingsOpen(false); document.getElementById(`tab-${next}`)?.focus() } }}
             tabIndex={tab === key ? 0 : -1} onClick={() => { setTab(key); setSettingsOpen(false) }}><Icon size={18} className="hidden sm:block" />{t(`nav.${key}`)}</button> })}
         </nav>
+        <label className="relative ml-auto flex shrink-0 items-center">
+          <GlobeIcon size={18} aria-hidden="true" className="pointer-events-none absolute left-2 text-muted" />
+          <select aria-label={t('prefs.language')} value={prefs.locale ?? 'auto'} onChange={(event) => update({ locale: LOCALES.find((item) => item.value === event.target.value)?.value ?? null })} className="h-11 w-28 rounded-control border border-line bg-canvas pl-8 pr-1 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent sm:w-36">
+            <option value="auto">{t('prefs.languageAuto')}</option>
+            {LOCALES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+          </select>
+        </label>
         <button type="button" onClick={() => setSettingsOpen(true)} aria-label={t('decide.settings')} className="grid size-10 shrink-0 place-items-center rounded-control text-muted hover:bg-sunken hover:text-ink"><GearSixIcon size={20} /></button>
       </div>
     </header>
