@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { en } from './en'
 import { es } from './es'
+import { ja } from './ja'
+import { ko } from './ko'
 import { detectLocale, translator } from './index'
 import { zhTW } from './zh-TW'
 import { zhCN } from './zh-CN'
@@ -20,11 +22,17 @@ describe('i18n', () => {
     expect(detectLocale(['fr-FR', 'zh-CN', 'en-US'])).toBe('zh-CN')
     expect(detectLocale(['es-MX'])).toBe('es')
     expect(detectLocale(['fr-FR', 'en-US'])).toBe('en')
-    expect(detectLocale(['ja-JP'])).toBe('en')
+    expect(detectLocale(['ja-JP'])).toBe('ja')
+    expect(detectLocale(['JA-jp'])).toBe('ja')
+    expect(detectLocale(['ko-KR'])).toBe('ko')
+    expect(detectLocale(['ko'])).toBe('ko')
+    expect(detectLocale(['fr-FR', 'ko-KR', 'ja-JP'])).toBe('ko')
+    expect(detectLocale(['fr-FR'])).toBe('en')
   })
 
   it('keeps every placeholder in every translation', () => {
-    for (const catalog of [zhTW, zhCN, es]) {
+    for (const catalog of [zhTW, zhCN, es, ja, ko]) {
+      expect(Object.keys(catalog).sort()).toEqual(Object.keys(en).sort())
       for (const key of Object.keys(en) as (keyof typeof en)[]) {
         expect(placeholders(catalog[key]), key).toEqual(placeholders(en[key]))
       }
@@ -35,10 +43,12 @@ describe('i18n', () => {
     expect(translator('es')('pick.save', { amount: '$2.05', name: 'Chevron' })).toBe('Ahorras $2.05 frente a Chevron')
     expect(translator('zh-TW')('pick.save', { amount: '$2.05', name: 'Chevron' })).toBe('比 Chevron 省 $2.05')
     expect(translator('zh-CN')('pick.save', { amount: '$2.05', name: 'Chevron' })).toBe('比 Chevron 省 $2.05')
+    expect(translator('ja')('pick.save', { amount: '$2.05', name: 'Chevron' })).toBe('Chevronより$2.05節約')
+    expect(translator('ko')('pick.save', { amount: '$2.05', name: 'Chevron' })).toBe('Chevron 대비 $2.05 절약')
   })
 
   it('never uses em or en dashes in visible copy', () => {
-    for (const catalog of [en, zhTW, zhCN, es]) {
+    for (const catalog of [en, zhTW, zhCN, es, ja, ko]) {
       for (const text of Object.values(catalog)) expect(text).not.toMatch(/[–—]/)
     }
   })

@@ -63,6 +63,25 @@ it('follows browser language until a manual choice, persists it, and can return 
   expect(JSON.parse(localStorage.getItem('gaswise.prefs.v1')!).locale).toBeNull()
 })
 
+it.each([
+  ['ja-JP', 'ja', '言語', '給油の設定を教えてください。', 'ko', '언어'],
+  ['ko-KR', 'ko', '언어', '주유 설정을 알려주세요.', 'ja', '言語'],
+])('detects %s and persists a manual language switch', (browserLanguage, locale, label, title, selected, selectedLabel) => {
+  localStorage.setItem('gaswise.prefs.v1', JSON.stringify({ onboarded: false }))
+  vi.spyOn(navigator, 'languages', 'get').mockReturnValue([browserLanguage])
+  const app = render(<App />)
+  expect(document.documentElement.lang).toBe(locale)
+  expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
+  const language = screen.getByRole('combobox', { name: label })
+  expect(within(language).getByRole('option', { name: '日本語' })).toBeInTheDocument()
+  expect(within(language).getByRole('option', { name: '한국어' })).toBeInTheDocument()
+  fireEvent.change(language, { target: { value: selected } })
+  app.unmount()
+  render(<App />)
+  expect(document.documentElement.lang).toBe(selected)
+  expect(screen.getByRole('combobox', { name: selectedLabel })).toHaveValue(selected)
+})
+
 describe('service integration', () => {
   it('supports all payment conditions and defaults legacy preferences to Google Maps', async () => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))

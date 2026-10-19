@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { en, type MessageKey } from './en'
 import { es } from './es'
+import { ja } from './ja'
+import { ko } from './ko'
 import { zhTW } from './zh-TW'
 import { zhCN } from './zh-CN'
 
-export type Locale = 'en' | 'zh-TW' | 'zh-CN' | 'es'
+export type Locale = 'en' | 'zh-TW' | 'zh-CN' | 'es' | 'ja' | 'ko'
 export type Vars = Record<string, string | number>
 export type Translate = (key: MessageKey, vars?: Vars) => string
 export type { MessageKey }
@@ -14,9 +16,11 @@ export const LOCALES: { value: Locale; label: string }[] = [
   { value: 'zh-TW', label: '繁體中文' },
   { value: 'zh-CN', label: '简体中文' },
   { value: 'es', label: 'Español' },
+  { value: 'ja', label: '日本語' },
+  { value: 'ko', label: '한국어' },
 ]
 
-const CATALOGS: Record<Locale, Record<MessageKey, string>> = { en, 'zh-TW': zhTW, 'zh-CN': zhCN, es }
+const CATALOGS: Record<Locale, Record<MessageKey, string>> = { en, 'zh-TW': zhTW, 'zh-CN': zhCN, es, ja, ko }
 
 export function detectLocale(languages: readonly string[] = navigator.languages ?? [navigator.language]): Locale {
   for (const language of languages) {
@@ -28,6 +32,8 @@ export function detectLocale(languages: readonly string[] = navigator.languages 
       return 'zh-CN'
     }
     if (base === 'es') return 'es'
+    if (base === 'ja') return 'ja'
+    if (base === 'ko') return 'ko'
     if (base === 'en') return 'en'
   }
   return 'en'
