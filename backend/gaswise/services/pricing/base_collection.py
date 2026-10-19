@@ -12,6 +12,7 @@ from gaswise.domain.pricing.collection_bases import BASE_CATALOG, BASES
 from gaswise.domain.pricing.collection_errors import safe_failure_code
 from gaswise.domain.pricing.shared_cache import (
     background_acquisition,
+    collection_attempt,
     collection_egress_key,
     mandatory_acquisition,
 )
@@ -102,6 +103,8 @@ class BaseCollection:
             await self.cache._db("finish_base_job", job_id, owner, 3600, "configuration_changed", 0, 0)
             return False
         completed = False
+        attempt = {}
+        attempt_token = collection_attempt.set(attempt)
         token = background_acquisition.set(True)
         egress_token = collection_egress_key.set(job.id)
         mandatory_token = mandatory_acquisition.set(job.base == "la")
@@ -110,7 +113,7 @@ class BaseCollection:
             if (state.get("blocked_seconds", 0) or state["background_day_used"] >= (state.get("daily_limit") or self.daily_limit)
                     or state["used"] >= max(1, self.limits[job.source] // 2)
                     or state.get("background_used", 0) >= max(1, self.limits[job.source] // 5)):
-                await self.cache._db("finish_base_job", job.id, owner, 900, "source_budget_deferred", 0, 0)
+                await self.cache._db("finish_base_job", job.id, owner, 900, "source_budget_deferred", 0, 0, dict(attempt))
                 completed = True
                 return False
 
@@ -124,7 +127,7 @@ class BaseCollection:
             result, _ = await self.cache.get(job.source, job.raw_key, load, wait_refresh=True)
             quotes = result if job.source == "waze" else result.prices if job.source == "gasbuddy" else result.all_prices or result.stations
             await self.cache._db("finish_base_job", job.id, owner, self.interval, None,
-                                 len(quotes), len({quote.id for quote in quotes}))
+                                 len(quotes), len({quote.id for quote in quotes}), dict(attempt))
             completed = True
             return True
         except asyncio.CancelledError:
@@ -137,19 +140,20 @@ class BaseCollection:
                 "request_budget_exhausted", "background_wait_exhausted")}
             deferred = isinstance(error, ProviderError) and reason in local_reasons
             if not deferred:
-                await self.cache._db("record_base_failure_diagnostic", job.id, owner, safe_failure_code(error))
+                attempt['failure_code'] = safe_failure_code(error)
             await self.cache._db("finish_base_job", job.id, owner, 60 if deferred else 3600,
-                                 reason if deferred else "collection_failed", 0, 0)
+                                 reason if deferred else "collection_failed", 0, 0, dict(attempt))
             completed = True
             logger.warning("Fixed base collection deferred for %s", job.id)
             return False
         finally:
+            collection_attempt.reset(attempt_token)
             background_acquisition.reset(token)
             collection_egress_key.reset(egress_token)
             mandatory_acquisition.reset(mandatory_token)
             if not completed:
                 try:
-                    await self.cache._db("finish_base_job", job.id, owner, 60, "interrupted", 0, 0)
+                    await self.cache._db("finish_base_job", job.id, owner, 60, "interrupted", 0, 0, dict(attempt))
                 except Exception:
                     logger.warning("Fixed base lease release deferred to expiry")
 

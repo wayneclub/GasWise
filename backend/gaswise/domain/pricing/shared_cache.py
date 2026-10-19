@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
 
+collection_attempt = ContextVar("collection_attempt", default=None)
+
 collection_egress_key = ContextVar("collection_egress_key", default="foreground")
 
 mandatory_acquisition = ContextVar("mandatory_pricing_acquisition", default=False)

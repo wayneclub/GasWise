@@ -62,7 +62,7 @@ async def test_fixed_bases_collect_without_any_foreground_uses_and_persist_due_j
     assert len(provider.calls) == 6
     assert {query.fuel_type for query in provider.calls} == {"regular", "premium"}
     assert all(args[2:4] == (86400, None) for args in cache.saved)
-    assert all(args[4:] == (1, 1) for args in cache.saved)
+    assert all(args[4:6] == (1, 1) for args in cache.saved)
     assert not background_acquisition.get()
 
 

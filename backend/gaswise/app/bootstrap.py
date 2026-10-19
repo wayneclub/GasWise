@@ -18,6 +18,7 @@ from gaswise.providers.http.curl_client import CurlHTTPClient
 from gaswise.providers.http.egress_pool import PooledGasBuddySession, PooledHTTPClient
 from gaswise.providers.http.parts import PartsHTTP
 from gaswise.providers.http.public import PublicHTTP
+from gaswise.providers.notifications.telegram import TelegramSender
 from gaswise.providers.pricing.aaa import AAAProvider
 from gaswise.providers.pricing.aaa_http import AAAHTTP
 from gaswise.providers.pricing.demo import DemoComparisonSource, DemoProvider
@@ -34,6 +35,7 @@ from gaswise.providers.vehicles.vin import VinProvider
 from gaswise.providers.waze.provider import WazeProvider
 from gaswise.services.parts.fitment import PartsProvider
 from gaswise.services.pricing.base_collection import BaseCollection
+from gaswise.services.pricing.collection_notifications import CollectionNotifications
 from gaswise.services.pricing.hot_refresh import HotQueryRefresh
 from gaswise.services.pricing.search import SearchService
 from gaswise.services.pricing.shared_cache import SharedPricingCache
@@ -290,6 +292,18 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
                     await base_task
 
             stack.push_async_callback(stop_base_collection)
+        if settings.collection_telegram_enabled:
+            sender = TelegramSender(settings.collection_telegram_bot_token, settings.collection_telegram_chat_id,
+                                    settings.collection_telegram_thread_id)
+            notifier = CollectionNotifications(store, sender)
+            notification_task = asyncio.create_task(notifier.run())
+
+            async def stop_collection_notifications():
+                notification_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await notification_task
+
+            stack.push_async_callback(stop_collection_notifications)
         if settings.hot_pricing_refresh_enabled:
             if shared_cache is None or settings.mode == "demo":
                 raise ValueError("Hot pricing refresh requires shared PostgreSQL cache and live mode")

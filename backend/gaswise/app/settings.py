@@ -28,6 +28,10 @@ class Settings(BaseSettings):
         hide_input_in_errors=True,
     )
     database_url: SecretStr = SecretStr("")
+    collection_telegram_enabled: bool = False
+    collection_telegram_bot_token: SecretStr = SecretStr("")
+    collection_telegram_chat_id: SecretStr = SecretStr("")
+    collection_telegram_thread_id: int | None = Field(default=None, ge=1)
     base_collection_enabled: bool = False
     base_collection_preset: Literal["custom", "socal"] = "custom"
     base_collection_bases: list[str] = Field(default_factory=lambda: ["la", "irvine", "sd"], min_length=1, max_length=200)
@@ -97,6 +101,10 @@ class Settings(BaseSettings):
             raise ValueError("Pricing egress pool requires a shared database budget")
         if self.pricing_egress_proxies and self.gasbuddy_web_transport != "http":
             raise ValueError("Pricing egress pool requires HTTP transport")
+        if self.collection_telegram_enabled and not (
+                self.base_collection_enabled and self.database_url.get_secret_value()
+                and self.collection_telegram_bot_token.get_secret_value() and self.collection_telegram_chat_id.get_secret_value()):
+            raise ValueError("Collection Telegram requires fixed collection, shared DB and private bot target configuration")
         if self.base_collection_preset == "socal":
             from gaswise.domain.pricing.collection_bases import BASES
             self.base_collection_bases = list(BASES)

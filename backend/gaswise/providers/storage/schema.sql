@@ -102,3 +102,38 @@ ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS background_next_job_a
 
 ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS last_failure_code text;
 ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS last_failure_at timestamptz;
+
+-- Append-only attempt history; public city jobs only, no raw transport payloads.
+ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS last_started_at timestamptz;
+CREATE TABLE IF NOT EXISTS gaswise.collection_runs (
+    id bigserial PRIMARY KEY,
+    job_id text NOT NULL, owner text NOT NULL,
+    base text NOT NULL, source text NOT NULL, fuel text NOT NULL,
+    started_at timestamptz, finished_at timestamptz NOT NULL DEFAULT now(),
+    outcome text NOT NULL CHECK(outcome IN ('success','failure','deferred','interrupted')),
+    reason text, http_status integer CHECK(http_status BETWEEN 100 AND 599),
+    phase text, egress_lane integer CHECK(egress_lane BETWEEN 0 AND 2),
+    http_requests integer NOT NULL DEFAULT 0 CHECK(http_requests>=0),
+    quote_count integer NOT NULL DEFAULT 0, station_count integer NOT NULL DEFAULT 0,
+    retry_at timestamptz,
+    UNIQUE(job_id,owner)
+);
+CREATE INDEX IF NOT EXISTS collection_runs_time ON gaswise.collection_runs(finished_at DESC);
+CREATE TABLE IF NOT EXISTS gaswise.collection_notifications (
+    id bigserial PRIMARY KEY, dedupe_key text NOT NULL UNIQUE,
+    kind text NOT NULL, payload jsonb NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(), sent_at timestamptz,
+    next_try timestamptz NOT NULL DEFAULT now(), attempts integer NOT NULL DEFAULT 0,
+    lease_owner text, lease_until timestamptz, last_error text,
+    telegram_message_id bigint
+);
+CREATE TABLE IF NOT EXISTS gaswise.collection_notification_clock (
+    name text PRIMARY KEY, next_at timestamptz NOT NULL
+);
+
+ALTER TABLE gaswise.collection_notifications ADD COLUMN IF NOT EXISTS last_attempt_at timestamptz;
+ALTER TABLE gaswise.collection_notifications ADD COLUMN IF NOT EXISTS last_error_at timestamptz;
+ALTER TABLE gaswise.collection_notifications ADD COLUMN IF NOT EXISTS expired_at timestamptz;
+
+CREATE INDEX IF NOT EXISTS collection_notifications_pending
+    ON gaswise.collection_notifications(next_try,created_at) WHERE sent_at IS NULL AND expired_at IS NULL;

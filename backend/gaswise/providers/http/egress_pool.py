@@ -7,7 +7,7 @@ from pathlib import Path
 
 import httpx
 
-from gaswise.domain.pricing.shared_cache import collection_egress_key
+from gaswise.domain.pricing.shared_cache import collection_attempt, collection_egress_key
 from gaswise.providers.gasbuddy.http_session import GasBuddyHTTPSession
 from gaswise.providers.http.curl_client import CurlHTTPClient
 
@@ -19,12 +19,19 @@ def lane_index(size):
     return int.from_bytes(digest[:8], "big") % size
 
 
+def _record_lane(index):
+    trace = collection_attempt.get()
+    if trace is not None:
+        trace['egress_lane'] = index
+    return index
+
+
 def selected_lane(size, health_file=None):
     """Resolve once per query; offline VPN lanes fall back before provider HTTP."""
     key = (collection_egress_key.get(), size, str(health_file))
     previous = _selection.get()
     if previous is not None and previous[0] == key:
-        return previous[1]
+        return _record_lane(previous[1])
     unavailable = set()
     if health_file is not None:
         try:
@@ -45,7 +52,7 @@ def selected_lane(size, health_file=None):
     if index not in available:
         index = available[0]
     _selection.set((key, index))
-    return index
+    return _record_lane(index)
 
 
 class PooledHTTPClient:

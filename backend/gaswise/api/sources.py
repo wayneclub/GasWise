@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from gaswise.api.dependencies import authorize, get_operations, get_services, get_settings
@@ -136,3 +138,12 @@ async def gasbuddy_prices(
     if not settings.gasbuddy_web_enabled:
         raise HTTPException(503, "gasbuddy_web_not_enabled")
     return await operations.run(lambda: services.gasbuddy_web.prices(query))
+
+
+@router.get("/v1/sources/collection-report", dependencies=[Depends(authorize)])
+async def collection_report(hours: int = Query(default=24, ge=1, le=2160), *, services: Services = Depends(get_services)):
+    cache = services.smart.shared_cache
+    if cache is None:
+        raise HTTPException(503, "shared_pricing_cache_unavailable")
+    end = datetime.now(UTC)
+    return await cache._db("collection_report", end - timedelta(hours=hours), end)

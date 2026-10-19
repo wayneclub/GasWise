@@ -12,9 +12,10 @@ from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.cache_policy import prune_quotes, public_quotes, quote_expiry
 from gaswise.domain.pricing.daily_ramp import reviewed_limit
 from gaswise.domain.pricing.shared_cache import CachedQuery
+from gaswise.providers.storage.collection_events import CollectionEvents
 
 
-class PostgresPricingCache:
+class PostgresPricingCache(CollectionEvents):
     def __init__(self, pool):
         self.pool = pool
 
@@ -61,7 +62,7 @@ class PostgresPricingCache:
             # Serialize job-start reservations across workers; never hold locks during HTTP.
             await connection.fetch("SELECT source FROM gaswise.source_limits WHERE source=ANY($1::text[]) ORDER BY source FOR UPDATE", sources)
             job = await connection.fetchrow("""
-                SELECT j.id,j.source,j.request_reserve FROM gaswise.base_collection_jobs j
+                SELECT j.* FROM gaswise.base_collection_jobs j
                 WHERE enabled AND next_due<=now() AND source=ANY($1::text[])
                   AND (lease_until IS NULL OR lease_until<=now())
                   AND (mandatory OR NOT EXISTS(SELECT 1 FROM gaswise.source_limits l WHERE l.source=j.source
@@ -73,7 +74,9 @@ class PostgresPricingCache:
             """, sources)
             if job is None:
                 return None
-            await connection.execute("""UPDATE gaswise.base_collection_jobs SET lease_owner=$2,
+            if job['lease_owner'] is not None:
+                await self._append_collection_run(connection, dict(job), job['lease_owner'], 'lease_expired')
+            await connection.execute("""UPDATE gaswise.base_collection_jobs SET lease_owner=$2,last_started_at=now(),
                 lease_until=now()+interval '15 minutes' WHERE id=$1""", job["id"], owner)
             await connection.execute("""UPDATE gaswise.source_limits SET
                 background_next_job_at=now()+($2::double precision*86400/GREATEST(1,adaptive_daily_limit))*interval '1 second'
@@ -85,23 +88,8 @@ class PostgresPricingCache:
         await self.pool.execute("""UPDATE gaswise.base_collection_jobs SET
             last_failure_code=$3,last_failure_at=now() WHERE id=$1 AND lease_owner=$2""", job_id, owner, code)
 
-    async def finish_base_job(self, job_id, owner, delay, error, quotes, stations):
-        if error == "collection_failed":
-            await self.pool.execute("""
-                UPDATE gaswise.source_limits SET last_collection_failure_at=now(),
-                    daily_review_at=CASE WHEN adaptive_daily_limit IS NULL THEN daily_review_at ELSE now() END,
-                    daily_review_requests=0
-                WHERE source=(SELECT source FROM gaswise.base_collection_jobs WHERE id=$1 AND lease_owner=$2)
-            """, job_id, owner)
-        await self.pool.execute("""
-            UPDATE gaswise.base_collection_jobs SET next_due=now()+$3*interval '1 second',
-            lease_owner=NULL,lease_until=NULL,last_error=$4,
-            last_success=CASE WHEN $4::text IS NULL THEN now() ELSE last_success END,
-            failures=CASE WHEN $4::text IS NULL THEN 0 ELSE failures+1 END,
-            quote_count=CASE WHEN $4::text IS NULL THEN $5 ELSE quote_count END,
-            station_count=CASE WHEN $4::text IS NULL THEN $6 ELSE station_count END
-            WHERE id=$1 AND lease_owner=$2
-        """, job_id, owner, float(delay), error, quotes, stations)
+    async def finish_base_job(self, job_id, owner, delay, error, quotes, stations, info=None):
+        return await self.finish_collection_attempt(job_id, owner, delay, error, quotes, stations, info)
 
     async def base_job_status(self):
         rows = await self.pool.fetch("""SELECT id,base,source,fuel,next_due,last_success,failures,last_error,quote_count,station_count,mandatory,request_reserve,last_failure_code,last_failure_at,
@@ -402,6 +390,8 @@ class PostgresPricingCache:
         """, source, float(retry_seconds or 120))
 
     async def cleanup(self):
+        await self.pool.execute("DELETE FROM gaswise.collection_notifications WHERE created_at < now() - interval '90 days'")
+        await self.pool.execute("DELETE FROM gaswise.collection_runs WHERE finished_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.quote_history WHERE last_seen_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.quotes WHERE expires_at <= now()")
         await self.pool.execute("""

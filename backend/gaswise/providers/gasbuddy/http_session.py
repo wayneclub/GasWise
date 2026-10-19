@@ -16,7 +16,7 @@ from gaswise.contracts.search import Search
 from gaswise.contracts.sources import gasbuddy_variables
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.comparison import distance_meters
-from gaswise.domain.pricing.shared_cache import background_acquisition
+from gaswise.domain.pricing.shared_cache import background_acquisition, collection_attempt
 from gaswise.providers.gasbuddy.web import PRICE_QUERY
 
 LANDING = "https://www.gasbuddy.com/"
@@ -64,6 +64,9 @@ class GasBuddyHTTPSession:
         self._lock = asyncio.Lock()
 
     async def _bootstrap(self):
+        trace = collection_attempt.get()
+        if trace is not None:
+            trace['phase'] = 'bootstrap'
         self._client = self._factory()
         if self.request_budget:
             await self.request_budget.before("gasbuddy")
@@ -100,6 +103,9 @@ class GasBuddyHTTPSession:
                 page_requests = 0
                 for _ in range(getattr(query, "max_pages", 1)):
                     page_requests += 1
+                    trace = collection_attempt.get()
+                    if trace is not None:
+                        trace['phase'] = 'graphql'
                     if self.request_budget:
                         await self.request_budget.before("gasbuddy")
                     response = await self._client.post(

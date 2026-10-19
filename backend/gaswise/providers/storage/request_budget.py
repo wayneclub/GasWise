@@ -6,7 +6,11 @@ from email.utils import parsedate_to_datetime
 from time import monotonic
 
 from gaswise.domain.ports import ProviderError
-from gaswise.domain.pricing.shared_cache import background_acquisition, mandatory_acquisition
+from gaswise.domain.pricing.shared_cache import (
+    background_acquisition,
+    collection_attempt,
+    mandatory_acquisition,
+)
 
 
 def retry_seconds(headers):
@@ -38,6 +42,11 @@ class RequestBudget:
                                              **({"mandatory": True} if mandatory_acquisition.get() else {}))
                 else:
                     await self.store.consume(source, self.limits[source])
+                trace = collection_attempt.get()
+                if trace is not None:
+                    trace['http_requests'] = trace.get('http_requests', 0) + 1
+                    trace['http_status'] = None
+                    trace.setdefault('phase', 'source_http')
                 return
             except ProviderError as error:
                 # Only local minute-budget exhaustion may wait. Never retry a
@@ -60,6 +69,9 @@ class RequestBudget:
                 raise ProviderError("shared_pricing_budget_unavailable") from None
 
     async def after(self, source, response):
+        trace = collection_attempt.get()
+        if trace is not None:
+            trace['http_status'] = response.status_code
         if response.status_code not in (401, 403, 429) and response.headers.get("cf-mitigated") != "challenge":
             return
         try:
