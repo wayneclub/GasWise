@@ -99,3 +99,6 @@ ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS request_reserv
 
 ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS background_job_pacing boolean NOT NULL DEFAULT false;
 ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS background_next_job_at timestamptz;
+
+ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS last_failure_code text;
+ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS last_failure_at timestamptz;

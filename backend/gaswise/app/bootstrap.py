@@ -15,6 +15,7 @@ from gaswise.providers.google.maps_web import MapsWebProvider
 from gaswise.providers.google.places import GoogleProvider
 from gaswise.providers.google.routes import MapsWebRouteProvider
 from gaswise.providers.http.curl_client import CurlHTTPClient
+from gaswise.providers.http.egress_pool import PooledGasBuddySession, PooledHTTPClient
 from gaswise.providers.http.parts import PartsHTTP
 from gaswise.providers.http.public import PublicHTTP
 from gaswise.providers.pricing.aaa import AAAProvider
@@ -130,6 +131,16 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
                 settings.gasbuddy_browser_headless,
                 **worker_args,
             )
+        if settings.pricing_egress_proxies:
+            await price_worker.close()
+            price_worker = PooledGasBuddySession(settings.pricing_egress_proxies,
+                                                session_seconds=settings.gasbuddy_session_seconds)
+            maps_client = PooledHTTPClient(settings.pricing_egress_proxies)
+            waze_client = PooledHTTPClient(settings.pricing_egress_proxies)
+            stack.push_async_callback(maps_client.aclose)
+            stack.push_async_callback(waze_client.aclose)
+        else:
+            waze_client = client
         stack.push_async_callback(price_worker.close)
         loader = price_worker.snapshot
         web = GasBuddyWebProvider(
@@ -142,7 +153,7 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
         maps_web = MapsWebProvider(maps_client, settings.maps_web_session_file)
         waze = (
             WazeProvider(
-                client,
+                waze_client,
                 settings.waze_session_file,
                 settings.waze_login_file,
                 settings.waze_auto_login,
@@ -267,7 +278,8 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
                 raise ValueError("Fixed base collection requires shared PostgreSQL and live mode")
             smart.base_collection = BaseCollection(
                 smart, settings.base_collection_bases, interval=settings.base_collection_interval_seconds,
-                limits=budget.limits, daily_limit=settings.hot_pricing_refresh_daily_requests)
+                limits=budget.limits, daily_limit=settings.hot_pricing_refresh_daily_requests,
+                egress_lanes=len(settings.pricing_egress_proxies) or 1)
             await smart.base_collection.initialize()
             base_task = asyncio.create_task(smart.base_collection.run())
 

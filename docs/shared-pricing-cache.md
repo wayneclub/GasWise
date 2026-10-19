@@ -314,3 +314,26 @@ provider rejections retain their existing review/cooldown behavior.
 adaptive allowance without changing Maps or Waze. Existing persisted limits are
 preserved on restart, including automatic downgrades; an operator increase is a
 separate guarded migration, never a daily-usage reset. Production uses 160.
+
+### Optional pinned egress pool and failure diagnostics
+
+`GASWISE_PRICING_EGRESS_PROXIES` accepts a JSON array of up to three distinct
+private HTTP proxy URLs; an empty array retains the existing routing. A shared
+PostgreSQL budget and HTTP GasBuddy transport are required. Fixed background job
+IDs hash to one lane for the entire query, including pages and detail lookups.
+GasBuddy owns separate CSRF/cookie sessions per lane with consistent Chrome or
+Safari libcurl profiles. Maps and Waze own separate connection cookie jars but
+retain their provider-supplied headers and authorized session data. Sharing one
+Waze UID or Google login does not create independent users or independent limits.
+
+All lanes continue to use the same source minute/day caps, pacing, cache keys and
+cooldowns. There is no automatic retry on another exit after an HTTP rejection.
+Verify each proxy is healthy and US-based before enabling the pool; a broken
+lane is surfaced as a failure rather than silently bypassed. This provides
+routing isolation, not a demonstrated increase in provider throughput.
+
+`last_failure_code` and `last_failure_at` retain an allowlisted diagnostic alongside
+the generic `collection_failed`. Unknown errors store `unclassified`; request URLs,
+headers, tokens, response bodies and exception messages are never stored. Old
+generic failures cannot be retrospectively reconstructed. These fields remain
+available after recovery, while `last_error` continues to show current job state.

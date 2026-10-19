@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     gasbuddy_session_seconds: int = Field(default=600, ge=60, le=1800)
     # One fixed operator-owned US egress (GasBuddy serves US traffic only); never user supplied.
     gasbuddy_http_proxy: HttpUrl | None = None
+    pricing_egress_proxies: list[HttpUrl] = Field(default_factory=list, max_length=3)
     gasbuddy_browser_channel: Literal["chrome", "chromium"] = "chrome"
     gasbuddy_browser_headless: bool = True
     gasbuddy_browser_timeout_seconds: int = Field(default=35, ge=5, le=45)
@@ -89,6 +90,12 @@ class Settings(BaseSettings):
         if self.pricing_daily_ramp_enabled and self.gasbuddy_background_daily_requests is not None and not (
                 self.pricing_daily_ramp_floor <= self.gasbuddy_background_daily_requests <= self.pricing_daily_ramp_max):
             raise ValueError("GasBuddy daily allowance must be between ramp floor and maximum")
+        if self.pricing_egress_proxies and len(set(map(str, self.pricing_egress_proxies))) != len(self.pricing_egress_proxies):
+            raise ValueError("Pricing egress proxies must be distinct")
+        if self.pricing_egress_proxies and not self.database_url.get_secret_value():
+            raise ValueError("Pricing egress pool requires a shared database budget")
+        if self.pricing_egress_proxies and self.gasbuddy_web_transport != "http":
+            raise ValueError("Pricing egress pool requires HTTP transport")
         if self.base_collection_preset == "socal":
             from gaswise.domain.pricing.collection_bases import BASES
             self.base_collection_bases = list(BASES)

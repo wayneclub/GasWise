@@ -9,7 +9,12 @@ from gaswise.contracts.common import Point
 from gaswise.contracts.sources import GasBuddySearch, GooglePriceSearch, MapsWebSearch
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.collection_bases import BASE_CATALOG, BASES
-from gaswise.domain.pricing.shared_cache import background_acquisition, mandatory_acquisition
+from gaswise.domain.pricing.collection_errors import safe_failure_code
+from gaswise.domain.pricing.shared_cache import (
+    background_acquisition,
+    collection_egress_key,
+    mandatory_acquisition,
+)
 from gaswise.services.pricing.discovery import shared_viewport
 
 logger = logging.getLogger(__name__)
@@ -53,13 +58,14 @@ def collection_jobs(service, bases):
 
 
 class BaseCollection:
-    def __init__(self, service, bases, *, interval=86400, limits=None, daily_limit=40):
+    def __init__(self, service, bases, *, interval=86400, limits=None, daily_limit=40, egress_lanes=1):
         self.service = service
         self.cache = service.shared_cache
         self.jobs = collection_jobs(service, bases)
         self.interval = interval
         self.limits = limits or {"gasbuddy": 12, "maps": 60, "waze": 20}
         self.daily_limit = daily_limit
+        self.egress_lanes = egress_lanes
 
     async def initialize(self):
         populations = {base["id"]: base["population_2026"] or 0 for base in BASE_CATALOG["bases"]}
@@ -97,6 +103,7 @@ class BaseCollection:
             return False
         completed = False
         token = background_acquisition.set(True)
+        egress_token = collection_egress_key.set(job.id)
         mandatory_token = mandatory_acquisition.set(job.base == "la")
         try:
             state = await self.cache.budget_state(job.source)
@@ -129,6 +136,8 @@ class BaseCollection:
                 "mandatory_budget_reserved", "background_daily_budget_exhausted", "background_budget_exhausted",
                 "request_budget_exhausted", "background_wait_exhausted")}
             deferred = isinstance(error, ProviderError) and reason in local_reasons
+            if not deferred:
+                await self.cache._db("record_base_failure_diagnostic", job.id, owner, safe_failure_code(error))
             await self.cache._db("finish_base_job", job.id, owner, 60 if deferred else 3600,
                                  reason if deferred else "collection_failed", 0, 0)
             completed = True
@@ -136,6 +145,7 @@ class BaseCollection:
             return False
         finally:
             background_acquisition.reset(token)
+            collection_egress_key.reset(egress_token)
             mandatory_acquisition.reset(mandatory_token)
             if not completed:
                 try:
@@ -151,6 +161,8 @@ class BaseCollection:
                 "mandatory_bases": ["la"] if any(job.base == "la" for job in self.jobs.values()) else [],
                 "score_policy": {"population_log_weight": 10, "overdue_hour_weight": 2, "never_sampled_bonus": 30},
                 "mandatory_target_seconds": self.interval,
+                "egress_pool": {"lanes": self.egress_lanes, "selection": "stable_job_hash",
+                                "shared_source_budgets": True, "independent_users": False},
                 "jobs": await self.cache._db("base_job_status")}
 
     async def run(self):

@@ -81,6 +81,10 @@ class PostgresPricingCache:
                 job["source"], job["request_reserve"])
             return job["id"]
 
+    async def record_base_failure_diagnostic(self, job_id, owner, code):
+        await self.pool.execute("""UPDATE gaswise.base_collection_jobs SET
+            last_failure_code=$3,last_failure_at=now() WHERE id=$1 AND lease_owner=$2""", job_id, owner, code)
+
     async def finish_base_job(self, job_id, owner, delay, error, quotes, stations):
         if error == "collection_failed":
             await self.pool.execute("""
@@ -100,7 +104,7 @@ class PostgresPricingCache:
         """, job_id, owner, float(delay), error, quotes, stations)
 
     async def base_job_status(self):
-        rows = await self.pool.fetch("""SELECT id,base,source,fuel,next_due,last_success,failures,last_error,quote_count,station_count,mandatory,request_reserve,
+        rows = await self.pool.fetch("""SELECT id,base,source,fuel,next_due,last_success,failures,last_error,quote_count,station_count,mandatory,request_reserve,last_failure_code,last_failure_at,
             (10*ln(1+population_priority)/ln(10) + 2*GREATEST(0,EXTRACT(EPOCH FROM (now()-next_due))/3600)
              + CASE WHEN last_success IS NULL THEN 30 ELSE 0 END)::float AS priority_score,
             (mandatory AND next_due<=now()) AS mandatory_due FROM gaswise.base_collection_jobs WHERE enabled ORDER BY mandatory DESC,priority_score DESC,base,fuel,source""")
