@@ -337,3 +337,11 @@ the generic `collection_failed`. Unknown errors store `unclassified`; request UR
 headers, tokens, response bodies and exception messages are never stored. Old
 generic failures cannot be retrospectively reconstructed. These fields remain
 available after recovery, while `last_error` continues to show current job state.
+
+With a managed secondary exit, set `GASWISE_PRICING_EGRESS_HEALTH_FILE` to
+`/run/gaswise/egress-2-health.json`. The supervisor publishes a private heartbeat
+with unavailable lane indexes. Before a new query, an offline secondary or a
+missing/stale (>30 seconds) heartbeat selects the primary lane. Selection is pinned
+for the entire query; failed provider requests are not retried on another lane.
+The supervisor watches VPN health/authentication only, with three persisted city
+attempts and no change to source-level rejection cooldowns or shared budgets.

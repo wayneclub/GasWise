@@ -91,3 +91,46 @@ async def test_gasbuddy_csrf_workers_are_pinned_and_share_one_budget():
 ])
 def test_failure_diagnostics_never_persist_raw_messages(error, code):
     assert safe_failure_code(error) == code
+
+
+def test_offline_secondary_falls_back_before_http_and_query_remains_pinned(tmp_path):
+    import json
+
+    from gaswise.providers.http.egress_pool import selected_lane
+    path = tmp_path / 'health.json'
+    key = keys_for_lanes()[1]
+    token = collection_egress_key.set(key)
+    try:
+        path.write_text(json.dumps({'unavailable_lanes': []}))
+        assert selected_lane(2, path) == 1
+        path.write_text(json.dumps({'unavailable_lanes': [1]}))
+        assert selected_lane(2, path) == 1  # Never switch a query's pages between exits.
+    finally:
+        collection_egress_key.reset(token)
+    for i in range(100, 300):
+        token = collection_egress_key.set(str(i))
+        try:
+            if lane_index(2) == 1:
+                assert selected_lane(2, path) == 0
+                break
+        finally:
+            collection_egress_key.reset(token)
+    else:
+        raise AssertionError('No secondary lane sample found')
+
+
+def test_missing_or_stale_heartbeat_keeps_new_queries_on_primary(tmp_path):
+    import os
+    import time
+
+    from gaswise.providers.http.egress_pool import selected_lane
+    path = tmp_path / 'missing.json'
+    token = collection_egress_key.set(keys_for_lanes()[1])
+    try:
+        assert selected_lane(2, path) == 0
+        stale = tmp_path / 'stale.json'
+        stale.write_text('{"unavailable_lanes": []}')
+        os.utime(stale, (time.time() - 90, time.time() - 90))
+        assert selected_lane(2, stale) == 0
+    finally:
+        collection_egress_key.reset(token)

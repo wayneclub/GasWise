@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     gasbuddy_session_seconds: int = Field(default=600, ge=60, le=1800)
     # One fixed operator-owned US egress (GasBuddy serves US traffic only); never user supplied.
     gasbuddy_http_proxy: HttpUrl | None = None
+    pricing_egress_health_file: Path | None = None
     pricing_egress_proxies: list[HttpUrl] = Field(default_factory=list, max_length=3)
     gasbuddy_browser_channel: Literal["chrome", "chromium"] = "chrome"
     gasbuddy_browser_headless: bool = True

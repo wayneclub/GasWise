@@ -134,9 +134,10 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
         if settings.pricing_egress_proxies:
             await price_worker.close()
             price_worker = PooledGasBuddySession(settings.pricing_egress_proxies,
-                                                session_seconds=settings.gasbuddy_session_seconds)
-            maps_client = PooledHTTPClient(settings.pricing_egress_proxies)
-            waze_client = PooledHTTPClient(settings.pricing_egress_proxies)
+                                                session_seconds=settings.gasbuddy_session_seconds,
+                                                health_file=settings.pricing_egress_health_file)
+            maps_client = PooledHTTPClient(settings.pricing_egress_proxies, health_file=settings.pricing_egress_health_file)
+            waze_client = PooledHTTPClient(settings.pricing_egress_proxies, health_file=settings.pricing_egress_health_file)
             stack.push_async_callback(maps_client.aclose)
             stack.push_async_callback(waze_client.aclose)
         else:

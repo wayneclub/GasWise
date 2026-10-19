@@ -63,3 +63,22 @@ Keep DNS credentials and NPM signing keys on the server, outside this repository
 Verify the public HTTPS page, ZIP/address resolution, a bounded live smart search,
 and zero-call reranking after deployment. Native GPS still requires a real browser
 and device verification; a valid HTTPS certificate alone does not prove GPS works.
+
+## Bounded secondary NordVPN exit supervision
+
+`scripts/infra/manage_pricing_egress.py` runs on the Docker host. It copies existing
+private NordVPN service credentials into a mode-0600 temporary env file, creates
+an isolated managed exit on `docker_default`, and deletes that file immediately.
+The original `gluetun` container is never stopped or reconfigured. AUTH_FAILED,
+startup failure or a sustained unhealthy tunnel selects the next distinct US city
+(Dallas, Miami, Seattle). At most three attempts are persisted in a private state
+file, so process restarts cannot create an infinite authentication loop. This
+supervisor does not observe provider HTTP responses and does not rotate on 403/429.
+
+Install the script in `/home/ubuntu/apps/gaswise/recovery/` and the supplied
+`gaswise-egress-supervisor.service` in systemd. `--watch` supervises a successful
+secondary exit and resumes the same owned container after a process restart.
+If all three attempts fail, the service exits with status 2 and leaves the
+production exit alone. Verify service credentials and account connection capacity
+before explicitly removing its `egress-2-state.json` to allow a new attempt cycle.
+Do not enable an unhealthy exit in `GASWISE_PRICING_EGRESS_PROXIES`.

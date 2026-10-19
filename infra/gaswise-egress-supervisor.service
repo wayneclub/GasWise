@@ -1,0 +1,19 @@
+[Unit]
+Description=GasWise bounded secondary NordVPN US exit supervisor
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/apps/gaswise
+ExecStart=/usr/bin/python3 /home/ubuntu/apps/gaswise/recovery/manage_pricing_egress.py --source gluetun --target gaswise-egress-2 --state /home/ubuntu/apps/gaswise/recovery/egress-2-state.json --max-attempts 3 --watch --health-state /home/ubuntu/apps/gaswise/credentials/egress-2-health.json
+Restart=no
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/apps/gaswise/recovery /home/ubuntu/apps/gaswise/credentials
+
+[Install]
+WantedBy=multi-user.target
