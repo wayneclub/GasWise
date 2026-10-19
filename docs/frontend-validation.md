@@ -71,3 +71,24 @@ Screenshots: `artifacts/frontend-validation/search-context-mobile.png` at 390×8
 - GPS remains unverified: no real device coordinate was obtained in the earlier Codex browser test. Address/ZIP lookup is working. No GPS, security or OS settings were changed.
 
 Screenshots: `artifacts/frontend-validation/estimated-comparison-mobile.png`, `settings-page-mobile.png`, and `compact-fuel-mobile.png`. These use public test locations and vehicle model names.
+
+## Recovering a suspended browser tab
+
+Fuel searches now keep a versioned recovery record in `sessionStorage` for up to
+30 minutes after the last check. The record contains the signed result, search
+origin, manual location label, and search/ranking settings. It is scoped to the
+browser tab; locations and price snapshots are not copied to `localStorage` or
+synced between browsers. VIN/plate identity storage is unchanged.
+
+A matching record restores results immediately on page reload without another
+location request. Existing visibility-based polling checks prices in the
+background after two minutes; expired snapshots trigger an immediate background
+check on recovery and retain an expired label if the check fails. Original
+source and collection timestamps are preserved. Mismatched settings, expired
+recovery records and corrupt storage are discarded. Blocked storage falls back
+to the existing in-memory behavior. Route destinations can be recovered from
+the same temporary record rather than retained in long-lived preferences.
+
+Automated checks simulate unmount/remount, expiry, offline refresh failure,
+changed fuel, corrupt or blocked storage, and recovery TTL. Physical iOS/Android
+OS tab eviction has not been exercised.

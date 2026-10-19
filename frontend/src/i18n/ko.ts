@@ -113,7 +113,7 @@ export const ko: Record<MessageKey, string> = {
   "vehicle.sharedMissing": "정확한 호환성을 확인하려면 설정에 VIN 또는 번호판을 추가하세요.",
   "vehicle.openSettings": "차량 설정",
   "app.name": "GasWise",
-  "app.locationPrivacy": "위치는 이번 검색에만 사용되며 저장되지 않습니다.",
+  "app.locationPrivacy": "검색 복원을 위해 위치와 결과를 이 탭에 최대 30분간 임시 보관합니다. 브라우저 간에 동기화되지 않습니다.",
   "setup.title": "주유 설정을 알려주세요.",
   "setup.lead": "한 번 설정하면 다음부터 바로 추천 주유소를 보여드립니다.",
   "setup.submit": "주유소 찾기",

@@ -113,7 +113,7 @@ export const ja: Record<MessageKey, string> = {
   "vehicle.sharedMissing": "正確な適合を確認するには、設定でVINまたはナンバープレートを追加してください。",
   "vehicle.openSettings": "車両設定",
   "app.name": "GasWise",
-  "app.locationPrivacy": "位置情報は今回の検索のみに使用し、保存しません。",
+  "app.locationPrivacy": "検索を復元するため、位置情報と結果をこのタブに最大30分間一時保存します。ブラウザー間では同期しません。",
   "setup.title": "給油の設定を教えてください。",
   "setup.lead": "最初に設定すると、次回からおすすめの給油所をすぐに表示します。",
   "setup.submit": "給油所を探す",

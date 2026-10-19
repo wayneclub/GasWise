@@ -120,7 +120,7 @@ export const zhTW: Record<MessageKey, string> = {
   'vehicle.openSettings': '車輛設定',
 
   'app.name': 'GasWise',
-  'app.locationPrivacy': '你的位置只用於這次搜尋，不會被儲存。',
+  "app.locationPrivacy": "位置與結果僅在目前分頁暫存最多 30 分鐘，方便恢復搜尋，不會跨瀏覽器同步。",
 
   'setup.title': '告訴我們你怎麼加油。',
   'setup.lead': '只需設定一次。下次打開 GasWise，就會直接告訴你最值得去的加油站。',

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, api } from '../api/client'
 import type { RankOptions, SmartResult, SmartSearchBody } from '../api/types'
 import { type Prefs } from './prefs'
+import { clearFuelSession, loadFuelSession, saveFuelSession } from './fuelSessionStorage'
 
 export interface Origin {
   lat: number
@@ -82,18 +83,23 @@ export function locate(): Promise<Origin> {
  * locally-held snapshots with zero upstream calls. No polling in hidden tabs; manual refresh still respects the shared price freshness window and provider budgets.
  */
 export function useFuelSession(prefs: Prefs, active = true) {
-  const [phase, setPhase] = useState<Phase>('idle')
+  const rankKey = JSON.stringify(rankOptions(prefs))
+  const searchKey = JSON.stringify([prefs.vehicle?.id ?? null, prefs.fuelType, prefs.mpg, prefs.tripMode, prefs.destination, prefs.searchRadiusMiles])
+  const [restored] = useState(() => loadFuelSession(searchKey, rankKey))
+  const [phase, setPhase] = useState<Phase>(restored ? 'ready' : 'idle')
   const [error, setError] = useState<SessionError | null>(null)
-  const [result, setResult] = useState<SmartResult | null>(null)
+  const [result, setResult] = useState<SmartResult | null>(restored?.result ?? null)
   const [locationPermission, setLocationPermission] = useState<PermissionState | 'unknown'>('unknown')
-  const [originKind, setOriginKind] = useState<'device' | 'manual' | null>(null)
+  const [originKind, setOriginKind] = useState<'device' | 'manual' | null>(restored?.originKind ?? null)
+  const [originLabel, setOriginLabel] = useState<string | null>(restored?.originLabel ?? null)
   const resultRef = useRef<SmartResult | null>(null)
   resultRef.current = result
-  const [origin, setOrigin] = useState<Origin | null>(null)
+  const [origin, setOrigin] = useState<Origin | null>(restored?.origin ?? null)
   const [reranking, setReranking] = useState(false)
-  const [expired, setExpired] = useState(false)
+  const [expired, setExpired] = useState(() => !!restored && Date.parse(restored.result.snapshot.expires_at) <= Date.now())
   const [refreshing, setRefreshing] = useState(false)
-  const lastCheck = useRef(0)
+  const lastCheck = useRef(restored?.checkedAt ?? 0)
+  const needsRecoveryCheck = useRef(expired)
   const retryDelay = useRef(120000)
   const locationRequest = useRef(0)
   const controller = useRef<AbortController | null>(null)
@@ -102,10 +108,15 @@ export function useFuelSession(prefs: Prefs, active = true) {
   prefsRef.current = prefs
 
   // Ranking choices rerank the held snapshot. Vehicle or fuel changes need new prices.
-  const rankKey = JSON.stringify(rankOptions(prefs))
-  const searchKey = JSON.stringify([prefs.vehicle?.id ?? null, prefs.fuelType, prefs.mpg, prefs.tripMode, prefs.destination, prefs.searchRadiusMiles])
   const lastRankKey = useRef(rankKey)
   const lastSearchKey = useRef(searchKey)
+
+  useEffect(() => {
+    if (phase === 'ready' && result && origin && originKind &&
+        lastSearchKey.current === searchKey && lastRankKey.current === rankKey) {
+      saveFuelSession({ result, origin, originKind, originLabel, searchKey, rankKey, checkedAt: lastCheck.current })
+    }
+  }, [phase, result, origin, originKind, originLabel, searchKey, rankKey])
 
   const search = useCallback(async (at: Origin, force = false, background = false) => {
     controller.current?.abort()
@@ -114,10 +125,10 @@ export function useFuelSession(prefs: Prefs, active = true) {
     const abort = new AbortController()
     controller.current = abort
     if (!background) setPhase('searching')
+    if (!background) clearFuelSession()
     setRefreshing(background)
     lastCheck.current = Date.now()
     setError(null)
-    setExpired(false)
     try {
       const requestedPrefs = prefsRef.current
       const body = searchBody(requestedPrefs, at)
@@ -145,6 +156,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
       if (abort.signal.aborted) return
       lastRankKey.current = JSON.stringify(rankOptions(requestedPrefs))
       setResult(next)
+      setExpired(false)
       retryDelay.current = 120000
       setPhase('ready')
     } catch (caught) {
@@ -159,11 +171,12 @@ export function useFuelSession(prefs: Prefs, active = true) {
   }, [])
 
   const start = useCallback(
-    async (options: { override?: Origin; userInitiated?: boolean } = {}) => {
+    async (options: { override?: Origin; label?: string; userInitiated?: boolean } = {}) => {
       const request = ++locationRequest.current
       const { override, userInitiated = false } = options
       if (override) {
         setOriginKind('manual')
+        setOriginLabel(options.label ?? null)
         setOrigin(override)
         await search(override)
         return
@@ -187,6 +200,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
         if (request !== locationRequest.current) return
         setLocationPermission('granted')
         setOriginKind('device')
+        setOriginLabel(null)
         setOrigin(at)
         await search(at)
       } catch (caught) {
@@ -260,10 +274,20 @@ export function useFuelSession(prefs: Prefs, active = true) {
   }, [rankKey, searchKey, result, origin, phase, search])
 
   useEffect(() => {
+    if (!result) return
+    const remaining = Date.parse(result.snapshot.expires_at) - Date.now()
+    const timer = window.setTimeout(() => setExpired(true), Math.max(0, remaining))
+    return () => window.clearTimeout(timer)
+  }, [result])
+
+  useEffect(() => {
     if (!active || !origin || !result || phase !== 'ready') return
     const check = () => {
       if (document.visibilityState !== 'visible' || navigator.onLine === false || refreshing || reranking) return
-      if (Date.now() - lastCheck.current >= retryDelay.current) void search(origin, false, true)
+      if (needsRecoveryCheck.current || Date.now() - lastCheck.current >= retryDelay.current) {
+        needsRecoveryCheck.current = false
+        void search(origin, false, true)
+      }
     }
     check()
     const timer = window.setInterval(check, 120000)
@@ -277,5 +301,5 @@ export function useFuelSession(prefs: Prefs, active = true) {
     rerankController.current?.abort()
   }, [])
 
-  return { phase, error, result, origin, originKind, locationPermission, reranking, refreshing, expired, start, refresh, expandRoutes }
+  return { phase, error, result, origin, originKind, originLabel, locationPermission, reranking, refreshing, expired, start, refresh, expandRoutes }
 }

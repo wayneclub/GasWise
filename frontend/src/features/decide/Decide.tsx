@@ -24,9 +24,8 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
   const session = useFuelSession(prefs, active)
   const [fillOpen, setFillOpen] = useState(false)
   const [locationOpen, setLocationOpen] = useState(false)
-  const [locationLabel, setLocationLabel] = useState<string | null>(null)
   const { start } = session
-  const started = useRef(false)
+  const started = useRef(!!session.origin)
 
   // One search per visit. StrictMode remounts must not spend a second acquisition.
   useEffect(() => {
@@ -55,11 +54,11 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
         <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">{t('experience.locationLead')}</p>
       </div> : null}
       {hero ? <h1 className="sr-only">{t('experience.ready')}</h1> : null}
-      <SearchContext prefs={prefs} label={locationLabel} source={session.originKind} permission={session.locationPermission} locating={phase === 'locating'} searching={phase === 'searching'}
+      <SearchContext prefs={prefs} label={session.originLabel} source={session.originKind} permission={session.locationPermission} locating={phase === 'locating'} searching={phase === 'searching'}
         onLocate={() => void start({ userInitiated: true })} onChange={() => setLocationOpen(open => !open)} onSettings={onSettings} onRefresh={() => void session.refresh()}>
         {locationOpen || !session.origin ? <>
           {error?.kind === 'location' && !['prompt', 'permission_pending'].includes(error.code) ? <div role="status" className="mb-3"><h3 className="text-sm font-semibold">{t(`error.${messageId(error)}.title` as MessageKey)}</h3><p className="mt-1 text-sm text-muted">{t(`error.${messageId(error)}.body` as MessageKey)}</p></div> : null}
-          <LocationSearch onChoose={(location, label) => { setLocationLabel(label); setLocationOpen(false); void start({ override: location }) }} />
+          <LocationSearch onChoose={(location, label) => { setLocationOpen(false); void start({ override: location, label }) }} />
         </> : null}
       </SearchContext>
 
@@ -121,7 +120,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
               error={error}
               onRetry={() => void session.refresh()}
               onLocate={() => void start({ userInitiated: true })}
-              onChooseLocation={(location, label) => { setLocationLabel(label); void start({ override: location }) }}
+              onChooseLocation={(location, label) => { void start({ override: location, label }) }}
               onDemoLocation={import.meta.env.DEV ? () => void start({ override: DOWNTOWN_LA }) : undefined}
             />
           ) : result && assessment && hero ? (

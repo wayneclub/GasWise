@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
-import { DEFAULT_PREFS } from './prefs'
+import { DEFAULT_PREFS, loadPrefs } from './prefs'
 import { useFuelSession } from './session'
 import fixture from '../test/fixtures/demo-search.json'
 
@@ -58,4 +58,97 @@ it('pauses price polling when the fuel page is not the active service', async ()
   expect(fetch).toHaveBeenCalledTimes(1)
   await act(async () => session.rerender({active:true}))
   expect(fetch).toHaveBeenCalledTimes(2)
+})
+
+it('restores a reloaded tab without another search and keeps the manual location label', async () => {
+  const current = structuredClone(fixture)
+  current.snapshot.expires_at = new Date(Date.now() + 600000).toISOString()
+  const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify(current)))
+  const first = renderHook(() => useFuelSession(DEFAULT_PREFS))
+  await act(async () => first.result.current.start({ override: { lat: 34, lng: -118 }, label: 'Pasadena, CA' }))
+  first.unmount()
+  const restored = renderHook(() => useFuelSession(DEFAULT_PREFS))
+  expect(restored.result.current.phase).toBe('ready')
+  expect(restored.result.current.origin).toEqual({ lat: 34, lng: -118 })
+  expect(restored.result.current.originKind).toBe('manual')
+  expect(restored.result.current.originLabel).toBe('Pasadena, CA')
+  expect(restored.result.current.result).toEqual(current)
+  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(localStorage.getItem('gaswise.fuel-session.v1')).toBeNull()
+})
+
+it('restores expired results while refreshing in the background and preserves them if offline', async () => {
+  vi.useFakeTimers()
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')
+  vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true)
+  const current = structuredClone(fixture)
+  current.snapshot.expires_at = new Date(Date.now() + 600000).toISOString()
+  const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify(current)))
+    .mockRejectedValue(new Error('offline'))
+  const first = renderHook(() => useFuelSession(DEFAULT_PREFS))
+  await act(async () => first.result.current.start({ override: { lat: 34, lng: -118 } }))
+  first.unmount()
+  await act(async () => vi.advanceTimersByTimeAsync(660000))
+  const restored = renderHook(() => useFuelSession(DEFAULT_PREFS))
+  await act(async () => {})
+  expect(fetch).toHaveBeenCalledTimes(2)
+  expect(restored.result.current.phase).toBe('ready')
+  expect(restored.result.current.expired).toBe(true)
+  expect(restored.result.current.result).toEqual(current)
+  expect(restored.result.current.error?.code).toBe('network_unavailable')
+})
+
+it('does not restore results for a different fuel search', async () => {
+  const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify(fixture)))
+  const first = renderHook(() => useFuelSession(DEFAULT_PREFS))
+  await act(async () => first.result.current.start({ override: { lat: 34, lng: -118 } }))
+  first.unmount()
+  const restored = renderHook(() => useFuelSession({ ...DEFAULT_PREFS, fuelType: 'diesel' }))
+  expect(restored.result.current.phase).toBe('idle')
+  expect(restored.result.current.result).toBeNull()
+  expect(fetch).toHaveBeenCalledTimes(1)
+})
+
+it('discards recovery data after 30 minutes', async () => {
+  vi.useFakeTimers()
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify(fixture)))
+  const first = renderHook(() => useFuelSession(DEFAULT_PREFS))
+  await act(async () => first.result.current.start({ override: { lat: 34, lng: -118 } }))
+  first.unmount()
+  await act(async () => vi.advanceTimersByTimeAsync(1800001))
+  const restored = renderHook(() => useFuelSession(DEFAULT_PREFS))
+  expect(restored.result.current.result).toBeNull()
+  expect(sessionStorage.getItem('gaswise.fuel-session.v1')).toBeNull()
+})
+
+it('continues searching when browser storage is blocked', async () => {
+  vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked') })
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked') })
+  vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => { throw new Error('blocked') })
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify(fixture)))
+  const session = renderHook(() => useFuelSession(DEFAULT_PREFS))
+  await act(async () => session.result.current.start({ override: { lat: 34, lng: -118 } }))
+  expect(session.result.current.phase).toBe('ready')
+})
+
+it('ignores corrupt recovery data', () => {
+  sessionStorage.setItem('gaswise.fuel-session.v1', '{broken')
+  const session = renderHook(() => useFuelSession(DEFAULT_PREFS))
+  expect(session.result.current.phase).toBe('idle')
+  expect(sessionStorage.getItem('gaswise.fuel-session.v1')).toBeNull()
+})
+
+it('restores the route destination from tab recovery without long-lived location storage', async () => {
+  const destination = { lat: 34.1, lng: -118.1 }
+  const prefs = { ...DEFAULT_PREFS, tripMode: 'on_route' as const, destination }
+  const current = structuredClone(fixture)
+  Object.assign(current.snapshot.query, { trip_mode: 'on_route', destination })
+  current.snapshot.expires_at = new Date(Date.now() + 600000).toISOString()
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify(current)))
+  const first = renderHook(() => useFuelSession(prefs))
+  await act(async () => first.result.current.start({ override: { lat: 34, lng: -118 } }))
+  first.unmount()
+  expect(loadPrefs().tripMode).toBe('on_route')
+  expect(loadPrefs().destination).toEqual(destination)
+  expect(localStorage.getItem('gaswise.fuel-session.v1')).toBeNull()
 })

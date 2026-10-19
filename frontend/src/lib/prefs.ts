@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import type { FuelType } from '../api/types'
 import { LOCALES, type Locale } from '../i18n'
+import { loadFuelSession } from './fuelSessionStorage'
 
 export type Preference = 'money' | 'balanced' | 'time'
 export type NavApp = 'google' | 'apple' | 'waze'
@@ -62,7 +63,7 @@ export const DEFAULT_PREFS: Prefs = {
 
 const KEY = 'gaswise.prefs.v1'
 
-// Only user choices live here. The signed price snapshot is never persisted.
+// Only user choices live here. Fuel search recovery uses short-lived sessionStorage separately.
 export function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(KEY)
@@ -72,7 +73,12 @@ export function loadPrefs(): Prefs {
     saved.creditCashbackPercent = Number.isFinite(reward) ? String(Math.min(100, Math.max(0, reward))) : '0'
     saved.timeValuePerHour = Math.min(500, Math.max(0, Number(saved.timeValuePerHour ?? 15) || 0))
     saved.searchRadiusMiles = [2, 5, 10, 20].includes(saved.searchRadiusMiles ?? 5) ? saved.searchRadiusMiles ?? 5 : 5
-    return { ...DEFAULT_PREFS, ...saved, locale: LOCALES.some((item) => item.value === saved.locale) ? saved.locale! : null, allowUnknownPayment: saved.paymentPolicyVersion === 2 ? saved.allowUnknownPayment ?? true : true, paymentPolicyVersion: 2, navApp: saved.navDefaultVersion === 2 ? saved.navApp ?? 'google' : 'google', navDefaultVersion: 2, tripMode: 'round_trip', destination: null }
+    const trip = loadFuelSession()?.result.snapshot.query
+    const destination = trip?.destination
+    const restoreTrip = trip?.trip_mode === 'on_route' && destination &&
+      Number.isFinite(destination.lat) && Math.abs(destination.lat) <= 90 &&
+      Number.isFinite(destination.lng) && Math.abs(destination.lng) <= 180
+    return { ...DEFAULT_PREFS, ...saved, locale: LOCALES.some((item) => item.value === saved.locale) ? saved.locale! : null, allowUnknownPayment: saved.paymentPolicyVersion === 2 ? saved.allowUnknownPayment ?? true : true, paymentPolicyVersion: 2, navApp: saved.navDefaultVersion === 2 ? saved.navApp ?? 'google' : 'google', navDefaultVersion: 2, tripMode: restoreTrip ? 'on_route' : 'round_trip', destination: restoreTrip ? destination : null }
   } catch {
     return DEFAULT_PREFS
   }

@@ -120,7 +120,7 @@ export const es: Record<MessageKey, string> = {
   'vehicle.openSettings': 'Ajustes del vehículo',
 
   'app.name': 'GasWise',
-  'app.locationPrivacy': 'Tu ubicación solo se usa para esta búsqueda y nunca se guarda.',
+  "app.locationPrivacy": "Tu ubicación y los resultados se guardan en esta pestaña hasta 30 minutos para restaurar la búsqueda. No se sincronizan entre navegadores.",
 
   'setup.title': 'Cuéntanos cómo cargas gasolina.',
   'setup.lead': 'Configúralo una vez. La próxima vez GasWise abrirá directo en la gasolinera que vale la pena.',

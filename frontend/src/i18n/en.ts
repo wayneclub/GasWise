@@ -120,7 +120,7 @@ export const en = {
   'vehicle.openSettings': 'Vehicle settings',
 
   'app.name': 'GasWise',
-  'app.locationPrivacy': 'Your location is used only for this search and never stored.',
+  "app.locationPrivacy": "Your location and results stay in this tab for up to 30 minutes to restore your search. They are not synced across browsers.",
 
   'setup.title': 'Tell us how you fill up.',
   'setup.lead': 'Set this once. Next time GasWise opens straight to the station worth driving to.',
