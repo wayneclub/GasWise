@@ -19,6 +19,7 @@ from gaswise.providers.http.egress_pool import PooledGasBuddySession, PooledHTTP
 from gaswise.providers.http.parts import PartsHTTP
 from gaswise.providers.http.public import PublicHTTP
 from gaswise.providers.notifications.telegram import TelegramSender
+from gaswise.providers.notifications.webpush import PushSubscriptionCipher, WebPushSender
 from gaswise.providers.pricing.aaa import AAAProvider
 from gaswise.providers.pricing.aaa_http import AAAHTTP
 from gaswise.providers.pricing.demo import DemoComparisonSource, DemoProvider
@@ -34,6 +35,7 @@ from gaswise.providers.vehicles.specifications import SpecificationProvider
 from gaswise.providers.vehicles.vin import VinProvider
 from gaswise.providers.waze.provider import WazeProvider
 from gaswise.services.parts.fitment import PartsProvider
+from gaswise.services.pricing.alerts import SmartAlerts
 from gaswise.services.pricing.base_collection import BaseCollection
 from gaswise.services.pricing.collection_notifications import CollectionNotifications
 from gaswise.services.pricing.hot_refresh import HotQueryRefresh
@@ -229,6 +231,7 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             )
         )
         shared_cache = None
+        alerts = None
         if settings.database_url.get_secret_value():
             store = await PostgresPricingCache.connect(settings.database_url.get_secret_value())
             stack.push_async_callback(store.close)
@@ -261,6 +264,21 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
                 with contextlib.suppress(asyncio.CancelledError):
                     await cleanup_task
             stack.push_async_callback(stop_cache_cleanup)
+            if settings.smart_alerts_enabled:
+                alerts = SmartAlerts(
+                    store,
+                    PushSubscriptionCipher(settings.push_subscription_key.get_secret_value()),
+                    WebPushSender(settings.push_vapid_private_key.get_secret_value(), settings.push_vapid_subject),
+                    settings.push_vapid_public_key.get_secret_value(),
+                )
+                alert_task = asyncio.create_task(alerts.run())
+
+                async def stop_smart_alerts():
+                    alert_task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await alert_task
+
+                stack.push_async_callback(stop_smart_alerts)
         smart = SmartService(
             secrets.token_bytes(32),
             settings.mode,
@@ -340,4 +358,5 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             service=service,
             smart=smart,
             top_tier=top_tier,
+            alerts=alerts,
         )

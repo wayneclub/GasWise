@@ -5,6 +5,8 @@ import { saveIdentity } from '../../lib/identityVault'
 import { exportPrivateBackup, getLocalProfile, importPrivateBackup, requestPersistentStorage, resetLocalProfile, shortProfileId } from '../../lib/localProfile'
 import { DEFAULT_PREFS, type Prefs } from '../../lib/prefs'
 import { useVehicleIdentity } from '../../lib/vehicleIdentity'
+import { clearSmartAlertStorage } from '../../lib/smartAlerts'
+import { clearFuelAssistant, replaceFuelAssistant } from '../../lib/fuelAssistant'
 
 type Notice = 'exported' | 'imported' | 'cleared' | 'error' | null
 
@@ -40,6 +42,7 @@ export function PrivacyProfile({ prefs, replace }: { prefs: Prefs; replace: (pre
     setBusy(true); setNotice(null)
     try {
       const restored = await importPrivateBackup(await file.text(), passphrase)
+      await replaceFuelAssistant(restored.assistant ?? null)
       await saveIdentity(restored.identity)
       setIdentity(restored.identity)
       replace(restored.prefs)
@@ -53,6 +56,8 @@ export function PrivacyProfile({ prefs, replace }: { prefs: Prefs; replace: (pre
     if (!window.confirm(t('privacy.clearConfirm'))) return
     setBusy(true); setNotice(null)
     try {
+      await clearSmartAlertStorage()
+      await clearFuelAssistant()
       await saveIdentity(null)
       setIdentity(null)
       localStorage.clear()

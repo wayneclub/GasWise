@@ -54,6 +54,13 @@ export type PriceObservation = import('./schema').components['schemas']['PriceOb
 export type PriceHistory = import('./schema').components['schemas']['PriceHistory']
 
 export const api = {
+  alertConfig: (signal?: AbortSignal) => post<{ enabled: boolean; vapid_public_key: string | null }>('/v1/alerts/config', {}, signal),
+  createAlertInstallation: (body: { subscription: PushSubscriptionJSON; timezone: string; locale: string }) => post<{ installation_id: string; installation_token: string }>('/v1/alerts/installations', body),
+  updateAlertNeed: (body: AlertAuth & { state: 'not_due' | 'approaching' | 'due' | 'unknown'; confidence: 'high' | 'medium' | 'low'; ttl_hours: number }) => post<{ status: string }>('/v1/alerts/need-state', body),
+  testAlert: (body: AlertAuth & { locale: string }) => post<{ status: string }>('/v1/alerts/test', body),
+  disableAlerts: (body: AlertAuth) => post<{ status: string }>('/v1/alerts/disable', body),
+  updateAlertWatch: (body: AlertAuth & AlertWatch) => post<{ status: 'watched' | 'removed' }>('/v1/alerts/watches', body),
+  alertInbox: (body: AlertAuth) => post<{ items: { id: number; title: string; body: string; created_at: string }[] }>('/v1/alerts/inbox', body),
   priceHistory: (body: import('./schema').components['schemas']['HistoryRequest'], signal?: AbortSignal) => post<PriceHistory>('/v1/prices/history', body, signal),
   resolveLocation: (text: string, signal?: AbortSignal) => post<LocationResult>('/v1/locations/resolve', { text }, signal),
   partsSearch: (body: PartsSearchRequest, signal?: AbortSignal) => post<PartsSearchResult>('/v1/parts/search', body, signal),
@@ -75,4 +82,25 @@ export const api = {
 
   resolveVehicle: (body: VehicleResolveRequest) =>
     post<VehicleResolution>('/v1/vehicles/resolve', body),
+}
+
+export interface AlertAuth {
+  installation_id: string
+  installation_token: string
+}
+
+export interface AlertWatch {
+  enabled: boolean
+  canonical_id: string | null
+  source: string
+  station_id: string
+  station_name: string
+  fuel_type: 'regular' | 'midgrade' | 'premium' | 'diesel'
+  payment_type: 'cash' | 'credit' | 'unknown'
+  membership_required: string | null
+  octane: number | null
+  currency: 'USD'
+  unit: 'US_gallon'
+  expected_gallons: number
+  threshold_cents: number
 }

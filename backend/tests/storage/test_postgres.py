@@ -11,6 +11,7 @@ import pytest
 from gaswise.contracts.common import Point
 from gaswise.contracts.sources import GasBuddySearch
 from gaswise.domain.ports import ProviderError
+from gaswise.domain.pricing.alerts import purchase_condition_key
 from gaswise.providers.storage.postgres import PostgresPricingCache
 from gaswise.services.pricing.shared_cache import SharedPricingCache
 from tests.support.smart import RawGasBuddy
@@ -165,4 +166,76 @@ async def test_daily_ramp_persists_reviews_keeps_usage_and_reduces_after_rejecti
     finally:
         await store.pool.execute("DELETE FROM gaswise.source_limits WHERE source=$1", source)
         await other.close()
+        await store.close()
+
+
+async def test_smart_alert_postgres_lifecycle_is_authorized_deduplicated_and_cascades():
+    store = await PostgresPricingCache.connect(os.environ["GASWISE_TEST_DATABASE_URL"])
+    suffix = uuid.uuid4().hex
+    installation_id = f"installation_{suffix}"
+    token_hash = f"token_{suffix}"
+    endpoint_hash = f"endpoint_{suffix}"
+    station_id = f"station_{suffix}"
+    source = f"integration_{suffix}"
+    canonical_id = f"canonical_{suffix}"
+    condition = purchase_condition_key(None, 87, "USD", "US_gallon")
+    now = datetime.now(UTC)
+    attributes = '{"name":"Integration Fuel","octane":87,"currency":"USD","unit":"US_gallon"}'
+    try:
+        assert await store.create_alert_installation(
+            installation_id, token_hash, endpoint_hash, b"encrypted-subscription",
+            "America/Los_Angeles", "en",
+        ) == installation_id
+        assert not await store.update_alert_need(
+            installation_id, "wrong-token", "due", "high", now + timedelta(hours=24)
+        )
+        assert await store.update_alert_need(
+            installation_id, token_hash, "due", "high", now + timedelta(hours=24)
+        )
+        assert await store.set_alert_watch(
+            installation_id, token_hash, True, canonical_id, source, station_id,
+            "Integration Fuel", "regular", "cash", condition, 10, 10,
+        ) is True
+        await store.pool.executemany("""
+            INSERT INTO gaswise.quote_history
+                (observation_key,source,station_id,canonical_id,fuel_type,payment_type,
+                 purchase_condition,price_per_gallon,reported_at,first_seen_at,last_seen_at,attributes)
+            VALUES($1,$2,$3,$4,'regular','cash',$5,$6,$7,$7,$7,$8::jsonb)
+        """, [
+            (f"old_{suffix}", source, station_id, canonical_id, condition, "4.30",
+             now - timedelta(hours=1), attributes),
+            (f"new_{suffix}", source, station_id, canonical_id, condition, "4.10",
+             now, attributes),
+        ])
+
+        candidate = await store.claim_alert_candidate(f"worker_{suffix}")
+        assert candidate is not None
+        assert candidate["observation_key"] == f"new_{suffix}"
+        assert str(candidate["current_price"]) == "4.10"
+        assert str(candidate["previous_price"]) == "4.30"
+        payload = {"title": "Integration Fuel dropped", "body": "Save $2.00", "tag": "integration"}
+        assert await store.finish_alert_candidate(
+            candidate["watch_id"], f"worker_{suffix}", candidate["observation_key"], payload, "push"
+        ) is True
+        assert await store.claim_alert_candidate(f"other_{suffix}") is None
+        inbox = await store.alert_inbox(installation_id, token_hash)
+        assert inbox and inbox[0]["title"] == payload["title"]
+        assert await store.pool.fetchval(
+            "SELECT count(*) FROM gaswise.alert_outbox WHERE installation_id=$1", installation_id
+        ) == 1
+
+        assert not await store.disable_alert_installation(installation_id, "wrong-token")
+        assert await store.disable_alert_installation(installation_id, token_hash)
+        assert await store.pool.fetchval(
+            "SELECT count(*) FROM gaswise.alert_watches WHERE installation_id=$1", installation_id
+        ) == 0
+        assert await store.pool.fetchval(
+            "SELECT count(*) FROM gaswise.alert_outbox WHERE installation_id=$1", installation_id
+        ) == 0
+        assert await store.pool.fetchval(
+            "SELECT count(*) FROM gaswise.alert_inbox WHERE installation_id=$1", installation_id
+        ) == 0
+    finally:
+        await store.pool.execute("DELETE FROM gaswise.alert_installations WHERE id=$1", installation_id)
+        await store.pool.execute("DELETE FROM gaswise.quote_history WHERE station_id=$1", station_id)
         await store.close()

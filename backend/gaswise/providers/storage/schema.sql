@@ -131,6 +131,72 @@ CREATE TABLE IF NOT EXISTS gaswise.collection_notification_clock (
     name text PRIMARY KEY, next_at timestamptz NOT NULL
 );
 
+-- User smart alerts are isolated from operator collection notifications. Push
+-- subscriptions are application-encrypted; only endpoint hashes are queryable.
+CREATE TABLE IF NOT EXISTS gaswise.alert_installations (
+    id text PRIMARY KEY,
+    token_hash text NOT NULL,
+    endpoint_hash text NOT NULL UNIQUE,
+    subscription_ciphertext bytea NOT NULL,
+    timezone text NOT NULL,
+    locale text NOT NULL DEFAULT 'en',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    confirmed_at timestamptz NOT NULL DEFAULT now(),
+    disabled_at timestamptz
+);
+ALTER TABLE gaswise.alert_installations ADD COLUMN IF NOT EXISTS locale text NOT NULL DEFAULT 'en';
+CREATE TABLE IF NOT EXISTS gaswise.alert_watches (
+    id bigserial PRIMARY KEY,
+    installation_id text NOT NULL REFERENCES gaswise.alert_installations(id) ON DELETE CASCADE,
+    canonical_id text,
+    source text NOT NULL,
+    station_id text NOT NULL,
+    station_name text NOT NULL,
+    fuel_type text NOT NULL,
+    payment_type text NOT NULL,
+    purchase_condition text NOT NULL,
+    expected_gallons numeric NOT NULL CHECK(expected_gallons BETWEEN 1 AND 30),
+    threshold_cents integer NOT NULL CHECK(threshold_cents BETWEEN 5 AND 100),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    last_evaluated_observation text,
+    last_alert_at timestamptz,
+    lease_owner text,
+    lease_until timestamptz,
+    UNIQUE(installation_id,source,station_id,fuel_type,payment_type,purchase_condition)
+);
+CREATE TABLE IF NOT EXISTS gaswise.alert_need_state (
+    installation_id text PRIMARY KEY REFERENCES gaswise.alert_installations(id) ON DELETE CASCADE,
+    state text NOT NULL CHECK (state IN ('not_due','approaching','due','unknown')),
+    confidence text NOT NULL CHECK (confidence IN ('high','medium','low')),
+    calculated_at timestamptz NOT NULL DEFAULT now(),
+    expires_at timestamptz NOT NULL
+);
+CREATE TABLE IF NOT EXISTS gaswise.alert_outbox (
+    id bigserial PRIMARY KEY,
+    installation_id text NOT NULL REFERENCES gaswise.alert_installations(id) ON DELETE CASCADE,
+    dedupe_key text NOT NULL UNIQUE,
+    payload jsonb NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    expires_at timestamptz NOT NULL,
+    attempts integer NOT NULL DEFAULT 0,
+    next_try timestamptz NOT NULL DEFAULT now(),
+    lease_owner text,
+    lease_until timestamptz,
+    sent_at timestamptz,
+    last_error text
+);
+CREATE TABLE IF NOT EXISTS gaswise.alert_inbox (
+    id bigserial PRIMARY KEY,
+    installation_id text NOT NULL REFERENCES gaswise.alert_installations(id) ON DELETE CASCADE,
+    dedupe_key text NOT NULL UNIQUE,
+    payload jsonb NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    expires_at timestamptz NOT NULL
+);
+CREATE INDEX IF NOT EXISTS alert_inbox_recent ON gaswise.alert_inbox(installation_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS alert_outbox_pending ON gaswise.alert_outbox(next_try,created_at)
+    WHERE sent_at IS NULL;
+
 ALTER TABLE gaswise.collection_notifications ADD COLUMN IF NOT EXISTS last_attempt_at timestamptz;
 ALTER TABLE gaswise.collection_notifications ADD COLUMN IF NOT EXISTS last_error_at timestamptz;
 ALTER TABLE gaswise.collection_notifications ADD COLUMN IF NOT EXISTS expired_at timestamptz;

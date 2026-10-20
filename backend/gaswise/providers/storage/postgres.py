@@ -9,6 +9,7 @@ import asyncpg
 from pydantic import SecretStr
 
 from gaswise.domain.ports import ProviderError
+from gaswise.domain.pricing.alerts import purchase_condition_key
 from gaswise.domain.pricing.cache_policy import prune_quotes, public_quotes, quote_expiry
 from gaswise.domain.pricing.daily_ramp import reviewed_limit
 from gaswise.domain.pricing.shared_cache import CachedQuery
@@ -159,6 +160,227 @@ class PostgresPricingCache(CollectionEvents):
     async def close(self):
         await self.pool.close()
 
+    async def create_alert_installation(self, installation_id, token_hash, endpoint_hash, ciphertext, timezone, locale):
+        return await self.pool.fetchval("""
+            INSERT INTO gaswise.alert_installations
+                (id,token_hash,endpoint_hash,subscription_ciphertext,timezone,locale)
+            VALUES($1,$2,$3,$4,$5,$6)
+            ON CONFLICT(endpoint_hash) DO UPDATE SET token_hash=$2,
+                subscription_ciphertext=$4,timezone=$5,locale=$6,confirmed_at=now(),disabled_at=NULL
+            RETURNING id
+        """, installation_id, token_hash, endpoint_hash, ciphertext, timezone, locale)
+
+    async def set_alert_watch(self, installation_id, token_hash, enabled, canonical_id, source,
+                              station_id, station_name, fuel_type, payment_type, condition,
+                              expected_gallons, threshold_cents):
+        async with self.pool.acquire() as connection, connection.transaction():
+            valid = await connection.fetchval("""SELECT 1 FROM gaswise.alert_installations
+                WHERE id=$1 AND token_hash=$2 AND disabled_at IS NULL FOR UPDATE""",
+                installation_id, token_hash)
+            if not valid:
+                return False
+            await connection.execute("UPDATE gaswise.alert_installations SET confirmed_at=now() WHERE id=$1", installation_id)
+            if not enabled:
+                await connection.execute("""DELETE FROM gaswise.alert_watches WHERE installation_id=$1
+                    AND source=$2 AND station_id=$3 AND fuel_type=$4 AND payment_type=$5
+                    AND purchase_condition=$6""", installation_id, source, station_id,
+                    fuel_type, payment_type, condition)
+                return True
+            exists = await connection.fetchval("""SELECT EXISTS(SELECT 1 FROM gaswise.alert_watches
+                WHERE installation_id=$1 AND source=$2 AND station_id=$3 AND fuel_type=$4
+                  AND payment_type=$5 AND purchase_condition=$6)""", installation_id, source,
+                station_id, fuel_type, payment_type, condition)
+            count = await connection.fetchval("SELECT count(*) FROM gaswise.alert_watches WHERE installation_id=$1", installation_id)
+            if not exists and count >= 20:
+                return "limit"
+            await connection.execute("""
+                INSERT INTO gaswise.alert_watches(installation_id,canonical_id,source,station_id,
+                    station_name,fuel_type,payment_type,purchase_condition,expected_gallons,threshold_cents)
+                VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+                ON CONFLICT(installation_id,source,station_id,fuel_type,payment_type,purchase_condition)
+                DO UPDATE SET canonical_id=EXCLUDED.canonical_id,station_name=EXCLUDED.station_name,
+                    expected_gallons=EXCLUDED.expected_gallons,threshold_cents=EXCLUDED.threshold_cents
+            """, installation_id, canonical_id, source, station_id, station_name, fuel_type,
+                payment_type, condition, expected_gallons, threshold_cents)
+            return True
+
+    async def claim_alert_candidate(self, owner):
+        async with self.pool.acquire() as connection, connection.transaction():
+            row = await connection.fetchrow("""
+                SELECT w.id AS watch_id,current.observation_key FROM gaswise.alert_watches w
+                JOIN gaswise.alert_installations i ON i.id=w.installation_id AND i.disabled_at IS NULL
+                JOIN LATERAL (SELECT observation_key FROM gaswise.quote_history h
+                    WHERE h.source=w.source AND h.station_id=w.station_id AND h.fuel_type=w.fuel_type
+                      AND h.payment_type=w.payment_type AND h.purchase_condition=w.purchase_condition
+                    ORDER BY COALESCE(h.reported_at,h.first_seen_at) DESC,observation_key DESC LIMIT 1) current ON true
+                WHERE current.observation_key IS DISTINCT FROM w.last_evaluated_observation
+                  AND (w.lease_until IS NULL OR w.lease_until<=now())
+                ORDER BY w.created_at FOR UPDATE OF w SKIP LOCKED LIMIT 1
+            """)
+            if row is None:
+                return None
+            watch_id = row["watch_id"]
+            await connection.execute("""UPDATE gaswise.alert_watches SET lease_owner=$2,
+                lease_until=now()+interval '2 minutes' WHERE id=$1""", watch_id, owner)
+            candidate = await connection.fetchrow("""
+                SELECT w.id AS watch_id,w.station_name,w.expected_gallons,w.threshold_cents,
+                       i.locale,current.observation_key,current.price_per_gallon AS current_price,
+                       previous.price_per_gallon AS previous_price,
+                       GREATEST(0,EXTRACT(EPOCH FROM (now()-COALESCE(current.reported_at,current.first_seen_at)))/60)::int AS quote_age_minutes,
+                       history.count::int AS comparable_observations,
+                       COALESCE(CASE WHEN n.expires_at>now() THEN n.state END,'unknown') AS need_state,
+                       COALESCE(CASE WHEN n.expires_at>now() THEN n.confidence END,'low') AS need_confidence,
+                       EXISTS(SELECT 1 FROM gaswise.quote_history conflict
+                           WHERE w.canonical_id IS NOT NULL AND conflict.canonical_id=w.canonical_id
+                             AND conflict.source<>w.source AND conflict.fuel_type=w.fuel_type
+                             AND conflict.payment_type=w.payment_type
+                             AND conflict.purchase_condition=w.purchase_condition
+                             AND COALESCE(conflict.reported_at,conflict.first_seen_at) >=
+                                 COALESCE(current.reported_at,current.first_seen_at)-interval '6 hours'
+                             AND abs(conflict.price_per_gallon-current.price_per_gallon)>=0.10
+                       ) AS source_conflict
+                FROM gaswise.alert_watches w
+                JOIN gaswise.alert_installations i ON i.id=w.installation_id
+                LEFT JOIN gaswise.alert_need_state n ON n.installation_id=i.id
+                JOIN LATERAL (SELECT observation_key,price_per_gallon,reported_at,first_seen_at
+                    FROM gaswise.quote_history h WHERE h.source=w.source AND h.station_id=w.station_id
+                      AND h.fuel_type=w.fuel_type AND h.payment_type=w.payment_type
+                      AND h.purchase_condition=w.purchase_condition
+                    ORDER BY COALESCE(h.reported_at,h.first_seen_at) DESC,observation_key DESC LIMIT 1) current ON true
+                JOIN LATERAL (SELECT price_per_gallon FROM gaswise.quote_history h
+                    WHERE h.source=w.source AND h.station_id=w.station_id AND h.fuel_type=w.fuel_type
+                      AND h.payment_type=w.payment_type AND h.purchase_condition=w.purchase_condition
+                      AND h.observation_key<>current.observation_key
+                    ORDER BY COALESCE(h.reported_at,h.first_seen_at) DESC,observation_key DESC LIMIT 1) previous ON true
+                JOIN LATERAL (SELECT count(*) FROM gaswise.quote_history h
+                    WHERE h.source=w.source AND h.station_id=w.station_id AND h.fuel_type=w.fuel_type
+                      AND h.payment_type=w.payment_type AND h.purchase_condition=w.purchase_condition
+                      AND COALESCE(h.reported_at,h.first_seen_at)>=now()-interval '30 days') history ON true
+                WHERE w.id=$1 AND w.lease_owner=$2
+            """, watch_id, owner)
+            if candidate is None:
+                await connection.execute("""UPDATE gaswise.alert_watches SET lease_owner=NULL,
+                    lease_until=NULL,last_evaluated_observation=$3 WHERE id=$1 AND lease_owner=$2""",
+                    watch_id, owner, row["observation_key"])
+                return None
+            return dict(candidate)
+
+    async def finish_alert_candidate(self, watch_id, owner, observation_key, payload, delivery):
+        async with self.pool.acquire() as connection, connection.transaction():
+            watch = await connection.fetchrow("""UPDATE gaswise.alert_watches SET
+                last_evaluated_observation=$3,lease_owner=NULL,lease_until=NULL,
+                last_alert_at=CASE WHEN $4::jsonb IS NOT NULL THEN now() ELSE last_alert_at END
+                WHERE id=$1 AND lease_owner=$2 RETURNING installation_id,last_alert_at""",
+                watch_id, owner, observation_key, json.dumps(payload) if payload else None)
+            if watch is None or payload is None:
+                return False
+            dedupe = f"watch:{watch_id}:{observation_key}"
+            await connection.execute("""INSERT INTO gaswise.alert_inbox
+                (installation_id,dedupe_key,payload,expires_at) VALUES($1,$2,$3::jsonb,now()+interval '30 days')
+                ON CONFLICT(dedupe_key) DO NOTHING""", watch["installation_id"], dedupe, json.dumps(payload))
+            if delivery != "push":
+                return True
+            # A delivered or queued alert suppresses the same watch for 24 hours.
+            recent = await connection.fetchval("""SELECT EXISTS(SELECT 1 FROM gaswise.alert_outbox
+                WHERE installation_id=$1 AND dedupe_key LIKE $2 AND created_at>now()-interval '24 hours')""",
+                watch["installation_id"], f"watch:{watch_id}:%")
+            if recent:
+                return False
+            await connection.execute("""INSERT INTO gaswise.alert_outbox
+                (installation_id,dedupe_key,payload,expires_at) VALUES($1,$2,$3::jsonb,now()+interval '6 hours')
+                ON CONFLICT(dedupe_key) DO NOTHING""", watch["installation_id"],
+                dedupe, json.dumps(payload))
+            return True
+
+    async def alert_inbox(self, installation_id, token_hash):
+        if not await self._valid_alert_installation(installation_id, token_hash):
+            return None
+        rows = await self.pool.fetch("""SELECT id,payload,created_at FROM gaswise.alert_inbox
+            WHERE installation_id=$1 AND expires_at>now() ORDER BY created_at DESC LIMIT 20""", installation_id)
+        result = []
+        for row in rows:
+            payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
+            result.append({"id": row["id"], "title": payload.get("title", "GasWise"),
+                           "body": payload.get("body", ""), "created_at": row["created_at"].isoformat()})
+        return result
+
+    async def release_alert_candidate(self, watch_id, owner):
+        await self.pool.execute("""UPDATE gaswise.alert_watches SET lease_owner=NULL,
+            lease_until=now()+interval '1 minute' WHERE id=$1 AND lease_owner=$2""", watch_id, owner)
+
+    async def update_alert_need(self, installation_id, token_hash, state, confidence, expires_at):
+        result = await self.pool.execute("""
+            INSERT INTO gaswise.alert_need_state(installation_id,state,confidence,expires_at)
+            SELECT id,$3,$4,$5 FROM gaswise.alert_installations
+            WHERE id=$1 AND token_hash=$2 AND disabled_at IS NULL
+            ON CONFLICT(installation_id) DO UPDATE SET state=$3,confidence=$4,
+                calculated_at=now(),expires_at=$5
+        """, installation_id, token_hash, state, confidence, expires_at)
+        if result == "INSERT 0 1":
+            await self.pool.execute("UPDATE gaswise.alert_installations SET confirmed_at=now() WHERE id=$1", installation_id)
+        return result == "INSERT 0 1"
+
+    async def queue_alert_test(self, installation_id, token_hash, locale):
+        titles = {"zh-TW": "GasWise 智能提醒已啟用", "zh-CN": "GasWise 智能提醒已启用",
+                  "es": "Alertas inteligentes activadas", "ja": "GasWise スマート通知が有効です",
+                  "ko": "GasWise 스마트 알림이 켜졌습니다"}
+        bodies = {"zh-TW": "之後只會在值得採取行動時通知你。", "zh-CN": "之后只会在值得采取行动时通知你。",
+                  "es": "Solo te avisaremos cuando valga la pena actuar.", "ja": "行動する価値があるときだけ通知します。",
+                  "ko": "행동할 가치가 있을 때만 알려드립니다."}
+        payload = json.dumps({"title": titles.get(locale, "GasWise smart alerts are on"),
+                              "body": bodies.get(locale, "You will only be notified when an opportunity is worth acting on."),
+                              "url": "/?smart-alert=test", "tag": "gaswise-alert-test"})
+        # One test per installation per minute prevents a valid token from becoming a push flood tool.
+        result = await self.pool.execute("""
+            INSERT INTO gaswise.alert_outbox(installation_id,dedupe_key,payload,expires_at)
+            SELECT id,'test:'||id||':'||to_char(now(),'YYYYMMDDHH24MI'),$3::jsonb,now()+interval '5 minutes'
+            FROM gaswise.alert_installations WHERE id=$1 AND token_hash=$2 AND disabled_at IS NULL
+            ON CONFLICT(dedupe_key) DO NOTHING
+        """, installation_id, token_hash, payload)
+        return result in {"INSERT 0 1", "INSERT 0 0"} and await self._valid_alert_installation(installation_id, token_hash)
+
+    async def _valid_alert_installation(self, installation_id, token_hash):
+        return bool(await self.pool.fetchval("""SELECT 1 FROM gaswise.alert_installations
+            WHERE id=$1 AND token_hash=$2 AND disabled_at IS NULL""", installation_id, token_hash))
+
+    async def disable_alert_installation(self, installation_id, token_hash):
+        result = await self.pool.execute("""DELETE FROM gaswise.alert_installations
+            WHERE id=$1 AND token_hash=$2""", installation_id, token_hash)
+        return result == "DELETE 1"
+
+    async def claim_alert_notice(self, owner):
+        async with self.pool.acquire() as connection, connection.transaction():
+            row = await connection.fetchrow("""
+                UPDATE gaswise.alert_outbox o SET lease_owner=$1,lease_until=now()+interval '2 minutes',
+                    attempts=attempts+1
+                FROM gaswise.alert_installations i
+                WHERE o.id=(SELECT pending.id FROM gaswise.alert_outbox pending
+                    JOIN gaswise.alert_installations target ON target.id=pending.installation_id
+                    WHERE pending.sent_at IS NULL AND pending.expires_at>now() AND pending.next_try<=now()
+                      AND (pending.lease_until IS NULL OR pending.lease_until<=now())
+                      AND (pending.payload->>'tag'='gaswise-alert-test' OR
+                           (EXTRACT(HOUR FROM now() AT TIME ZONE target.timezone)>=7 AND
+                            EXTRACT(HOUR FROM now() AT TIME ZONE target.timezone)<22))
+                    ORDER BY pending.created_at FOR UPDATE OF pending SKIP LOCKED LIMIT 1)
+                  AND i.id=o.installation_id AND i.disabled_at IS NULL
+                RETURNING o.id,o.payload,o.lease_owner,i.subscription_ciphertext
+            """, owner)
+            return dict(row) if row else None
+
+    async def finish_alert_notice(self, notice_id, owner, retry=False, permanent=False):
+        if permanent:
+            await self.pool.execute("""DELETE FROM gaswise.alert_installations i USING gaswise.alert_outbox o
+                WHERE o.id=$1 AND o.lease_owner=$2 AND i.id=o.installation_id""", notice_id, owner)
+            return
+        if retry:
+            await self.pool.execute("""UPDATE gaswise.alert_outbox SET lease_owner=NULL,lease_until=NULL,
+                next_try=now()+LEAST(3600,30*power(2,LEAST(attempts,7)))*interval '1 second',
+                last_error='delivery_deferred' WHERE id=$1 AND lease_owner=$2""", notice_id, owner)
+        else:
+            await self.pool.execute("""UPDATE gaswise.alert_outbox SET sent_at=now(),lease_owner=NULL,
+                lease_until=NULL,last_error=$3 WHERE id=$1 AND lease_owner=$2""",
+                notice_id, owner, "endpoint_gone" if permanent else None)
+
     async def read(self, key):
         row = await self.pool.fetchrow("""
             SELECT payload, fetched_at, fresh_until > now() AS fresh, stale_until > now() AS usable
@@ -222,9 +444,10 @@ class PostgresPricingCache(CollectionEvents):
             if expires is None or expires <= now:
                 continue
             reported = datetime.fromisoformat(quote["price_updated_at"].replace("Z", "+00:00")) if quote.get("price_updated_at") else None
-            condition = hashlib.sha256(json.dumps({k: quote.get(k) for k in (
-                "membership_required", "octane", "currency", "unit"
-            )}, sort_keys=True).encode()).hexdigest()
+            condition = purchase_condition_key(
+                quote.get("membership_required"), quote.get("octane"),
+                quote.get("currency"), quote.get("unit"),
+            )
             # Exclude retrieval time from identity: duplicate searches must not
             # look like new price reports. Unknown-time observations get daily buckets.
             identity = (source, station_id, quote["fuel_type"], quote["payment_type"],
@@ -390,6 +613,10 @@ class PostgresPricingCache(CollectionEvents):
         """, source, float(retry_seconds or 120))
 
     async def cleanup(self):
+        await self.pool.execute("DELETE FROM gaswise.alert_installations WHERE confirmed_at < now() - interval '180 days'")
+        await self.pool.execute("DELETE FROM gaswise.alert_need_state WHERE expires_at < now() - interval '30 days'")
+        await self.pool.execute("DELETE FROM gaswise.alert_outbox WHERE expires_at < now() - interval '7 days'")
+        await self.pool.execute("DELETE FROM gaswise.alert_inbox WHERE expires_at < now()")
         await self.pool.execute("DELETE FROM gaswise.collection_notifications WHERE created_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.collection_runs WHERE finished_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.quote_history WHERE last_seen_at < now() - interval '90 days'")

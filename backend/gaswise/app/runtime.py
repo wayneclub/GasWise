@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from gaswise.providers.geocoding import LocationProvider
     from gaswise.domain.ports import PlateLookup, Provider, VehicleCatalog, VinDecoder
     from gaswise.providers.gasbuddy.web import GasBuddyWebProvider
+    from gaswise.providers.geocoding import LocationProvider
     from gaswise.providers.google.maps_web import MapsWebProvider
     from gaswise.providers.google.places import GoogleProvider
     from gaswise.providers.pricing.aaa import AAAProvider
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from gaswise.providers.vehicles.hertz import HertzProvider
     from gaswise.providers.waze.provider import WazeProvider
     from gaswise.services.parts.fitment import PartsProvider
+    from gaswise.services.pricing.alerts import SmartAlerts
     from gaswise.services.pricing.search import SearchService
     from gaswise.services.pricing.smart import SmartService
 
@@ -48,3 +49,4 @@ class Services:
     smart: SmartService
     locations: LocationProvider | None = None
     top_tier: TopTierProvider | None = None
+    alerts: SmartAlerts | None = None

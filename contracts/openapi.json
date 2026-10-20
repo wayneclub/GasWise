@@ -86,6 +86,287 @@
         ]
       }
     },
+    "/v1/alerts/config": {
+      "post": {
+        "summary": "Alert Config",
+        "operationId": "alert_config_v1_alerts_config_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/alerts/installations": {
+      "post": {
+        "summary": "Create Installation",
+        "operationId": "create_installation_v1_alerts_installations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallationCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/alerts/need-state": {
+      "post": {
+        "summary": "Update Need",
+        "operationId": "update_need_v1_alerts_need_state_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NeedStateUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/alerts/test": {
+      "post": {
+        "summary": "Test Alert",
+        "operationId": "test_alert_v1_alerts_test_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertTestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/alerts/disable": {
+      "post": {
+        "summary": "Disable Alerts",
+        "operationId": "disable_alerts_v1_alerts_disable_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallationAuth"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/alerts/watches": {
+      "post": {
+        "summary": "Update Watch",
+        "operationId": "update_watch_v1_alerts_watches_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/alerts/inbox": {
+      "post": {
+        "summary": "Alert Inbox",
+        "operationId": "alert_inbox_v1_alerts_inbox_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallationAuth"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/locations/resolve": {
       "post": {
         "summary": "Resolve Location",
@@ -950,6 +1231,51 @@
         ]
       }
     },
+    "/v1/sources/collection-report": {
+      "get": {
+        "summary": "Collection Report",
+        "operationId": "collection_report_v1_sources_collection_report_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2160,
+              "minimum": 1,
+              "default": 24,
+              "title": "Hours"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/smart/search": {
       "post": {
         "summary": "Smart Search",
@@ -1296,6 +1622,86 @@
           "county_status"
         ],
         "title": "AAASnapshot"
+      },
+      "AlertConfig": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "vapid_public_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vapid Public Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "AlertConfig"
+      },
+      "AlertStatus": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "updated",
+              "queued",
+              "disabled"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "AlertStatus"
+      },
+      "AlertTestRequest": {
+        "properties": {
+          "installation_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 20,
+            "title": "Installation Id"
+          },
+          "installation_token": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 32,
+            "title": "Installation Token"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "zh-TW",
+              "zh-CN",
+              "es",
+              "ja",
+              "ko"
+            ],
+            "title": "Locale",
+            "default": "en"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "installation_id",
+          "installation_token"
+        ],
+        "title": "AlertTestRequest"
       },
       "BreakEven": {
         "properties": {
@@ -2476,6 +2882,129 @@
         ],
         "title": "HistoryRequest"
       },
+      "InboxItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "body",
+          "created_at"
+        ],
+        "title": "InboxItem"
+      },
+      "InboxResult": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InboxItem"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "InboxResult"
+      },
+      "InstallationAuth": {
+        "properties": {
+          "installation_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 20,
+            "title": "Installation Id"
+          },
+          "installation_token": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 32,
+            "title": "Installation Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "installation_id",
+          "installation_token"
+        ],
+        "title": "InstallationAuth"
+      },
+      "InstallationCreate": {
+        "properties": {
+          "subscription": {
+            "$ref": "#/components/schemas/PushSubscription"
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_+\\-/]+$",
+            "title": "Timezone"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "zh-TW",
+              "zh-CN",
+              "es",
+              "ja",
+              "ko"
+            ],
+            "title": "Locale",
+            "default": "en"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "subscription",
+          "timezone"
+        ],
+        "title": "InstallationCreate"
+      },
+      "InstallationCreated": {
+        "properties": {
+          "installation_id": {
+            "type": "string",
+            "title": "Installation Id"
+          },
+          "installation_token": {
+            "type": "string",
+            "title": "Installation Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "installation_id",
+          "installation_token"
+        ],
+        "title": "InstallationCreated"
+      },
       "LocationCandidate": {
         "properties": {
           "id": {
@@ -2796,6 +3325,57 @@
           "available_fuel_types"
         ],
         "title": "MapsWebStation"
+      },
+      "NeedStateUpdate": {
+        "properties": {
+          "installation_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 20,
+            "title": "Installation Id"
+          },
+          "installation_token": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 32,
+            "title": "Installation Token"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "not_due",
+              "approaching",
+              "due",
+              "unknown"
+            ],
+            "title": "State"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Confidence"
+          },
+          "ttl_hours": {
+            "type": "integer",
+            "maximum": 168.0,
+            "minimum": 1.0,
+            "title": "Ttl Hours",
+            "default": 48
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "installation_id",
+          "installation_token",
+          "state",
+          "confidence"
+        ],
+        "title": "NeedStateUpdate"
       },
       "PartCandidate": {
         "properties": {
@@ -3807,6 +4387,50 @@
           "octane"
         ],
         "title": "PriceObservation"
+      },
+      "PushKeys": {
+        "properties": {
+          "p256dh": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 20,
+            "title": "P256Dh"
+          },
+          "auth": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Auth"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "p256dh",
+          "auth"
+        ],
+        "title": "PushKeys"
+      },
+      "PushSubscription": {
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Endpoint"
+          },
+          "keys": {
+            "$ref": "#/components/schemas/PushKeys"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "endpoint",
+          "keys"
+        ],
+        "title": "PushSubscription"
       },
       "RankOptions": {
         "properties": {
@@ -7921,6 +8545,158 @@
           "status"
         ],
         "title": "VinResolution"
+      },
+      "WatchResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "watched",
+              "removed"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "WatchResult"
+      },
+      "WatchUpdate": {
+        "properties": {
+          "installation_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 20,
+            "title": "Installation Id"
+          },
+          "installation_token": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 32,
+            "title": "Installation Token"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "canonical_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Id"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source"
+          },
+          "station_id": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Station Id"
+          },
+          "station_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Station Name"
+          },
+          "fuel_type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "midgrade",
+              "premium",
+              "diesel"
+            ],
+            "title": "Fuel Type"
+          },
+          "payment_type": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "credit",
+              "unknown"
+            ],
+            "title": "Payment Type"
+          },
+          "membership_required": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Membership Required"
+          },
+          "octane": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 80.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Octane"
+          },
+          "currency": {
+            "type": "string",
+            "const": "USD",
+            "title": "Currency",
+            "default": "USD"
+          },
+          "unit": {
+            "type": "string",
+            "const": "US_gallon",
+            "title": "Unit",
+            "default": "US_gallon"
+          },
+          "expected_gallons": {
+            "type": "integer",
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Expected Gallons",
+            "default": 10
+          },
+          "threshold_cents": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 5.0,
+            "title": "Threshold Cents",
+            "default": 10
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "installation_id",
+          "installation_token",
+          "source",
+          "station_id",
+          "station_name",
+          "fuel_type",
+          "payment_type"
+        ],
+        "title": "WatchUpdate"
       },
       "WazePriceSearch": {
         "properties": {

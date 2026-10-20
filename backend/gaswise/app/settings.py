@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     collection_telegram_bot_token: SecretStr = SecretStr("")
     collection_telegram_chat_id: SecretStr = SecretStr("")
     collection_telegram_thread_id: int | None = Field(default=None, ge=1)
+    smart_alerts_enabled: bool = False
+    push_vapid_public_key: SecretStr = SecretStr("")
+    push_vapid_private_key: SecretStr = SecretStr("")
+    push_vapid_subject: str = "mailto:admin@example.com"
+    push_subscription_key: SecretStr = SecretStr("")
     base_collection_enabled: bool = False
     base_collection_preset: Literal["custom", "socal"] = "custom"
     base_collection_bases: list[str] = Field(default_factory=lambda: ["la", "irvine", "sd"], min_length=1, max_length=200)
@@ -90,6 +95,14 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def expand_collection_preset(self):
+        if self.smart_alerts_enabled and not (
+            self.database_url.get_secret_value()
+            and self.push_vapid_public_key.get_secret_value()
+            and self.push_vapid_private_key.get_secret_value()
+            and self.push_subscription_key.get_secret_value()
+            and (self.push_vapid_subject.startswith("mailto:") or self.push_vapid_subject.startswith("https://"))
+        ):
+            raise ValueError("Smart alerts require PostgreSQL, VAPID keys, subscription encryption key and subject")
         if self.pricing_daily_ramp_enabled and not (self.pricing_daily_ramp_floor <= self.hot_pricing_refresh_daily_requests <= self.pricing_daily_ramp_max):
             raise ValueError("Daily ramp requires floor <= initial allowance <= maximum")
         if self.pricing_daily_ramp_enabled and self.gasbuddy_background_daily_requests is not None and not (

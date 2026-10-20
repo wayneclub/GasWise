@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { DEFAULT_PREFS } from './prefs'
 import { exportPrivateBackup, getLocalProfile, importPrivateBackup, resetLocalProfile, shortProfileId } from './localProfile'
 import type { VehicleIdentity } from './vehicleIdentity'
+import { recordRefuel, saveFuelAssistantSettings } from './fuelAssistant'
 
 const identity: VehicleIdentity = { kind: 'vin', value: { vin: 'A'.repeat(17) } }
 const first = '11111111-1111-4111-8111-111111111111'
@@ -28,6 +29,9 @@ it('creates one browser-local profile and rotates it only when cleared', async (
 })
 
 it('encrypts a complete private backup and restores it only with the password', async () => {
+  await getLocalProfile()
+  await saveFuelAssistantSettings({ weeklyMiles: 321, typicalGallons: 11 })
+  await recordRefuel(new Date('2026-10-20T08:00:00Z'))
   const backup = await exportPrivateBackup({ ...DEFAULT_PREFS, gallons: 17 }, identity, 'correct horse')
   expect(backup).not.toContain(identity.value.vin)
   expect(backup).not.toContain('"gallons":17')
@@ -36,6 +40,8 @@ it('encrypts a complete private backup and restores it only with the password', 
   expect(restored.identity).toEqual(identity)
   expect(restored.prefs.gallons).toBe(17)
   expect(restored.profile.id).toBe(first)
+  expect(restored.assistant?.settings.weeklyMiles).toBe(321)
+  expect(restored.assistant?.events[0].at).toBe('2026-10-20T08:00:00.000Z')
 })
 
 it('rejects short backup passwords and malformed files', async () => {

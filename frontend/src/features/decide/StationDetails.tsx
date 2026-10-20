@@ -10,6 +10,7 @@ import { useI18n } from '../../i18n'
 import { comparisonPrice, age, fuelKey, perGallon, usd, miles, minutes } from '../../lib/format'
 import { navigationUrl } from '../../lib/navigation'
 import type { NavApp } from '../../lib/prefs'
+import { WatchStation } from './WatchStation'
 
 export type StationSummary = Pick<Station, 'name' | 'location'> & Partial<Station>
 import { reasonKey } from '../../lib/stationStatus'
@@ -75,6 +76,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
         </> : null}
       </div>
       <PriceHistory station={station} />
+      <WatchStation station={station} />
       <p className="text-sm">{t('station.hours')}: {t(station.open_now === true ? 'hours.open' : station.open_now === false ? 'hours.closed' : 'hours.unknown')}</p>
       {row?.route.source === "straight_line_estimate" ? <p className="text-xs text-caution">{t("coverage.estimated_route")}</p> : null}
       {row ? <dl className="grid grid-cols-2 gap-2 border-t border-line pt-3 text-sm">

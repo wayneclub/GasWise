@@ -55,6 +55,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/alerts/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Alert Config */
+        post: operations["alert_config_v1_alerts_config_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/alerts/installations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Installation */
+        post: operations["create_installation_v1_alerts_installations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/alerts/need-state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Need */
+        post: operations["update_need_v1_alerts_need_state_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/alerts/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test Alert */
+        post: operations["test_alert_v1_alerts_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/alerts/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable Alerts */
+        post: operations["disable_alerts_v1_alerts_disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/alerts/watches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Watch */
+        post: operations["update_watch_v1_alerts_watches_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/alerts/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Alert Inbox */
+        post: operations["alert_inbox_v1_alerts_inbox_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/locations/resolve": {
         parameters: {
             query?: never;
@@ -412,6 +531,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sources/collection-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Collection Report */
+        get: operations["collection_report_v1_sources_collection_report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/smart/search": {
         parameters: {
             query?: never;
@@ -578,6 +714,34 @@ export interface components {
             regions: components["schemas"]["RegionAverage"][];
             /** County Status */
             county_status: string;
+        };
+        /** AlertConfig */
+        AlertConfig: {
+            /** Enabled */
+            enabled: boolean;
+            /** Vapid Public Key */
+            vapid_public_key?: string | null;
+        };
+        /** AlertStatus */
+        AlertStatus: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "updated" | "queued" | "disabled";
+        };
+        /** AlertTestRequest */
+        AlertTestRequest: {
+            /** Installation Id */
+            installation_id: string;
+            /** Installation Token */
+            installation_token: string;
+            /**
+             * Locale
+             * @default en
+             * @enum {string}
+             */
+            locale: "en" | "zh-TW" | "zh-CN" | "es" | "ja" | "ko";
         };
         /** BreakEven */
         BreakEven: {
@@ -1042,6 +1206,48 @@ export interface components {
              */
             days: 7 | 30 | 90;
         };
+        /** InboxItem */
+        InboxItem: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /** Created At */
+            created_at: string;
+        };
+        /** InboxResult */
+        InboxResult: {
+            /** Items */
+            items: components["schemas"]["InboxItem"][];
+        };
+        /** InstallationAuth */
+        InstallationAuth: {
+            /** Installation Id */
+            installation_id: string;
+            /** Installation Token */
+            installation_token: string;
+        };
+        /** InstallationCreate */
+        InstallationCreate: {
+            subscription: components["schemas"]["PushSubscription"];
+            /** Timezone */
+            timezone: string;
+            /**
+             * Locale
+             * @default en
+             * @enum {string}
+             */
+            locale: "en" | "zh-TW" | "zh-CN" | "es" | "ja" | "ko";
+        };
+        /** InstallationCreated */
+        InstallationCreated: {
+            /** Installation Id */
+            installation_id: string;
+            /** Installation Token */
+            installation_token: string;
+        };
         /** LocationCandidate */
         LocationCandidate: {
             /** Id */
@@ -1165,6 +1371,28 @@ export interface components {
             business_status?: ("operational" | "temporarily_closed" | "permanently_closed") | null;
             /** Opening Status */
             opening_status?: string | null;
+        };
+        /** NeedStateUpdate */
+        NeedStateUpdate: {
+            /** Installation Id */
+            installation_id: string;
+            /** Installation Token */
+            installation_token: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "not_due" | "approaching" | "due" | "unknown";
+            /**
+             * Confidence
+             * @enum {string}
+             */
+            confidence: "high" | "medium" | "low";
+            /**
+             * Ttl Hours
+             * @default 48
+             */
+            ttl_hours: number;
         };
         /** PartCandidate */
         PartCandidate: {
@@ -1499,6 +1727,22 @@ export interface components {
             membership: string | null;
             /** Octane */
             octane: number | null;
+        };
+        /** PushKeys */
+        PushKeys: {
+            /** P256Dh */
+            p256dh: string;
+            /** Auth */
+            auth: string;
+        };
+        /** PushSubscription */
+        PushSubscription: {
+            /**
+             * Endpoint
+             * Format: uri
+             */
+            endpoint: string;
+            keys: components["schemas"]["PushKeys"];
         };
         /** RankOptions */
         RankOptions: {
@@ -3002,6 +3246,70 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /** WatchResult */
+        WatchResult: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "watched" | "removed";
+        };
+        /** WatchUpdate */
+        WatchUpdate: {
+            /** Installation Id */
+            installation_id: string;
+            /** Installation Token */
+            installation_token: string;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /** Canonical Id */
+            canonical_id?: string | null;
+            /** Source */
+            source: string;
+            /** Station Id */
+            station_id: string;
+            /** Station Name */
+            station_name: string;
+            /**
+             * Fuel Type
+             * @enum {string}
+             */
+            fuel_type: "regular" | "midgrade" | "premium" | "diesel";
+            /**
+             * Payment Type
+             * @enum {string}
+             */
+            payment_type: "cash" | "credit" | "unknown";
+            /** Membership Required */
+            membership_required?: string | null;
+            /** Octane */
+            octane?: number | null;
+            /**
+             * Currency
+             * @default USD
+             * @constant
+             */
+            currency: "USD";
+            /**
+             * Unit
+             * @default US_gallon
+             * @constant
+             */
+            unit: "US_gallon";
+            /**
+             * Expected Gallons
+             * @default 10
+             */
+            expected_gallons: number;
+            /**
+             * Threshold Cents
+             * @default 10
+             */
+            threshold_cents: number;
+        };
         /** WazePriceSearch */
         WazePriceSearch: {
             origin: components["schemas"]["Point"];
@@ -3089,6 +3397,224 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PriceHistory"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    alert_config_v1_alerts_config_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertConfig"];
+                };
+            };
+        };
+    };
+    create_installation_v1_alerts_installations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstallationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallationCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_need_v1_alerts_need_state_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NeedStateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_alert_v1_alerts_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlertTestRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_alerts_v1_alerts_disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstallationAuth"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_watch_v1_alerts_watches_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    alert_inbox_v1_alerts_inbox_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstallationAuth"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboxResult"];
                 };
             };
             /** @description Validation Error */
@@ -3723,6 +4249,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GasBuddyPrices"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    collection_report_v1_sources_collection_report_get: {
+        parameters: {
+            query?: {
+                hours?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

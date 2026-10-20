@@ -9,6 +9,8 @@ import type { Prefs } from '../../lib/prefs'
 import { TripForm } from './TripForm'
 import { VehiclePicker } from './VehiclePicker'
 import { PrivacyProfile } from './PrivacyProfile'
+import { SmartAlerts } from './SmartAlerts'
+import { FuelAssistant } from './FuelAssistant'
 
 export function PreferencesForm({
   prefs,
@@ -154,6 +156,8 @@ export function PreferencesForm({
         </Field>
       ) : null}
       </section>
+      {advanced ? <FuelAssistant prefs={prefs} /> : null}
+      {advanced ? <SmartAlerts /> : null}
       {advanced && replace ? <PrivacyProfile prefs={prefs} replace={replace} /> : null}
     </div>
   )
