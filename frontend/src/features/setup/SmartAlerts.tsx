@@ -23,7 +23,7 @@ export function SmartAlerts() {
     } catch { setNotice('error') } finally { setBusy(false) }
   }
 
-  return <section className="flex min-w-0 flex-col gap-4 liquid-panel rounded-box p-4 sm:p-6 lg:col-span-2" aria-label={t('alerts.title')}>
+  return <section id="smart-alerts" tabIndex={-1} className="flex min-w-0 scroll-mt-24 flex-col gap-4 liquid-panel rounded-box p-4 outline-none sm:p-6 lg:col-span-2" aria-label={t('alerts.title')}>
     <div><h2 className="font-semibold">{t('alerts.title')}</h2><p className="mt-1 text-xs leading-relaxed text-muted">{t('alerts.description')}</p></div>
     <p className="text-xs leading-relaxed text-muted">{t('alerts.privacy')}</p>
     <div><button type="button" disabled={busy || !supported} onClick={() => void toggle()} className="rounded-control border border-line px-4 py-2 text-sm disabled:opacity-50">{t(enabled ? 'alerts.disable' : 'alerts.enable')}</button></div>

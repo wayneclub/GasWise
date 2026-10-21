@@ -83,6 +83,18 @@ it.each([
 })
 
 describe('service integration', () => {
+  it('exposes smart alerts from the primary navigation', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+
+    const header = within(screen.getByRole('banner'))
+    fireEvent.click(header.getByRole('button', { name: 'Smart fuel alerts' }))
+
+    expect(screen.getByRole('main', { name: 'Settings' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Smart fuel alerts' })).toBeInTheDocument()
+  })
+
   it('switches language from the header across services without fetching prices again', async () => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))
     render(<App />)
