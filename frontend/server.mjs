@@ -80,7 +80,13 @@ const server = createServer(async (request, response) => {
     const file = await realpath(path)
     if (!file.startsWith(dist + sep) || !(await stat(file)).isFile()) return json(response, 404, 'not_found')
     response.setHeader('Content-Type', mime[extname(file)] || 'application/octet-stream')
-    response.setHeader('Cache-Control', file.includes(`${sep}assets${sep}`) ? 'public, max-age=31536000, immutable' : 'no-cache')
+    if (pathname === '/sw.js') {
+      response.setHeader('Cache-Control', 'no-store, max-age=0, must-revalidate')
+      response.setHeader('CDN-Cache-Control', 'no-store')
+      response.setHeader('Service-Worker-Allowed', '/')
+    } else {
+      response.setHeader('Cache-Control', file.includes(`${sep}assets${sep}`) ? 'public, max-age=31536000, immutable' : 'no-cache')
+    }
     response.end(request.method === 'HEAD' ? undefined : await readFile(file))
   } catch (error) {
     json(response, error?.code === 'ENOENT' ? 404 : 502, error?.code === 'ENOENT' ? 'not_found' : 'gateway_unavailable')

@@ -33,6 +33,14 @@ test('serves the built app without service credentials', async () => {
   assert.match(csp, /connect-src 'self' https:\/\/cloudflareinsights.com https:\/\/www.googletagmanager.com https:\/\/\*.google-analytics.com https:\/\/\*.google.com;/)
   assert.doesNotMatch(csp, /unsafe-eval|script-src[^;]*unsafe-inline/)
 })
+test('serves the push service worker without browser or CDN caching', async () => {
+  const result = await fetch(`${base}/sw.js`)
+  assert.equal(result.status, 200)
+  assert.equal(result.headers.get('cache-control'), 'no-store, max-age=0, must-revalidate')
+  assert.equal(result.headers.get('cdn-cache-control'), 'no-store')
+  assert.equal(result.headers.get('service-worker-allowed'), '/')
+  assert.match(await result.text(), /notificationclick/)
+})
 test('injects server authentication and strips browser authorization', async () => {
   const result = await fetch(`${base}/api/v1/vehicles/resolve`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer browser-value' }, body: JSON.stringify({ text: 'test car' }) })
   assert.equal(result.status, 200)
