@@ -83,6 +83,20 @@ it.each([
 })
 
 describe('service integration', () => {
+  it('uses the confirmed vehicle EPA estimate without exposing assumption fields by default', async () => {
+    localStorage.setItem('gaswise.prefs.v1', JSON.stringify({ onboarded: true, locale: 'en', vehicle: {
+      id: car.id, label: '2003 Honda Accord', fuelType: 'regular', combinedMpg: '25',
+    } }))
+    vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
+
+    expect(await screen.findByText('Automatic basis · 2003 Honda Accord EPA combined estimate (25 MPG)')).toBeInTheDocument()
+    expect(screen.getByText('Fine-tune assumptions (optional)').closest('details')).not.toHaveAttribute('open')
+  })
+
   it('exposes smart alerts from the primary navigation', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))
     render(<App />)

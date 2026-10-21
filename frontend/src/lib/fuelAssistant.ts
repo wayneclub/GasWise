@@ -13,6 +13,8 @@ export interface NeedEstimate {
   confidence: 'high' | 'medium' | 'low'
   earliestDays: number | null
   latestDays: number | null
+  basis: 'insufficient_data' | 'epa_vehicle' | 'manual_mpg' | 'refuel_cadence'
+  observations: number
 }
 
 export const DEFAULT_FUEL_ASSISTANT_SETTINGS: FuelAssistantSettings = { weeklyMiles: 200, typicalGallons: 10 }
@@ -72,16 +74,20 @@ function median(values: number[]): number {
 }
 
 export function estimateNeed(events: RefuelEvent[], settings: FuelAssistantSettings, mpg: number,
-                             now = new Date()): NeedEstimate {
+                             now = new Date(),
+                             mpgBasis: 'epa_vehicle' | 'manual_mpg' = 'manual_mpg'): NeedEstimate {
   const valid = events.map(event => Date.parse(event.at)).filter(Number.isFinite).sort((a, b) => b - a)
-  if (!valid.length || !Number.isFinite(mpg) || mpg <= 0) return { state: 'unknown', confidence: 'low', earliestDays: null, latestDays: null }
+  const canDerive = Number.isFinite(mpg) && mpg > 0 && settings.weeklyMiles > 0 && settings.typicalGallons > 0
+  const unknown = (): NeedEstimate => ({ state: 'unknown', confidence: 'low', earliestDays: null, latestDays: null,
+    basis: canDerive ? mpgBasis : 'insufficient_data', observations: valid.length })
+  if (!valid.length) return unknown()
   const intervals = valid.slice(0, 6).flatMap((time, index, list) => {
     if (index === list.length - 1) return []
     const days = (time - list[index + 1]) / 86_400_000
     return days >= 2 && days <= 60 ? [days] : []
   })
-  const derived = settings.typicalGallons * mpg / settings.weeklyMiles * 7
-  const cycle = intervals.length ? median(intervals) : derived
+  if (!intervals.length && !canDerive) return unknown()
+  const cycle = intervals.length ? median(intervals) : settings.typicalGallons * mpg / settings.weeklyMiles * 7
   const confidence = intervals.length >= 3 ? 'high' : intervals.length >= 1 ? 'medium' : 'low'
   const elapsed = Math.max(0, (now.getTime() - valid[0]) / 86_400_000)
   const remaining = cycle - elapsed
@@ -92,6 +98,8 @@ export function estimateNeed(events: RefuelEvent[], settings: FuelAssistantSetti
     confidence,
     earliestDays: Math.max(0, Math.round(remaining - uncertainty)),
     latestDays: Math.max(0, Math.round(remaining + uncertainty)),
+    basis: intervals.length ? 'refuel_cadence' : mpgBasis,
+    observations: valid.length,
   }
 }
 
