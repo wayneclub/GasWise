@@ -321,3 +321,84 @@ def test_http_empty_request_starts_questions_instead_of_validation_error():
     assert result.status_code == 200
     assert result.json()["answer_field"] == "year"
     assert result.json()["selection"]["text"] == ""
+
+
+@pytest.mark.parametrize(
+    "make,query,models,expected,forbidden",
+    [
+        ("Toyota", "Corolla", ["Corolla", "Corolla Cross", "Corolla Hybrid"], "Corolla", "Corolla Cross"),
+        ("Ford", "Bronco", ["Bronco 4WD", "Bronco Sport 4WD"], "Bronco 4WD", "Bronco Sport 4WD"),
+        ("Chevrolet", "Equinox", ["Equinox AWD", "Equinox EV FWD"], "Equinox AWD", "Equinox EV FWD"),
+        ("Honda", "CR-V", ["CR-V AWD", "CR-V e-FCEV"], "CR-V AWD", "CR-V e-FCEV"),
+        ("Hyundai", "Kona", ["Kona AWD", "Kona Electric"], "Kona AWD", "Kona Electric"),
+        ("Jeep", "Wagoneer", ["Wagoneer L 4WD", "Wagoneer S AWD"], "Wagoneer L 4WD", "Wagoneer S AWD"),
+    ],
+)
+async def test_distinct_nameplates_and_unsupported_powertrains_are_not_offered(
+    make, query, models, expected, forbidden
+):
+    def market_handler(request):
+        if request.url.path.endswith("/menu/make"):
+            return httpx.Response(200, json={"menuItem": [{"text": make, "value": make}]})
+        if request.url.path.endswith("/menu/model"):
+            return httpx.Response(
+                200, json={"menuItem": [{"text": item, "value": item} for item in models]}
+            )
+        if request.url.path.endswith("/menu/options"):
+            return httpx.Response(200, json={"menuItem": {"text": "Automatic", "value": "100"}})
+        return httpx.Response(200, json={**RECORD, "id": "100", "year": "2025", "make": make, "model": expected})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(market_handler)) as client:
+        result = await VehicleSelector(VehicleProvider(client)).resolve(
+            VehicleResolveRequest(year=2025, make=make, model=query)
+        )
+    assert forbidden not in result.matched_models
+    assert all(choice.value != forbidden for choice in result.choices)
+
+
+@pytest.mark.parametrize(
+    "query,models,expected",
+    [
+        ("F-Series", ["F150 Pickup 4WD", "F-150 Lightning 4WD"], "F150 Pickup 4WD"),
+        ("3 Series", ["330i", "M340i", "530i"], "330i"),
+        ("4 Series", ["430i", "M440i", "530i"], "430i"),
+    ],
+)
+async def test_market_series_aliases_expand_only_to_members(query, models, expected):
+    make = "Ford" if query == "F-Series" else "BMW"
+
+    def series_handler(request):
+        if request.url.path.endswith("/menu/make"):
+            return httpx.Response(200, json={"menuItem": [{"text": make, "value": make}]})
+        if request.url.path.endswith("/menu/model"):
+            return httpx.Response(
+                200, json={"menuItem": [{"text": item, "value": item} for item in models]}
+            )
+        if request.url.path.endswith("/menu/options"):
+            return httpx.Response(200, json={"menuItem": {"text": "Automatic", "value": "100"}})
+        return httpx.Response(200, json={**RECORD, "id": "100", "year": "2025", "make": make, "model": expected})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(series_handler)) as client:
+        result = await VehicleSelector(VehicleProvider(client)).resolve(
+            VehicleResolveRequest(year=2025, make=make, model=query, catalog_model=expected)
+        )
+    assert result.status == "resolved"
+    assert result.vehicle.model == expected
+
+
+async def test_unsupported_vehicle_record_returns_clear_no_match():
+    def unsupported(request):
+        if request.url.path.endswith("/menu/make"):
+            return httpx.Response(200, json={"menuItem": {"text": "Example", "value": "Example"}})
+        if request.url.path.endswith("/menu/model"):
+            return httpx.Response(200, json={"menuItem": {"text": "Mystery", "value": "Mystery"}})
+        if request.url.path.endswith("/menu/options"):
+            return httpx.Response(200, json={"menuItem": {"text": "Unknown powertrain", "value": "100"}})
+        return httpx.Response(200, json={**RECORD, "id": "100", "year": "2025", "make": "Example", "model": "Mystery", "fuelType1": "Electricity"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(unsupported)) as client:
+        result = await VehicleSelector(VehicleProvider(client)).resolve(
+            VehicleResolveRequest(year=2025, make="Example", model="Mystery")
+        )
+    assert result.status == "no_match"
+    assert "不是目前支援" in result.question

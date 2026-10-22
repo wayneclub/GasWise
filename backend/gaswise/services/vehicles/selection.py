@@ -18,6 +18,28 @@ ALIASES = {
     "vw": "Volkswagen",
     "chevy": "Chevrolet",
 }
+# Market-facing series names do not always match EPA's model labels. These aliases
+# expand only to known members of that series; the user must still confirm the
+# exact EPA model and configuration.
+MODEL_QUERY_PREFIXES = {
+    ("Ford", "fseries"): ("f150",),
+    ("BMW", "3series"): ("330i", "m340i", "m3"),
+    ("BMW", "4series"): ("430i", "m440i", "m4"),
+    ("Mercedes-Benz", "gclass"): ("g550", "amgg63"),
+}
+
+# Prefix matching is useful for trims (RAV4 AWD) but these extensions are distinct
+# nameplates. Keep the list deliberately narrow and backed by market regression
+# cases instead of guessing from string length.
+SEPARATE_NAMEPLATE_PREFIXES = {
+    ("Toyota", "corolla"): ("corollacross",),
+    ("Ford", "bronco"): ("broncosport",),
+    ("Jeep", "wagoneer"): ("wagoneers",),
+}
+
+UNSUPPORTED_MODEL_PATTERN = re.compile(
+    r"\b(?:electric|ev|phev|plug[ -]?in|e[ -]?fcev|4xe|lightning)\b", re.IGNORECASE
+)
 BODY_LABELS = {
     "coupe": "Coupe 雙門",
     "convertible": "Convertible 敞篷",
@@ -90,6 +112,21 @@ def model_core(name):
             flags=re.IGNORECASE,
         )
     )
+
+
+def model_prefixes(make, base):
+    return MODEL_QUERY_PREFIXES.get((make, base), (base,))
+
+
+def is_separate_nameplate(make, base, name):
+    return any(
+        compact(name).startswith(prefix)
+        for prefix in SEPARATE_NAMEPLATE_PREFIXES.get((make, base), ())
+    )
+
+
+def unsupported_powertrain_label(name):
+    return bool(UNSUPPORTED_MODEL_PATTERN.search(name))
 
 
 class VehicleSelector:
@@ -208,12 +245,18 @@ class VehicleSelector:
         request.body_style = selected_body
         request.drivetrain = drive
         matches = []
+        prefixes = model_prefixes(make, base)
         for item in menu.items:
             name = compact(item.value)
             model_base = model_core(item.value)
-            if not model_base.startswith(base) or (
-                len(model_base) > len(base) and model_base[len(base)].isdigit()
+            matched_prefix = next((prefix for prefix in prefixes if model_base.startswith(prefix)), None)
+            if matched_prefix is None or (
+                matched_prefix[-1:].isdigit()
+                and len(model_base) > len(matched_prefix)
+                and model_base[len(matched_prefix)].isdigit()
             ):
+                continue
+            if is_separate_nameplate(make, base, item.value) or unsupported_powertrain_label(item.value):
                 continue
             if selected_body is not None and body(item.value) != selected_body:
                 continue
@@ -226,6 +269,8 @@ class VehicleSelector:
             suggestions = []
             for item in menu.items:
                 core = model_core(item.value)
+                if is_separate_nameplate(make, base, item.value) or unsupported_powertrain_label(item.value):
+                    continue
                 if selected_body is not None and body(item.value) != selected_body:
                     continue
                 if drive is not None and ("4matic" in compact(item.value)) != (drive == "4matic"):
@@ -306,7 +351,18 @@ class VehicleSelector:
                 raise ValueError("invalid_vehicle_id")
         except ValueError:
             raise ProviderError("vehicle_catalog_invalid_option") from None
-        vehicle = await self.catalog.vehicle(vehicle_id)
+        try:
+            vehicle = await self.catalog.vehicle(vehicle_id)
+        except ProviderError as error:
+            if str(error) == "vehicle_powertrain_not_supported":
+                return VehicleResolution(
+                    status="no_match",
+                    year=year,
+                    make=make,
+                    matched_models=matches,
+                    question="這個配置不是目前支援的汽油、柴油或非插電式油電車。",
+                )
+            raise
         if vehicle.year != year or vehicle.make != make or vehicle.model != matches[0]:
             raise ProviderError("vehicle_catalog_selection_mismatch")
         return VehicleResolution(
