@@ -19,9 +19,10 @@ BASE_URL = "https://www.fueleconomy.gov/ws/rest/vehicle"
 
 
 class VehicleProvider:
-    def __init__(self, client, specifications=None):
+    def __init__(self, client, specifications=None, persistent_cache=None):
         self.client = client
         self.specifications = specifications
+        self.persistent_cache = persistent_cache
         self.cache = OrderedDict()
 
     async def get(self, path, params=None):
@@ -68,6 +69,15 @@ class VehicleProvider:
         return menu.model_copy(deep=True)
 
     async def vehicle(self, vehicle_id):
+        if self.persistent_cache is not None:
+            try:
+                persisted = await self.persistent_cache.read_vehicle(vehicle_id)
+                if persisted is not None:
+                    return VehicleProfile.model_validate(persisted)
+            except Exception:  # best-effort cache boundary; EPA remains authoritative
+                # Reference-cache trouble must not make the authoritative EPA
+                # provider unavailable.
+                pass
         result = await self.get("/" + str(vehicle_id))
         if isinstance(result, VehicleProfile):
             return result
@@ -116,4 +126,9 @@ class VehicleProvider:
             )
         )
         self.remember(key, profile, ttl=900 if missing_specs else 86400)
+        if self.persistent_cache is not None:
+            try:
+                await self.persistent_cache.write_vehicle(profile)
+            except Exception:  # best-effort cache boundary; response is already valid
+                pass
         return profile.model_copy(deep=True)

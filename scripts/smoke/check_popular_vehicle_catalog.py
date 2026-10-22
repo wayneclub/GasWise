@@ -15,7 +15,9 @@ from pathlib import Path
 
 import httpx
 
+from gaswise.app.settings import Settings
 from gaswise.contracts.vehicles import VehicleResolveRequest
+from gaswise.providers.storage.postgres import PostgresPricingCache
 from gaswise.providers.vehicles.catalog import VehicleProvider
 from gaswise.services.vehicles.selection import VehicleSelector, compact
 
@@ -65,38 +67,52 @@ async def run(args):
     fixture = json.loads(Path(args.fixture).read_text())
     year = fixture["year"]
     rows = []
-    async with httpx.AsyncClient(timeout=args.timeout) as client:
-        selector = VehicleSelector(VehicleProvider(client))
-        for case in fixture["cases"]:
-            request = VehicleResolveRequest(year=year, make=case["make"], model=case["query"])
-            try:
-                result, reason = await find_supported(selector, case, request)
-                if result is None:
-                    passed = bool(case.get("expected_unavailable"))
-                    row = {**case, "status": "expected_unavailable" if passed else "failed", "reason": reason}
-                else:
-                    vehicle = result.vehicle
-                    passed = (
-                        not case.get("expected_unavailable")
-                        and vehicle.year == year
-                        and vehicle.make == case["make"]
-                        and belongs_to_case(vehicle.model, case["expected_prefixes"])
-                        and vehicle.source == "fueleconomy_gov"
-                        and vehicle.combined_mpg > 0
-                    )
-                    row = {
-                        **case,
-                        "status": "passed" if passed else "failed",
-                        "vehicle_id": vehicle.id,
-                        "resolved_model": vehicle.model,
-                        "fuel_type": vehicle.fuel_type,
-                        "combined_mpg": str(vehicle.combined_mpg),
-                    }
-            except Exception as error:  # diagnostic boundary: retain case identity
-                passed = False
-                row = {**case, "status": "failed", "reason": f"{type(error).__name__}:{error}"}
-            rows.append(row)
-            print(json.dumps(row, ensure_ascii=False, separators=(",", ":")))
+    store = None
+    if args.persist:
+        dsn = Settings().database_url.get_secret_value()
+        if not dsn:
+            raise SystemExit("--persist requires GASWISE_DATABASE_URL; no provider calls were made")
+        store = await PostgresPricingCache.connect(dsn)
+    try:
+        async with httpx.AsyncClient(timeout=args.timeout) as client:
+            selector = VehicleSelector(VehicleProvider(client, persistent_cache=store))
+            for case in fixture["cases"]:
+                request = VehicleResolveRequest(year=year, make=case["make"], model=case["query"])
+                try:
+                    result, reason = await find_supported(selector, case, request)
+                    if result is None:
+                        passed = bool(case.get("expected_unavailable"))
+                        row = {
+                            **case,
+                            "status": "expected_unavailable" if passed else "failed",
+                            "reason": reason,
+                        }
+                    else:
+                        vehicle = result.vehicle
+                        passed = (
+                            not case.get("expected_unavailable")
+                            and vehicle.year == year
+                            and vehicle.make == case["make"]
+                            and belongs_to_case(vehicle.model, case["expected_prefixes"])
+                            and vehicle.source == "fueleconomy_gov"
+                            and vehicle.combined_mpg > 0
+                        )
+                        row = {
+                            **case,
+                            "status": "passed" if passed else "failed",
+                            "vehicle_id": vehicle.id,
+                            "resolved_model": vehicle.model,
+                            "fuel_type": vehicle.fuel_type,
+                            "combined_mpg": str(vehicle.combined_mpg),
+                        }
+                except Exception as error:  # diagnostic boundary: retain case identity
+                    passed = False
+                    row = {**case, "status": "failed", "reason": f"{type(error).__name__}:{error}"}
+                rows.append(row)
+                print(json.dumps(row, ensure_ascii=False, separators=(",", ":")))
+    finally:
+        if store is not None:
+            await store.close()
 
     passed_count = sum(row["status"] in {"passed", "expected_unavailable"} for row in rows)
     summary = {
@@ -117,4 +133,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE)
     parser.add_argument("--timeout", type=float, default=20)
+    parser.add_argument(
+        "--persist",
+        action="store_true",
+        help="write validated public EPA records to the configured PostgreSQL reference cache",
+    )
     raise SystemExit(asyncio.run(run(parser.parse_args())))

@@ -49,6 +49,35 @@ class PostgresPricingCache(CollectionEvents):
                     mandatory=EXCLUDED.mandatory,request_reserve=EXCLUDED.request_reserve
                 """, job["id"], job["base"], job["source"], job["fuel"], json.dumps(job["descriptor"]), job["population_priority"], job.get("mandatory", False), job.get("request_reserve", 1))
 
+    async def read_vehicle(self, vehicle_id):
+        payload = await self.pool.fetchval(
+            """SELECT payload FROM gaswise.vehicle_records
+               WHERE vehicle_id=$1 AND source='fueleconomy_gov' AND refresh_after>now()""",
+            vehicle_id,
+        )
+        if isinstance(payload, str):
+            payload = json.loads(payload)
+        return payload
+
+    async def write_vehicle(self, vehicle, refresh_days=30):
+        await self.pool.execute(
+            """INSERT INTO gaswise.vehicle_records
+                   (vehicle_id,source,model_year,make,model,payload,fetched_at,refresh_after)
+               VALUES($1,$2,$3,$4,$5,$6::jsonb,$7,now()+make_interval(days=>$8))
+               ON CONFLICT(vehicle_id) DO UPDATE SET
+                   source=EXCLUDED.source,model_year=EXCLUDED.model_year,make=EXCLUDED.make,
+                   model=EXCLUDED.model,payload=EXCLUDED.payload,fetched_at=EXCLUDED.fetched_at,
+                   refresh_after=EXCLUDED.refresh_after,updated_at=now()""",
+            vehicle.id,
+            vehicle.source,
+            vehicle.year,
+            vehicle.make,
+            vehicle.model,
+            json.dumps(vehicle.model_dump(mode="json")),
+            vehicle.fetched_at,
+            refresh_days,
+        )
+
     async def base_jobs_pending(self, source):
         return await self.pool.fetchval("SELECT EXISTS(SELECT 1 FROM gaswise.base_collection_jobs WHERE enabled AND source=$1 AND next_due<=now())", source)
 

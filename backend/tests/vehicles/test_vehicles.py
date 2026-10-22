@@ -43,6 +43,55 @@ async def test_record_identity_units_and_bounded_cache():
         assert len(provider.cache) == 128
 
 
+async def test_persistent_vehicle_cache_avoids_repeat_epa_lookup():
+    class Cache:
+        payload = None
+        writes = 0
+
+        async def read_vehicle(self, vehicle_id):
+            assert vehicle_id == 123
+            return self.payload
+
+        async def write_vehicle(self, vehicle):
+            self.writes += 1
+            self.payload = vehicle.model_dump(mode="json")
+
+    cache = Cache()
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, json=RECORD)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        first = await VehicleProvider(client, persistent_cache=cache).vehicle(123)
+    assert cache.writes == 1
+    assert len(calls) == 1
+
+    def should_not_call_epa(request):
+        raise AssertionError("fresh persistent record should avoid an EPA request")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(should_not_call_epa)) as client:
+        cached = await VehicleProvider(client, persistent_cache=cache).vehicle(123)
+    assert cached == first
+    assert cache.writes == 1
+
+
+async def test_persistent_cache_failure_falls_back_to_epa():
+    class BrokenCache:
+        async def read_vehicle(self, vehicle_id):
+            raise RuntimeError("database unavailable")
+
+        async def write_vehicle(self, vehicle):
+            raise RuntimeError("database unavailable")
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json=RECORD))
+    ) as client:
+        vehicle = await VehicleProvider(client, persistent_cache=BrokenCache()).vehicle(123)
+    assert vehicle.id == 123
+
+
 @pytest.mark.parametrize(
     "changes",
     [

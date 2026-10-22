@@ -132,3 +132,9 @@ uv run python ../scripts/smoke/check_popular_vehicle_catalog.py
 - 前綴誤配會把 Corolla Cross、Bronco Sport、Wagoneer S 混進不同 nameplate。
 - EV／PHEV／FCEV 候選可能進入液體燃料流程，最後才丟出 provider error；現在已先排除可辨識標籤，剩餘不支援記錄會回傳清楚的 `no_match`。
 - 市場系列名稱 `F-Series`、BMW `3 Series`／`4 Series`、Mercedes-Benz `G-Class` 與 EPA model 命名不同；現在只展開成受限的系列候選，仍保留配置確認。
+
+### PostgreSQL 公共車輛快取
+
+正式環境沿用既有 PostgreSQL 的 `gaswise` schema，新增獨立 `vehicle_records` 表。它只保存公開 EPA vehicle ID 與已驗證的車輛 payload、來源、抓取時間及 30 天更新期限，不保存哪位使用者選了哪台車。服務流程是記憶體快取 → PostgreSQL 新鮮記錄 → EPA/DOE 回源；DB cache miss、過期或暫時故障時仍以 EPA 為權威來源。部署啟動後會在背景暖入本驗證集的 59 筆可支援代表配置，Ford Transit 不建立假記錄。
+
+本機不保存 production DSN；需要驗證同一批公共資料時，使用管理 SSH 金鑰建立只綁 `127.0.0.1` 的臨時 tunnel，將 server 私有 `.env` 的 DSN 只注入該次程序，完成後立即關閉。2026-10-22 已用此方式確認 59 筆記錄、12 個品牌皆為 2025 且仍在更新期限內，過程未公開 PostgreSQL port 或輸出密碼。

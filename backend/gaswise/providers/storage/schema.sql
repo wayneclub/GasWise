@@ -1,4 +1,20 @@
 CREATE SCHEMA IF NOT EXISTS gaswise;
+-- Public EPA reference data only. This table never stores a user's selected car.
+CREATE TABLE IF NOT EXISTS gaswise.vehicle_records (
+    vehicle_id integer PRIMARY KEY CHECK(vehicle_id > 0),
+    source text NOT NULL CHECK(source = 'fueleconomy_gov'),
+    model_year integer NOT NULL CHECK(model_year BETWEEN 1984 AND 2100),
+    make text NOT NULL,
+    model text NOT NULL,
+    payload jsonb NOT NULL,
+    fetched_at timestamptz NOT NULL,
+    refresh_after timestamptz NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS vehicle_records_identity
+    ON gaswise.vehicle_records(model_year,make,model);
+CREATE INDEX IF NOT EXISTS vehicle_records_refresh
+    ON gaswise.vehicle_records(refresh_after);
 CREATE TABLE IF NOT EXISTS gaswise.query_cache (
     key text PRIMARY KEY,
     source text NOT NULL,

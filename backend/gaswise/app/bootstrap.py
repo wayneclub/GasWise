@@ -42,6 +42,7 @@ from gaswise.services.pricing.hot_refresh import HotQueryRefresh
 from gaswise.services.pricing.search import SearchService
 from gaswise.services.pricing.shared_cache import SharedPricingCache
 from gaswise.services.pricing.smart import SmartService
+from gaswise.services.vehicles.popular_cache import warm_popular_vehicle_records
 
 
 @asynccontextmanager
@@ -235,6 +236,16 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
         if settings.database_url.get_secret_value():
             store = await PostgresPricingCache.connect(settings.database_url.get_secret_value())
             stack.push_async_callback(store.close)
+            if isinstance(vehicles, VehicleProvider):
+                vehicles.persistent_cache = store
+                vehicle_warm_task = asyncio.create_task(warm_popular_vehicle_records(vehicles))
+
+                async def stop_vehicle_warmup():
+                    vehicle_warm_task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await vehicle_warm_task
+
+                stack.push_async_callback(stop_vehicle_warmup)
             shared_cache = SharedPricingCache(store, settings.pricing_cache_fresh_seconds)
             stack.push_async_callback(shared_cache.close)
             budget = RequestBudget(store, {
