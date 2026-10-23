@@ -1,13 +1,16 @@
 import json
 from types import SimpleNamespace
+
 import httpx
 import pytest
 from fastapi import HTTPException
+
 from gaswise.api.locations import LocationQuery, resolve_location
 from gaswise.api.operations import OperationRunner
-from gaswise.providers.google.maps_web import MapsWebProvider
-from gaswise.providers.geocoding import LocationProvider
 from gaswise.domain.ports import ProviderError
+from gaswise.providers.geocoding import LocationProvider
+from gaswise.providers.google.maps_web import MapsWebProvider
+
 
 def row(identifier='zip', country='US', lat=34.0390107):
     data = [None] * 260
@@ -55,7 +58,8 @@ async def test_web_failures_have_no_fallback(status, body, code):
     assert len(calls) == 1
 
 def test_location_parser_rejects_unknown_country_and_invalid_coordinates():
-    malformed = row('missing'); malformed[9] = None
+    malformed = row('missing')
+    malformed[9] = None
     data = [row(), row(), row('foreign', 'CA'), row('unknown', None), row('bad', lat=100), malformed]
     parsed = LocationProvider.parse(data)
     assert len(parsed) == 1

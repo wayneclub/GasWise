@@ -1,11 +1,13 @@
 """Bounded address and US ZIP lookup. No automatic acquisition or persistence."""
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import Field
+
 from gaswise.api.dependencies import authorize, get_operations, get_services
 from gaswise.api.operations import OperationRunner
 from gaswise.app.runtime import Services
 from gaswise.contracts.common import Model, Point
 from gaswise.domain.ports import ProviderError
+
 
 class LocationQuery(Model):
     text: str = Field(min_length=3, max_length=200)

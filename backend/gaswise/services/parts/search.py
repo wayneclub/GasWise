@@ -1,9 +1,9 @@
 """Bounded retailer discovery followed by exact-SKU native vehicle checks."""
-import re
 import asyncio
+import re
 
 from gaswise.contracts.parts import PartCandidate, PartsEvidence, PartsSearchResult
-from gaswise.providers.parts.autozone import AutoZoneParts, BASE, HEADERS, ROOT, load
+from gaswise.providers.parts.autozone import BASE, HEADERS, ROOT, AutoZoneParts, load
 from gaswise.providers.vehicles.plate import AutoZonePlateProvider
 
 
