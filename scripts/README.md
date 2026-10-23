@@ -41,6 +41,8 @@ uv run python ../scripts/smoke/smoke_public_specifications.py --help
 | --- | --- |
 | `diagnostics/gasbuddy/probe_gasbuddy_browserless.py` | Compare clean HTTP transports; network and curl |
 | `diagnostics/source_reachability.py` | Matched local/server AAA and GasBuddy probes; safe response metadata only |
+| `diagnostics/egress_lanes.py` | Prove each pricing egress lane with an HTTPS 200 and a US location; proxy credentials are redacted |
+| `diagnostics/pricing_baseline.py` | Repeat the browser's Smart search request and report latency, per-source quote counts, coverage and upstream calls |
 | `diagnostics/gasbuddy/probe_gasbuddy_session.py` | Compare browser loading and session HTTP; Playwright and Chrome |
 | `diagnostics/waze/check_waze_browser.py` | Browser endpoint probe; Playwright and Chrome |
 | `diagnostics/waze/check_waze_fuel.py` | HTTP fuel endpoint/session probe; network |

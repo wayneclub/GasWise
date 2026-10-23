@@ -29,7 +29,10 @@ def shared_viewport(point, radius):
     return centre, min(50000, shared_radius)
 
 
-MAPS_WAVE = 6
+# Live production probe: 6-wide waves needed five sequential rounds for the 20-request
+# budget and proved 74% of an 8 km area; wider waves finished in fewer rounds and proved
+# 84%. Eight keeps a bounded burst while removing the extra round trip.
+MAPS_WAVE = 8
 MAPS_CACHE_SECONDS = 300
 
 
@@ -71,6 +74,13 @@ async def discover_maps(service, search, query):
             break
         points, radius = coverage.wave(min(MAPS_WAVE, remaining))
         batch = [(point, radius) for point in points]
+    if outcomes and all(
+        isinstance(item, ProviderError) and str(item) == "pricing_egress_unavailable"
+        for item in outcomes
+    ):
+        # No verified US lane: surface the deferral itself instead of a generic
+        # discovery failure so callers keep the actionable code.
+        raise ProviderError("pricing_egress_unavailable")
     return outcomes, coverage.fraction()
 
 

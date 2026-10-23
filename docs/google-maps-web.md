@@ -34,7 +34,7 @@ Anonymous operation remains available for Regular summaries. Full fuel coverage 
 
 `detail_limit` defaults to **0**. A normal query makes **one search request** and returns all available fuel grades. There are no retries, polling, pagination, browser fallback or paid API fallback.
 
-Explicitly setting `detail_limit` (0–10) allows bounded sequential place-detail requests for missing non-Regular prices among returned candidates. Already priced stations are skipped; any provider error stops further enrichment. The response preserves discovered inventory and warns about failures. An identity mismatch never assigns another station's prices. Regular queries use search data only.
+Explicitly setting `detail_limit` (0–10) allows bounded place-detail requests for missing non-Regular prices among returned candidates. One request runs alone first so a rejected session ends enrichment immediately; the remaining candidates run in bursts of four. Already priced stations are skipped; any provider error stops later bursts. The response preserves discovered inventory and warns about failures. An identity mismatch never assigns another station's prices. Regular queries use search data only.
 
 ## Private session configuration
 

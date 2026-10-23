@@ -138,6 +138,9 @@ class BaseCollection:
             local_reasons = {f"{job.source}_{suffix}" for suffix in (
                 "mandatory_budget_reserved", "background_daily_budget_exhausted", "background_budget_exhausted",
                 "request_budget_exhausted", "background_wait_exhausted")}
+            # An operator-side lane outage is not a provider failure: retry soon
+            # instead of backing the job off for an hour.
+            local_reasons.add("pricing_egress_unavailable")
             deferred = isinstance(error, ProviderError) and reason in local_reasons
             if not deferred:
                 attempt['failure_code'] = safe_failure_code(error)

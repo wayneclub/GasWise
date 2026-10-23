@@ -1,4 +1,12 @@
-"""Pinned per-query egress sessions. Source budgets remain global, with no HTTP failover."""
+"""Pinned per-query egress sessions. Source budgets remain global, with no HTTP failover.
+
+Lane availability comes from the operator-owned heartbeat produced by the VPN
+supervisor. A query resolves one lane before provider HTTP and keeps it for every
+page, so a lane is never switched mid-query. When no lane is usable the source
+defers with ``pricing_egress_unavailable`` instead of making an unverified direct
+request; the diagnostic in ``scripts/diagnostics/egress_lanes.py`` proves a lane
+with an HTTPS 200 and a US location rather than container health alone.
+"""
 import hashlib
 import json
 import time
@@ -7,6 +15,7 @@ from pathlib import Path
 
 import httpx
 
+from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.shared_cache import collection_attempt, collection_egress_key
 from gaswise.providers.gasbuddy.http_session import GasBuddyHTTPSession
 from gaswise.providers.http.curl_client import CurlHTTPClient
@@ -47,7 +56,9 @@ def selected_lane(size, health_file=None):
             unavailable = set(range(1, size))
     available = [index for index in range(size) if index not in unavailable]
     if not available:
-        raise ValueError('pricing_egress_unavailable')
+        # A source failure, not a programming error: callers report the source as
+        # deferred and the ranking keeps other evidence instead of returning 500.
+        raise ProviderError('pricing_egress_unavailable')
     index = lane_index(size)
     if index not in available:
         index = available[0]

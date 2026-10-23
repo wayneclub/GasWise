@@ -147,6 +147,18 @@ async def test_local_budget_deferrals_preserve_provider_health(reason):
     assert not background_acquisition.get()
 
 
+async def test_lane_outage_defers_quickly_without_marking_provider_failure():
+    from gaswise.domain.ports import ProviderError
+    collector, cache, provider = setup()
+    await collector.initialize()
+    async def deferred(*args, **kwargs):
+        raise ProviderError("pricing_egress_unavailable")
+    cache.get = deferred
+    assert not await collector.step()
+    # Operator-side lane outage: retry in a minute, not an hour, with no failure code.
+    assert cache.saved[0][2:4] == (60, "pricing_egress_unavailable")
+
+
 async def test_pacing_pauses_optional_jobs_but_allows_due_mandatory_work():
     collector, cache, provider = setup()
     await collector.initialize()

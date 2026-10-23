@@ -28,6 +28,16 @@ describe('searchBody', () => {
       mpg: '25',
     })
   })
+
+  it('requests extra GasBuddy pages only for grades Maps summaries omit', () => {
+    expect(searchBody({ ...DEFAULT_PREFS }, origin).gasbuddy_page_limit).toBe(3)
+    expect(searchBody({ ...DEFAULT_PREFS, fuelType: 'premium' }, origin).gasbuddy_page_limit).toBe(5)
+    const vehicle = searchBody(
+      { ...DEFAULT_PREFS, vehicle: { id: 40000, label: 'E400', fuelType: 'premium', combinedMpg: '22' } },
+      origin,
+    )
+    expect(vehicle.gasbuddy_page_limit).toBe(5)
+  })
 })
 
 describe('navigationUrl', () => {

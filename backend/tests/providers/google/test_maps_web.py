@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 import httpx
@@ -213,6 +214,87 @@ async def test_detail_rejection_stops_remaining_requests(tmp_path):
     assert "google_maps_web_session_rejected" in result.warnings
     assert not result.stations
     assert "private-fixture" not in result.model_dump_json()
+    assert "secret server body" not in result.model_dump_json()
+
+
+def detail_rows(count):
+    # One priced Regular summary per station; full fuel tables arrive from details.
+    rows = []
+    for index in range(count):
+        row = record()
+        row[10] = f"0xabc{index}:0xdef{index}"
+        row[78] = f"place-{index}"
+        row[11] = f"Station {index}"
+        rows.append(row)
+    return rows
+
+
+def detail_payload(rows, place):
+    row = record()
+    row[78] = place
+    row[86] = [[["$6.96", 5, 1791544992, "gallon", 0, "USD", 6.96, "Premium"]], 3]
+    return httpx.Response(200, text=")]}'\n" + json.dumps([row]))
+
+
+async def test_detail_enrichment_is_bounded_but_concurrent(tmp_path):
+    rows = detail_rows(5)
+    places = {row[11]: row[78] for row in rows}
+    calls = []
+
+    def answer(request):
+        calls.append(request.url.path)
+        if request.url.path == "/search":
+            return httpx.Response(200, text=")]}'\n" + json.dumps(rows))
+        return detail_payload(rows, places[request.url.params["q"]])
+
+    class Tracking(httpx.AsyncBaseTransport):
+        active = peak = 0
+
+        async def handle_async_request(self, request):
+            if request.url.path == "/search":
+                return answer(request)
+            type(self).active += 1
+            type(self).peak = max(type(self).peak, type(self).active)
+            try:
+                await asyncio.sleep(0.01)  # Hold the request open so overlap is observable.
+                return answer(request)
+            finally:
+                type(self).active -= 1
+
+    async with httpx.AsyncClient(transport=Tracking()) as client:
+        result = await MapsWebProvider(client, session_file(tmp_path)).prices(
+            query(fuel_type="premium", detail_limit=5)
+        )
+    # The first request is solo; the other four run as one bounded burst.
+    assert Tracking.peak == 4
+    assert result.detail_requests == 5
+    assert result.upstream_http_requests == 6
+    assert len(result.stations) == 5
+    assert calls.count("/maps/preview/place") == 5
+
+
+async def test_rejection_inside_a_detail_burst_stops_later_chunks(tmp_path):
+    rows = detail_rows(9)
+    places = {row[11]: row[78] for row in rows}
+    detail_calls = []
+
+    def answer(request):
+        if request.url.path == "/search":
+            return httpx.Response(200, text=")]}'\n" + json.dumps(rows))
+        detail_calls.append(request)
+        if request.url.params["q"] == "Station 2":
+            return httpx.Response(403, text="secret server body must not leak")
+        return detail_payload(rows, places[request.url.params["q"]])
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(answer)) as client:
+        result = await MapsWebProvider(client, session_file(tmp_path)).prices(
+            query(fuel_type="premium", detail_limit=9)
+        )
+    # Solo first request, then one four-wide chunk that contains the rejection.
+    # The final chunk of four is never sent.
+    assert len(detail_calls) == 5
+    assert result.detail_requests == 5
+    assert "google_maps_web_session_rejected" in result.warnings
     assert "secret server body" not in result.model_dump_json()
 
 

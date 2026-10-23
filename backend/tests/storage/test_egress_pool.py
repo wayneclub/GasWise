@@ -134,3 +134,19 @@ def test_missing_or_stale_heartbeat_keeps_new_queries_on_primary(tmp_path):
         assert selected_lane(2, stale) == 0
     finally:
         collection_egress_key.reset(token)
+
+
+def test_no_available_lane_defers_as_a_source_failure(tmp_path):
+    import json
+
+    from gaswise.providers.http.egress_pool import selected_lane
+    path = tmp_path / 'health.json'
+    path.write_text(json.dumps({'unavailable_lanes': [0, 1]}))
+    token = collection_egress_key.set(keys_for_lanes()[0])
+    try:
+        # Every lane is offline: the source defers instead of raising a
+        # programming error that the API would report as an unhandled 500.
+        with pytest.raises(ProviderError, match='^pricing_egress_unavailable$'):
+            selected_lane(2, path)
+    finally:
+        collection_egress_key.reset(token)

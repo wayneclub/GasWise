@@ -44,7 +44,11 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
     route_limit: 20,
     estimate_unrouted_routes: true,
     discovery_tiles: 20,
-    gasbuddy_page_limit: 3,
+    // Maps website summaries only publish Regular, so non-regular searches rely on
+    // GasBuddy/Waze for grade-specific quotes. Five pages measured 87 vs 39 raw
+    // premium quotes and 30 vs 14 eligible stations; Regular already has Maps
+    // coverage, where extra pages added no eligible stations.
+    gasbuddy_page_limit: (prefs.vehicle?.fuelType ?? prefs.fuelType) === 'regular' ? 3 : 5,
     station_lookup_limit: 5,
     maps_detail_limit: 5,
     trip_mode: prefs.tripMode,

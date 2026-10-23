@@ -5,6 +5,7 @@ challenge bypass, retries, or automatic paid fallback. Optional authorized
 Google session cookies are read only from a private local file.
 """
 
+import asyncio
 import json
 import math
 import re
@@ -22,6 +23,10 @@ from gaswise.providers.google.session_renewal import renew_session
 
 # Verified website numeric values and labels; do not infer pump octane from them.
 WEB_FUEL_TYPES = {1: "diesel", 3: "regular", 4: "midgrade", 5: "premium"}
+
+# Detail lookups are independent once their candidates are known. Keep the burst
+# small because the same session and per-minute source budget are shared.
+DETAIL_CONCURRENCY = 4
 
 FEATURES = "!12m25!1m5!18b1!30b1!31m1!1b1!34e1!2m4!5m1!6e2!20e3!39b1!10b1!12b1!13b1!16b1!17m1!3e1!20m3!5e2!6b1!14b1!46m1!1b0!96b1!99b1!24m109!1m27!13m9!2b1!3b1!4b1!6i1!8b1!9b1!14b1!20b1!25b1!18m16!3b1!4b1!5b1!6b1!9b1!13b1!14b1!17b1!20b1!21b1!22b1!32b1!33m1!1b1!34b1!36e2!10m1!8e3!11m1!3e1!17b1!20m2!1e3!1e6!24b1!25b1!26b1!27b1!29b1!30m1!2b1!36b1!37b1!39m3!2m2!2i1!3i1!43b1!52b1!54m1!1b1!55b1!56m1!1b1!61m2!1m1!1e1!65m5!3m4!1m3!1m2!1i224!2i298!72m22!1m8!2b1!5b1!7b1!12m4!1b1!2b1!4m1!1e1!4b1!8m10!1m6!4m1!1e1!4m1!1e3!4m1!1e4!3sother_user_google_review_posts__and__hotel_and_vr_partner_review_posts!6m1!1e1!9b1!89b1!90m2!1m1!1e2!98m3!1b1!2b1!3b1!103b1!113b1!114m3!1b1!2m1!1b1!117b1!122m1!1b1!126b1!127b1!128m1!1b1"
 
@@ -194,39 +199,62 @@ class MapsWebProvider:
                 indexed.setdefault(row[78], row)
         priced = {s.canonical_id for s in initial.stations}
         count, warnings = 0, []
+        candidates = []
         # Regular search cards stay a single request. Other grades get bounded detail enrichment.
         if self.session_file is not None and query.fuel_type != "regular":
             for candidate in initial.inventory:
-                if count >= query.detail_limit:
+                if len(candidates) >= query.detail_limit:
                     break
                 if "google_places:" + candidate.place_id in priced:
                     continue
-                row = indexed[candidate.place_id]
-                if not re.fullmatch(r"0x[0-9a-f]+:0x[0-9a-f]+", row[10], re.IGNORECASE):
+                row = indexed.get(candidate.place_id)
+                if row is None or not re.fullmatch(r"0x[0-9a-f]+:0x[0-9a-f]+", row[10], re.IGNORECASE):
                     continue
-                detail_pb = (
-                    f"!1m6!1s{row[10]}!3m1!1d1000!4m2!3d{candidate.location.lat}!4d{candidate.location.lng}"
-                    "!3m1!1e3" + DETAIL_FEATURES
-                )
-                count += 1
-                try:
-                    detail = await self.get_data(
-                        "/maps/preview/place",
-                        {
-                            "authuser": "0",
-                            "hl": "en",
-                            "gl": "us",
-                            "pb": detail_pb,
-                            "q": candidate.name,
-                        },
-                        headers,
-                    )
-                    matching = [r for r in records(detail) if r[78] == candidate.place_id]
-                    if not matching:
-                        raise ProviderError("google_maps_web_detail_identity_mismatch")
-                    row[86] = matching[0][86]
-                except ProviderError as error:
-                    warnings.append(str(error))
+                candidates.append((candidate, row))
+
+        async def enrich(candidate, row):
+            detail_pb = (
+                f"!1m6!1s{row[10]}!3m1!1d1000!4m2!3d{candidate.location.lat}!4d{candidate.location.lng}"
+                "!3m1!1e3" + DETAIL_FEATURES
+            )
+            detail = await self.get_data(
+                "/maps/preview/place",
+                {
+                    "authuser": "0",
+                    "hl": "en",
+                    "gl": "us",
+                    "pb": detail_pb,
+                    "q": candidate.name,
+                },
+                headers,
+            )
+            matching = [r for r in records(detail) if r[78] == candidate.place_id]
+            if not matching:
+                raise ProviderError("google_maps_web_detail_identity_mismatch")
+            row[86] = matching[0][86]
+
+        if candidates:
+            # The first detail request stays solo so a rejected/limited session ends
+            # enrichment before any burst. The remaining bounded requests run
+            # together: five sequential requests measured ~1.7s versus ~0.4s.
+            try:
+                await enrich(*candidates[0])
+                count = 1
+            except ProviderError as error:
+                warnings.append(str(error))
+                count = 1
+                candidates = []
+            rest = candidates[1:]
+            for start in range(0, len(rest), DETAIL_CONCURRENCY):
+                chunk = rest[start:start + DETAIL_CONCURRENCY]
+                outcomes = await asyncio.gather(*(enrich(*item) for item in chunk), return_exceptions=True)
+                count += len(chunk)
+                errors = [item for item in outcomes if isinstance(item, ProviderError)]
+                warnings.extend(str(item) for item in errors)
+                for outcome in outcomes:
+                    if isinstance(outcome, BaseException) and not isinstance(outcome, ProviderError):
+                        raise outcome
+                if errors:
                     # A rejected/limited request ends enrichment, avoiding repeated failures.
                     break
         result = self.parse(data, query)

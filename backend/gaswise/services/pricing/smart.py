@@ -144,9 +144,16 @@ class SmartService:
         self.base_collection = None
         self.inflight = {}
         self.waiters = {}
-        self.source_slots = {"gasbuddy": asyncio.Semaphore(1), "maps": asyncio.Semaphore(6), "waze": asyncio.Semaphore(2), "aaa": asyncio.Semaphore(1)}
+        # Maps discovery runs one whole-area request and then waves of nearest
+        # unproven points. Measured production first searches spent ~4.5s in four
+        # sequential six-wide waves; the wave width and slot count must agree or
+        # the extra tiles simply queue. Per-source minute budgets still apply.
+        self.source_slots = {"gasbuddy": asyncio.Semaphore(1), "maps": asyncio.Semaphore(8), "waze": asyncio.Semaphore(2), "aaa": asyncio.Semaphore(1)}
         self.background_gasbuddy_slot = asyncio.Semaphore(1)
-        self.route_slots = asyncio.Semaphore(4)
+        # Each station route is two dependent website requests. A live 20-route
+        # search took ~5.3s at four slots; eight keeps the same bounded shortlist
+        # but halves the number of waves. Routes are cached for 300s.
+        self.route_slots = asyncio.Semaphore(8)
         self.cache = TTLCache()
         self.failures = TTLCache(capacity=64)
         self.source_failures = TTLCache(capacity=16)
@@ -543,6 +550,10 @@ class SmartService:
                     calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(getattr(error, "cache_hit", False))
                     statuses.append(SourceStatus(source="waze", status="unavailable", detail=str(error)))
             if not any(s.status == "ok" for s in statuses):
+                # Preserve the actionable deferral code when every configured source
+                # failed because no verified US pricing lane was available.
+                if statuses and all(s.detail == "pricing_egress_unavailable" for s in statuses):
+                    raise ProviderError("pricing_egress_unavailable")
                 raise ProviderError("smart_price_sources_unavailable")
         if self.top_tier is not None:
             # Tagged once at acquisition and signed with the snapshot; reranks reuse the tags.

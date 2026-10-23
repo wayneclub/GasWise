@@ -341,6 +341,39 @@ async def test_maps_failure_preserves_raw_gasbuddy_and_waze_without_paid_fallbac
     )
 
 
+class NoLane:
+    def __init__(self, error="pricing_egress_unavailable"):
+        self.error = error
+
+    async def prices(self, query):
+        raise ProviderError(self.error)
+
+    async def stations(self, query):
+        raise ProviderError(self.error)
+
+
+async def test_all_sources_without_a_verified_lane_defer_with_the_lane_code():
+    service = SmartService(
+        b"test", "prices_only", gasbuddy=NoLane(), maps_web=NoLane(), waze=NoLane()
+    )
+    with pytest.raises(ProviderError) as error:
+        await service.search(SmartSearch(origin=Point(lat=34, lng=-118)))
+    # Every failure carries the actionable lane code, not a generic outage.
+    assert str(error.value) == "pricing_egress_unavailable"
+
+
+async def test_mixed_source_failures_keep_the_existing_unavailable_code():
+    service = SmartService(
+        b"test",
+        "prices_only",
+        gasbuddy=NoLane("gasbuddy_http_unavailable"),
+        maps_web=NoLane("google_maps_web_unavailable"),
+        waze=NoLane("waze_upstream_unavailable"),
+    )
+    with pytest.raises(ProviderError, match="^smart_price_sources_unavailable$"):
+        await service.search(SmartSearch(origin=Point(lat=34, lng=-118)))
+
+
 async def test_unknown_only_sources_do_not_rank_unless_explicitly_allowed():
     router = CountingProvider()
     service = SmartService(b"test", "google", maps_web=MapsInventory(), waze=WazeQuotes(), router=router)
