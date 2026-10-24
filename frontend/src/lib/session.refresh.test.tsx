@@ -52,6 +52,47 @@ it('shows a one-page cold result before optimistically replacing it with backgro
   expect(session.result.current.result?.signature).toBe(enriched.signature)
 })
 
+it('starts cold searches immediately and applies each polled source revision', async () => {
+  vi.useFakeTimers()
+  const partial = structuredClone(fixture) as unknown as SmartResult
+  partial.signature = 'a'.repeat(64)
+  partial.snapshot.acquisition_options = { gasbuddy_page_limit: 3 }
+  partial.ranking?.results.forEach((row) => { row.route.source = 'google_maps_routes_web' })
+  const complete = structuredClone(partial)
+  complete.signature = 'b'.repeat(64)
+  const fetch = vi.spyOn(globalThis, 'fetch')
+    .mockResolvedValueOnce(new Response(JSON.stringify({
+      job_id: 'job-12345678901234567890', status: 'pending', revision: 0,
+      completed_sources: [], result: null, error: null,
+    })))
+    .mockResolvedValueOnce(new Response(JSON.stringify({
+      job_id: 'job-12345678901234567890', status: 'partial', revision: 1,
+      completed_sources: ['maps'], result: partial, error: null,
+    })))
+    .mockResolvedValueOnce(new Response(JSON.stringify({
+      job_id: 'job-12345678901234567890', status: 'complete', revision: 2,
+      completed_sources: ['maps', 'waze'], result: complete, error: null,
+    })))
+  const session = renderHook(() => useFuelSession(DEFAULT_PREFS))
+
+  let started!: Promise<void>
+  act(() => { started = session.result.current.start({ override: { lat: 34, lng: -118 } }) })
+  await act(async () => {})
+  expect(session.result.current.phase).toBe('searching')
+  expect(session.result.current.result).toBeNull()
+  expect(fetch.mock.calls[0][0]).toBe('/api/v1/smart/search-jobs/start')
+
+  await act(async () => vi.advanceTimersByTimeAsync(500))
+  expect(session.result.current.phase).toBe('ready')
+  expect(session.result.current.result?.signature).toBe(partial.signature)
+  expect(fetch.mock.calls[1][0]).toBe('/api/v1/smart/search-jobs/poll')
+
+  await act(async () => vi.advanceTimersByTimeAsync(500))
+  await act(async () => started)
+  expect(session.result.current.result?.signature).toBe(complete.signature)
+  expect(fetch).toHaveBeenCalledTimes(3)
+})
+
 it('keeps the displayed snapshot on update failure and backs off instead of looping', async () => {
   vi.useFakeTimers()
   vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')

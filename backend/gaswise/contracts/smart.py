@@ -21,6 +21,11 @@ class SmartSearch(Search):
     maps_detail_limit: int = Field(default=0, ge=0, le=5)
 
 
+class ProgressiveSearchPoll(Model):
+    job_id: str = Field(min_length=20, max_length=80)
+    after_revision: int = Field(default=0, ge=0)
+
+
 class SnapshotRoute(Model):
     via: Point
     route: Route
@@ -121,6 +126,15 @@ class SmartRerank(Model):
     options: RankOptions
 
 
+class ProgressiveSearchState(Model):
+    job_id: str
+    status: Literal["pending", "partial", "complete", "failed"]
+    revision: int = Field(ge=0)
+    completed_sources: list[str] = Field(default_factory=list, max_length=5)
+    result: SmartResult | None = None
+    error: str | None = None
+
+
 class SmartPriceRefresh(Model):
     snapshot: SmartSnapshot
     signature: str = Field(min_length=64, max_length=64)
@@ -138,5 +152,6 @@ RankOptions.model_rebuild()
 SnapshotRoute.model_rebuild()
 SmartSnapshot.model_rebuild()
 SmartResult.model_rebuild()
+ProgressiveSearchState.model_rebuild()
 SmartRerank.model_rebuild()
 SmartRouteRequest.model_rebuild()

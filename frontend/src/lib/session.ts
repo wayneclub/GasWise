@@ -63,6 +63,30 @@ export function backgroundGasBuddyPageLimit(prefs: Prefs): number {
   return (prefs.vehicle?.fuelType ?? prefs.fuelType) === 'regular' ? 3 : 5
 }
 
+async function progressiveSearch(
+  body: SmartSearchBody,
+  signal: AbortSignal,
+  onRevision: (result: SmartResult) => void,
+): Promise<SmartResult> {
+  const started = await api.startSearchJob(body, signal)
+  // Test/dev adapters created before the job API may still return a SmartResult directly.
+  if ('snapshot' in (started as unknown as object)) return started as unknown as SmartResult
+  let state = started
+  let revision = 0
+  while (!signal.aborted) {
+    if (state.result && state.revision > revision) {
+      revision = state.revision
+      onRevision(state.result)
+    }
+    if (state.status === 'complete' && state.result) return state.result
+    if (state.status === 'failed') throw new ApiError(503, state.error ?? 'progressive_search_failed')
+    await new Promise((resolve) => window.setTimeout(resolve, 500))
+    if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
+    state = await api.pollSearchJob(state.job_id, revision, signal)
+  }
+  throw new DOMException('Aborted', 'AbortError')
+}
+
 /** Ask the browser only after a tap when permission was never granted, so the prompt has context. */
 async function permissionState(): Promise<PermissionState | 'unknown'> {
   try {
@@ -179,7 +203,16 @@ export function useFuelSession(prefs: Prefs, active = true) {
           next = await api.search({ ...body, force_refresh: false }, abort.signal)
         }
       } else {
-        next = await api.search({ ...body, force_refresh: force }, abort.signal)
+        next = await progressiveSearch(
+          { ...body, force_refresh: force },
+          abort.signal,
+          (revision) => {
+            if (abort.signal.aborted) return
+            setResult(revision)
+            setExpired(false)
+            setPhase('ready')
+          },
+        )
       }
       if (abort.signal.aborted) return
       lastRankKey.current = JSON.stringify(rankOptions(requestedPrefs))

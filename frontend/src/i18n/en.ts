@@ -188,7 +188,7 @@ export const en = {
   'decide.expired': 'These prices expired after 10 minutes.',
   'decide.rerankFailed': 'Could not recalculate. The figures below use your previous settings.',
   'decide.locating': 'Finding your location',
-  'decide.searching': 'Checking prices and driving distances',
+  'decide.searching': 'Filling in live fuel prices',
   'decide.sources': 'Prices from {sources}. Collected {age}.',
   'decide.noSource': 'no source',
   'decide.coverage': 'Based on {usable} of {total} nearby stations.',

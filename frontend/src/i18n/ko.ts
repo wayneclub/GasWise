@@ -176,7 +176,7 @@ export const ko: Record<MessageKey, string> = {
   "decide.expired": "이 가격은 10분이 지나 만료되었습니다.",
   "decide.rerankFailed": "다시 계산하지 못했습니다. 아래 수치는 이전 설정을 기준으로 합니다.",
   "decide.locating": "현재 위치 확인 중",
-  "decide.searching": "가격과 주행 거리 확인 중",
+  "decide.searching": "연료 가격을 불러오는 중",
   "decide.sources": "가격 출처: {sources}. 수집: {age}.",
   "decide.noSource": "출처 없음",
   "decide.coverage": "주변 {total}곳 중 {usable}곳을 기준으로 비교합니다.",

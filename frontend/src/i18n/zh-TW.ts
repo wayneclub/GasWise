@@ -188,7 +188,7 @@ export const zhTW: Record<MessageKey, string> = {
   'decide.expired': '這批油價已超過 10 分鐘。',
   'decide.rerankFailed': '無法重新計算，下方數字仍是先前設定的結果。',
   'decide.locating': '正在取得你的位置',
-  'decide.searching': '正在比對油價與行車距離',
+  'decide.searching': '正在補齊油價',
   'decide.sources': '油價來源：{sources}。{age}取得。',
   'decide.noSource': '無',
   'decide.coverage': '依據附近 {total} 家中的 {usable} 家。',

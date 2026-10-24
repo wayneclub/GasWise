@@ -1276,6 +1276,92 @@
         }
       }
     },
+    "/v1/smart/search-jobs/start": {
+      "post": {
+        "summary": "Smart Search Job Start",
+        "operationId": "smart_search_job_start_v1_smart_search_jobs_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmartSearch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressiveSearchState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/smart/search-jobs/poll": {
+      "post": {
+        "summary": "Smart Search Job Poll",
+        "operationId": "smart_search_job_poll_v1_smart_search_jobs_poll_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressiveSearchPoll"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressiveSearchState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/smart/search": {
       "post": {
         "summary": "Smart Search",
@@ -2228,7 +2314,7 @@
         "properties": {
           "page_requests": {
             "type": "integer",
-            "maximum": 5.0,
+            "maximum": 10.0,
             "minimum": 1.0,
             "title": "Page Requests",
             "default": 1
@@ -2623,7 +2709,7 @@
         "properties": {
           "max_pages": {
             "type": "integer",
-            "maximum": 5.0,
+            "maximum": 10.0,
             "minimum": 1.0,
             "title": "Max Pages",
             "default": 1
@@ -2716,7 +2802,7 @@
           },
           "max_results": {
             "type": "integer",
-            "maximum": 100.0,
+            "maximum": 200.0,
             "minimum": 1.0,
             "title": "Max Results",
             "default": 5
@@ -4387,6 +4473,88 @@
           "octane"
         ],
         "title": "PriceObservation"
+      },
+      "ProgressiveSearchPoll": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 20,
+            "title": "Job Id"
+          },
+          "after_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "After Revision",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "ProgressiveSearchPoll"
+      },
+      "ProgressiveSearchState": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "partial",
+              "complete",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision"
+          },
+          "completed_sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Completed Sources"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SmartResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "revision"
+        ],
+        "title": "ProgressiveSearchState"
       },
       "PushKeys": {
         "properties": {

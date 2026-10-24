@@ -188,7 +188,7 @@ export const es: Record<MessageKey, string> = {
   'decide.expired': 'Estos precios vencieron después de 10 minutos.',
   'decide.rerankFailed': 'No se pudo recalcular. Las cifras usan tu configuración anterior.',
   'decide.locating': 'Buscando tu ubicación',
-  'decide.searching': 'Revisando precios y distancias',
+  'decide.searching': 'Completando precios de combustible',
   'decide.sources': 'Precios de {sources}. Obtenidos {age}.',
   'decide.noSource': 'ninguna fuente',
   'decide.coverage': 'Basado en {usable} de {total} gasolineras cercanas.',

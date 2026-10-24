@@ -4,6 +4,7 @@ import type {
   SmartResult,
   SmartSearchBody,
   SmartSnapshot,
+  ProgressiveSearchState,
   VehicleResolution,
   VehicleResolveRequest,
 } from './types'
@@ -71,6 +72,12 @@ export const api = {
   /** Stage 1+2: one price acquisition plus a bounded route shortlist. Consumes upstream quota. */
   search: (body: SmartSearchBody, signal?: AbortSignal) =>
     post<SmartResult>('/v1/smart/search', body, signal),
+
+  startSearchJob: (body: SmartSearchBody, signal?: AbortSignal) =>
+    post<ProgressiveSearchState>('/v1/smart/search-jobs/start', body, signal),
+
+  pollSearchJob: (jobId: string, afterRevision: number, signal?: AbortSignal) =>
+    post<ProgressiveSearchState>('/v1/smart/search-jobs/poll', { job_id: jobId, after_revision: afterRevision }, signal),
 
   /** Read shared source data while preserving the trip and still-fresh routes. */
   refreshPrices: (snapshot: SmartSnapshot, signature: string, options: Partial<RankOptions>, signal?: AbortSignal) =>

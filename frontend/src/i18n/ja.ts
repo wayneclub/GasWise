@@ -176,7 +176,7 @@ export const ja: Record<MessageKey, string> = {
   "decide.expired": "この価格は10分経過したため期限切れです。",
   "decide.rerankFailed": "再計算できませんでした。以下の数値は前の設定に基づいています。",
   "decide.locating": "現在地を取得中",
-  "decide.searching": "価格と走行距離を確認中",
+  "decide.searching": "燃料価格を取得中",
   "decide.sources": "価格の情報源：{sources}。収集：{age}。",
   "decide.noSource": "情報源なし",
   "decide.coverage": "近隣{total}か所中{usable}か所を基に比較。",

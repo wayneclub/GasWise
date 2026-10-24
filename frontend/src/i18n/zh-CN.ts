@@ -188,7 +188,7 @@ export const zhCN: Record<MessageKey, string> = {
   'decide.expired': '这批油价已超过 10 分钟。',
   'decide.rerankFailed': '无法重新计算，下方数字仍是先前设置的结果。',
   'decide.locating': '正在取得你的位置',
-  'decide.searching': '正在比对油价与行车距离',
+  'decide.searching': '正在补齐油价',
   'decide.sources': '油价来源：{sources}。{age}取得。',
   'decide.noSource': '无',
   'decide.coverage': '依据附近 {total} 家中的 {usable} 家。',

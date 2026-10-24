@@ -170,6 +170,78 @@ def test_smart_http_auth_and_input_contract():
         assert client.post("/v1/smart/rerank", json=rerank, headers=headers).status_code == 422
 
 
+def test_progressive_search_job_returns_before_slow_source_and_polls_completed_result():
+    class SlowProvider(CountingProvider):
+        async def stations(self, query):
+            await asyncio.sleep(.2)
+            return await super().stations(query)
+
+    with TestClient(create_app(Settings(api_token="secret"), SlowProvider())) as client:
+        headers = {"Authorization": "Bearer secret"}
+        started = client.post(
+            "/v1/smart/search-jobs/start",
+            headers=headers,
+            json={"origin": {"lat": 34, "lng": -118}, "calculate_routes": True},
+        )
+        assert started.status_code == 200
+        job = started.json()
+        assert job["status"] == "pending" and job["revision"] == 0 and job["result"] is None
+
+        response = None
+        for _ in range(20):
+            response = client.post(
+                "/v1/smart/search-jobs/poll",
+                headers=headers,
+                json={"job_id": job["job_id"], "after_revision": 0},
+            )
+            if response.json()["status"] == "complete":
+                break
+            __import__("time").sleep(.02)
+        assert response is not None and response.status_code == 200
+        completed = response.json()
+        assert completed["status"] == "complete" and completed["revision"] == 1
+        assert completed["result"]["ranking"]["results"]
+
+
+async def test_progressive_search_publishes_each_live_source_as_a_revision():
+    class SlowWaze(WazeQuotes):
+        async def stations(self, query):
+            await asyncio.sleep(.1)
+            return await super().stations(query)
+
+    service = SmartService(
+        b"test", "prices_only", maps_web=MapsInventory(), waze=SlowWaze(), router=CountingProvider()
+    )
+    started = await service.start_progressive_search(
+        SmartSearch(
+            origin=Point(lat=34, lng=-118),
+            fuel_type="premium",
+            calculate_routes=True,
+            allow_unknown_payment=True,
+        )
+    )
+    assert started.revision == 0
+    partial = None
+    for _ in range(20):
+        await asyncio.sleep(.01)
+        state = await service.poll_progressive_search(started.job_id)
+        if state.revision == 1:
+            partial = state
+            break
+    assert partial is not None
+    assert partial.status == "partial"
+    assert partial.completed_sources == ["maps"]
+    assert partial.result.ranking.results
+
+    await asyncio.sleep(.12)
+    complete = await service.poll_progressive_search(started.job_id)
+    assert complete.status == "complete"
+    assert complete.revision == 2
+    assert set(complete.completed_sources) == {"maps", "waze"}
+    assert {row.source for row in complete.result.snapshot.stations} >= {"google_maps_web", "waze"}
+    await service.close()
+
+
 async def test_separate_routing_stage_does_not_refetch_prices():
     from gaswise.contracts.smart import SmartRouteRequest
 

@@ -5,6 +5,14 @@ type Schemas = components['schemas']
 export type SmartSearchBody = Schemas['SmartSearch']
 export type SmartResult = Schemas['SmartResult']
 export type SmartSnapshot = Schemas['SmartSnapshot-Output']
+export interface ProgressiveSearchState {
+  job_id: string
+  status: 'pending' | 'partial' | 'complete' | 'failed'
+  revision: number
+  completed_sources: string[]
+  result: SmartResult | null
+  error: string | null
+}
 export type RankOptions = Schemas['RankOptions']
 export type SearchResult = Schemas['SearchResult']
 export type RankedStation = Schemas['RankedStation']

@@ -58,7 +58,7 @@ describe('Decide', () => {
     expect(hero.getAllByText('Comparison cost')[0]).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe('/api/v1/smart/search')
+    expect(url).toBe('/api/v1/smart/search-jobs/start')
     expect(JSON.parse(String(init?.body))).toMatchObject({ origin: { lat: 34.0522, lng: -118.2437 }, fuel_type: 'premium' })
   })
 
@@ -282,7 +282,7 @@ it('starts one new transaction when a server restart invalidates the held snapsh
   await screen.findByRole('heading', { name: 'Chevron', level: 2 })
   fireEvent.click(screen.getByRole('button', { name: 'Refresh prices' }))
   await waitFor(() => expect(fetch).toHaveBeenCalledTimes(3))
-  expect(fetch.mock.calls.map(([url]) => url)).toEqual(['/api/v1/smart/search', '/api/v1/smart/refresh-prices', '/api/v1/smart/search'])
+  expect(fetch.mock.calls.map(([url]) => url)).toEqual(['/api/v1/smart/search-jobs/start', '/api/v1/smart/refresh-prices', '/api/v1/smart/search'])
   expect(JSON.parse(String(fetch.mock.calls[2][1]?.body)).force_refresh).toBe(false)
 })
 

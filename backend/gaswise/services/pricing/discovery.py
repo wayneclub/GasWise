@@ -85,7 +85,7 @@ async def discover_maps(service, search, query):
     return outcomes, coverage.fraction()
 
 
-async def acquire(service, search, query, timings=None):
+async def acquire(service, search, query, timings=None, sources=None):
     async def timed(name, operation):
         started = perf_counter()
         try:
@@ -95,7 +95,7 @@ async def acquire(service, search, query, timings=None):
                 timings[name] = round((perf_counter() - started) * 1000, 1)
 
     requests = {}
-    if service.gasbuddy is not None:
+    if service.gasbuddy is not None and (sources is None or "gasbuddy" in sources):
         # Coordinates, not ZIP: a ZIP search stops at the ZIP line. The snapped centre lets
         # nearby users share one cached GasBuddy request with a fixed enlarged radius.
         limit = search_limit_meters(search)
@@ -108,9 +108,9 @@ async def acquire(service, search, query, timings=None):
             "discovery_gasbuddy",
             service.cached("gasbuddy:" + gb.model_dump_json(), lambda: service.gasbuddy.prices(gb), refresh=query.force_refresh),
         )
-    if service.maps_web is not None:
+    if service.maps_web is not None and (sources is None or "maps" in sources):
         requests["maps"] = timed("discovery_maps", discover_maps(service, search, query))
-    if service.waze is not None:
+    if service.waze is not None and (sources is None or "waze" in sources):
         centre, radius = shared_viewport(search.origin, search_limit_meters(search))
         waze = GooglePriceSearch(origin=centre, fuel_type=search.fuel_type, radius_meters=min(50000, radius), max_results=20)
         requests["waze"] = timed(
