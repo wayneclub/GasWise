@@ -139,7 +139,7 @@ describe('service integration', () => {
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2))
     expect(fetch.mock.calls[1][0]).toBe('/api/v1/smart/rerank')
     expect(JSON.parse(String(fetch.mock.calls[1][1]?.body)).options.payment_type).toBe('cash_or_credit')
-    expect(JSON.parse(String(fetch.mock.calls[0][1]?.body)).route_limit).toBe(10)
+    expect(JSON.parse(String(fetch.mock.calls[0][1]?.body)).route_limit).toBe(0)
   })
 
   it('keeps the fuel snapshot while switching to parts and back', async () => {
@@ -349,7 +349,7 @@ it('opens settings as a page and preserves the fuel session on return', async ()
   expect(screen.getByRole('heading', { name: 'Chevron', level: 2 })).toBeInTheDocument()
   expect(fetch).toHaveBeenCalledTimes(1)
   const body = JSON.parse(String(fetch.mock.calls[0][1]?.body))
-  expect(body).toMatchObject({ opening_policy: 'require_open', discovery_tiles: 20, maps_detail_limit: 5, route_limit: 10, estimate_unrouted_routes: true, max_results: 100, allow_unknown_payment: true, unknown_payment_credit_markup: '0.20' })
+  expect(body).toMatchObject({ opening_policy: 'require_open', discovery_tiles: 8, maps_detail_limit: 5, route_limit: 0, estimate_unrouted_routes: true, max_results: 100, allow_unknown_payment: true, unknown_payment_credit_markup: '0.20' })
 })
 
  it('places compact TOP TIER next to the name and reports quote age rather than collection freshness', () => {

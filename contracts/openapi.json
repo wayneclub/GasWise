@@ -5902,7 +5902,7 @@
           "route_limit": {
             "type": "integer",
             "maximum": 100.0,
-            "minimum": 1.0,
+            "minimum": 0.0,
             "title": "Route Limit",
             "default": 5
           }
@@ -6246,7 +6246,7 @@
           "route_limit": {
             "type": "integer",
             "maximum": 100.0,
-            "minimum": 1.0,
+            "minimum": 0.0,
             "title": "Route Limit",
             "default": 5
           },

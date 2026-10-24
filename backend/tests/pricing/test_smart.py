@@ -535,6 +535,11 @@ async def test_expand_routes_uses_original_prices_and_does_not_repeat_cached_rou
     from gaswise.contracts.smart import SmartRouteRequest
     provider = CountingProvider()
     service = SmartService(b"test", "demo", demo=provider)
+    initial = await service.search(SmartSearch(origin=Point(lat=34, lng=-118), calculate_routes=True, route_limit=0, estimate_unrouted_routes=True))
+    assert initial.coverage.routed == 0
+    assert initial.ranking is not None
+    assert any(r.route.source == "straight_line_estimate" for r in initial.ranking.results)
+    assert provider.routes == 0
     first = await service.search(SmartSearch(origin=Point(lat=34, lng=-118), calculate_routes=True, route_limit=1))
     assert first.coverage.eligible > first.coverage.routed
     price_calls, initial_routes = provider.searches, provider.routes

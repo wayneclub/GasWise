@@ -15,7 +15,7 @@ class SmartSearch(Search):
     station_lookup_limit: int = Field(default=0, ge=0, le=5)
     calculate_routes: bool = False
     estimate_unrouted_routes: bool = False
-    route_limit: int = Field(default=5, ge=1, le=100)
+    route_limit: int = Field(default=5, ge=0, le=100)
     # Maximum Maps discovery requests: one whole-area request, then waves of nearest unproven points.
     discovery_tiles: int = Field(default=1, ge=1, le=40)
     maps_detail_limit: int = Field(default=0, ge=0, le=5)
@@ -130,7 +130,7 @@ class SmartPriceRefresh(Model):
 class SmartRouteRequest(Model):
     snapshot: SmartSnapshot
     signature: str = Field(min_length=64, max_length=64)
-    route_limit: int = Field(default=5, ge=1, le=100)
+    route_limit: int = Field(default=5, ge=0, le=100)
 
 
 SmartSearch.model_rebuild()

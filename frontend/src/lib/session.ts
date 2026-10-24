@@ -41,11 +41,11 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
     radius_meters: (prefs.searchRadiusMiles ?? 5) * 1609.344,
     max_results: 100,
     calculate_routes: true,
-    // Ten routes measured the same top five as twenty at 34.10,-118.30 while
-    // cutting the cold route phase from ~4.2s to ~2.0s; expansion stays explicit.
-    route_limit: 10,
+    // Fast First Render: route_limit 0 gives instant (<1s) straight-line road-factor estimate;
+    // the background task then enriches top candidates with real Google Maps routes asynchronously.
+    route_limit: 0,
     estimate_unrouted_routes: true,
-    discovery_tiles: 20,
+    discovery_tiles: 8,
     // Maps website summaries only publish Regular, so non-regular searches rely on
     // GasBuddy/Waze for grade-specific quotes. Five pages measured 87 vs 39 raw
     // premium quotes and 30 vs 14 eligible stations; Regular already has Maps
@@ -165,6 +165,17 @@ export function useFuelSession(prefs: Prefs, active = true) {
       setExpired(false)
       retryDelay.current = 120000
       setPhase('ready')
+      if (next.ranking?.results.some((r) => r.route.source === 'straight_line_estimate')) {
+        void api.routes(next.snapshot, next.signature, abort.signal, 3)
+          .then((routed) => {
+            if (!abort.signal.aborted && routed.ranking) {
+              setResult(routed)
+            }
+          })
+          .catch(() => {
+            // Non-fatal: straight-line estimated ranking remains active if Google Maps route enrichment fails
+          })
+      }
     } catch (caught) {
       if (abort.signal.aborted) return
       const apiError = caught instanceof ApiError ? caught : new ApiError(0, 'unexpected_error')
@@ -234,7 +245,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
     controller.current = abort
     setPhase('searching'); setError(null)
     try {
-      const next = await api.routes(result.snapshot, result.signature, abort.signal)
+      const next = await api.routes(result.snapshot, result.signature, abort.signal, 100)
       if (abort.signal.aborted) return
       setResult(next); setPhase('ready')
     } catch (caught) {
