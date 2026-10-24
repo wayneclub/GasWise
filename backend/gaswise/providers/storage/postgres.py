@@ -14,6 +14,7 @@ from gaswise.domain.pricing.cache_policy import prune_quotes, public_quotes, quo
 from gaswise.domain.pricing.daily_ramp import reviewed_limit
 from gaswise.domain.pricing.shared_cache import CachedQuery
 from gaswise.providers.storage.collection_events import CollectionEvents
+from gaswise.providers.storage.warm_queries import WarmQueries
 
 GOOGLE_LOCATION_SOURCES = {"google_maps_web", "google_places"}
 STATION_DETAIL_KEYS = (
@@ -85,7 +86,7 @@ def station_checked_at(metadata, fallback):
     return checked.replace(tzinfo=UTC) if checked.tzinfo is None else checked
 
 
-class PostgresPricingCache(CollectionEvents):
+class PostgresPricingCache(CollectionEvents, WarmQueries):
     def __init__(self, pool):
         self.pool = pool
 
@@ -762,6 +763,8 @@ class PostgresPricingCache(CollectionEvents):
         """, source, float(retry_seconds or 120))
 
     async def cleanup(self):
+        await self.pool.execute("""DELETE FROM gaswise.warm_queries WHERE expires_at<=now()
+            AND (lease_until IS NULL OR lease_until<=now())""")
         await self.pool.execute("DELETE FROM gaswise.alert_installations WHERE confirmed_at < now() - interval '180 days'")
         await self.pool.execute("DELETE FROM gaswise.alert_need_state WHERE expires_at < now() - interval '30 days'")
         await self.pool.execute("DELETE FROM gaswise.alert_outbox WHERE expires_at < now() - interval '7 days'")

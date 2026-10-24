@@ -309,7 +309,7 @@ class SmartService:
                 async with slot:
                     return await operation()
             if self.hot_refresh is not None:
-                self.hot_refresh.observe(source, key, shared_operation)
+                await self.hot_refresh.observe(source, key, shared_operation)
             return await self.shared_cache.get(source, key, shared_operation)
         # Keys are digests: exact origin/query identity without plaintext coordinates.
         key = "cache:" + hashlib.sha256(key.encode()).hexdigest()

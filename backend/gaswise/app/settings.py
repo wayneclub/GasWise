@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     pricing_daily_ramp_max: int = Field(default=800, ge=1, le=1000)
     hot_pricing_refresh_enabled: bool = False
     hot_pricing_refresh_daily_requests: int = Field(default=100, ge=1, le=1000)
+    # Legacy environment compatibility; durable demand registrations have no process-local cap.
     hot_pricing_refresh_max_queries: int = Field(default=20, ge=1, le=100)
     hot_pricing_refresh_interval_seconds: int = Field(default=900, ge=900, le=3600)
     pricing_cache_fresh_seconds: int = Field(default=900, ge=60, le=3600)

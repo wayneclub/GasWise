@@ -29,6 +29,8 @@ The table definitions ship in `gaswise/providers/storage/schema.sql`:
 - `quotes`: separate source/station/fuel/payment/membership/octane conditions,
   original reported/fetched times, and price expiration.
 - `source_limits`: shared per-source minute budgets and rejection cooldown.
+- `warm_queries`: public provider viewport queries, last foreground demand,
+  fourteen-day expiry, next due time and a cross-worker job lease.
 
 ## Reuse and refresh
 
@@ -89,34 +91,35 @@ coverage proof. Never print a connection URL, password or environment dump.
 The integrated personal-search, price-refresh and route-reuse design is in
 [search-cache-architecture.md](search-cache-architecture.md).
 
-## Adaptive hot-query refresh pilot
+## Persistent demand-driven warming
 
-`GASWISE_HOT_PRICING_REFRESH_ENABLED=true` enables the pilot (default false).
-Live mode and shared PostgreSQL are required. It reuses SmartService public query
-keys and coverage, without city-wide scans or personal routes. Restart clears its
-process-local demand registry; database counters and cooldowns survive restart.
+`GASWISE_HOT_PRICING_REFRESH_ENABLED=true` enables warming (default false).
+Live mode and shared PostgreSQL are required. The first foreground use registers
+each bounded public provider query in `gaswise.warm_queries`, even when its
+response has no stations. It reuses the same provider cache key and query options,
+without city-wide scans, personal routes or visitor identifiers.
 
-The bounded registry holds 20 recent queries by default
-(`GASWISE_HOT_PRICING_REFRESH_MAX_QUERIES`, 1–100). At least three foreground uses
-within the last hour qualify. Uses expire individually after an hour; idle queries
-are removed. Counts include browser refresh actions and are not unique user counts.
-When full, new queries stay on-demand until slots expire.
+Every foreground use renews `last_requested_at` and `expires_at` to fourteen days
+from that request. Background reads, refresh successes and retries never renew
+demand. At expiry, the scheduler immediately stops claiming that query; hourly
+maintenance removes expired registrations when no lease remains. A later
+foreground request registers it again. Registrations and due dates survive
+service restarts. `GASWISE_HOT_PRICING_REFRESH_MAX_QUERIES` is retained only for
+legacy environment compatibility; it no longer drops new towns at a memory cap.
 
 The scheduler checks once per minute and considers at most one acquisition per
-tick. With the default minimum interval of 900 seconds:
+tick, oldest due first. `GASWISE_HOT_PRICING_REFRESH_INTERVAL_SECONDS` sets the
+interval (900–3600 seconds), never shorter than cache freshness. Foreground
+acquisition fills the initial cache; the first scheduled check becomes due after
+that interval. Provider failures back off up to six hours. Shared source budgets
+and cooldowns can defer work; registration is not a promise of fixed refresh
+frequency or complete geographic coverage.
 
-| Foreground uses in the last hour | Update interval |
-| --- | --- |
-| 0–2 | No proactive acquisition |
-| 3–5 | 60 minutes |
-| 6–11 | 30 minutes |
-| 12 or more | 15 minutes |
-
-`GASWISE_HOT_PRICING_REFRESH_INTERVAL_SECONDS` sets the minimum (900–3600), never
-shorter than cache freshness. Normal demand pacing is capped at one hour. A
-provider failure doubles the source pause, up to six hours; successful background
-loads reduce the failure level one step at a time. Cached reads do not establish
-provider recovery. Known shared provider cooldown also suppresses scheduled loads.
+A five-minute database job lease prevents duplicate claims across workers.
+Each background acquisition has a three-minute deadline and also uses the shared
+cache's renewable source lease. Shutdown releases the job for retry without
+extending its demand expiry. Completed refreshes preserve original price report
+times and use the same source DTOs, not synthesized station prices.
 
 All background actual HTTP calls inherit a context marker, including pagination,
 bootstrap and details. Database row locks enforce across workers:
@@ -219,9 +222,9 @@ workers; interrupted work releases its lease, or becomes reclaimable after expir
 The worker drains initial due work at ten-second spacing after successful jobs,
 then checks idle/deferred work once a minute. Provider minute/day caps, pressure
 checks, cooldown and GasBuddy's bounded cross-window waits remain in force. Failed
-loads retry after an hour; budget deferrals after 15 minutes. A source's due base
-jobs take priority over extra demand-driven warming; they do not share the bounded
-hot-query registry. The 40/day deployment allowance is shared by both collectors,
+loads retry after an hour; budget deferrals after 15 minutes. Mandatory base jobs
+reserve source allowance ahead of demand warming; optional bases and demand jobs
+share the same source budgets. The deployment allowance is shared by both collectors,
 not added to it, so completion is not guaranteed under rejection or exhausted caps.
 
 The existing shared cache saves public station/quote observations and the

@@ -1,0 +1,186 @@
+import asyncio
+from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
+
+import pytest
+
+from gaswise.contracts.common import Point
+from gaswise.contracts.sources import GooglePriceSearch
+from gaswise.domain.pricing.shared_cache import background_acquisition
+from gaswise.services.pricing.demand_refresh import DemandQueryRefresh
+
+
+class DurableCache:
+    def __init__(self):
+        self.now = datetime(2026, 1, 1, tzinfo=UTC)
+        self.jobs = {}
+        self.calls = []
+        self.budget = {"used": 0, "background_used": 0, "background_day_used": 0}
+
+    async def _db(self, method, *args):
+        return await getattr(self, method)(*args)
+
+    async def observe_warm_query(self, key, source, raw_key, interval):
+        job = self.jobs.setdefault(key, {"key": key, "source": source, "raw_key": raw_key,
+                                         "next_due": self.now + timedelta(seconds=interval)})
+        job.update(last_requested_at=self.now, expires_at=self.now + timedelta(days=14))
+
+    async def claim_warm_query(self, owner, sources):
+        for job in sorted(self.jobs.values(), key=lambda row: row["next_due"]):
+            if job["source"] in sources and job["expires_at"] > self.now and job["next_due"] <= self.now and not job.get("owner"):
+                job["owner"] = owner
+                return dict(job)
+
+    async def finish_warm_query(self, key, owner, delay, error):
+        job = self.jobs[key]
+        assert job["owner"] == owner
+        job.update(owner=None, next_due=self.now + timedelta(seconds=delay), error=error)
+
+    async def budget_state(self, source):
+        return self.budget
+
+    async def get(self, source, raw_key, operation, **kwargs):
+        assert background_acquisition.get()
+        assert kwargs == {"wait_refresh": True}
+        self.calls.append(raw_key)
+        return await operation(), False
+
+
+def service(cache, provider=None):
+    class Provider:
+        async def stations(self, query):
+            assert isinstance(query, GooglePriceSearch)
+            return []
+    return SimpleNamespace(shared_cache=cache, gasbuddy=None, maps_web=None, waze=provider or Provider(),
+                           source_slots={"waze": asyncio.Semaphore(1)}, background_gasbuddy_slot=asyncio.Semaphore(1))
+
+
+def raw_key(index=0):
+    query = GooglePriceSearch(origin=Point(lat=34 + index * .01, lng=-118))
+    return "waze:" + query.model_dump_json()
+
+
+async def test_first_observation_survives_new_scheduler_and_warms_without_renewing_demand():
+    cache = DurableCache()
+    first = DemandQueryRefresh(service(cache))
+    await first.observe("waze", raw_key())
+    job = next(iter(cache.jobs.values()))
+    requested, expires = job["last_requested_at"], job["expires_at"]
+    cache.now += timedelta(minutes=16)
+    restarted = DemandQueryRefresh(service(cache))
+    assert await restarted.step()
+    assert len(cache.calls) == 1
+    assert job["last_requested_at"] == requested
+    assert job["expires_at"] == expires == requested + timedelta(days=14)
+
+
+async def test_two_weeks_without_request_stops_warming_but_new_request_renews_retention():
+    cache = DurableCache()
+    warmer = DemandQueryRefresh(service(cache))
+    await warmer.observe("waze", raw_key())
+    cache.now += timedelta(days=13)
+    await warmer.observe("waze", raw_key())
+    renewed = next(iter(cache.jobs.values()))["expires_at"]
+    cache.now += timedelta(days=1)
+    assert await warmer.step()  # The day-13 request renewed the window.
+    cache.now = renewed
+    assert not await warmer.step()  # Exact expiry, even though the job is due.
+    assert len(cache.calls) == 1
+
+
+async def test_registration_has_no_old_twelve_query_cap_and_background_never_renews():
+    cache = DurableCache()
+    warmer = DemandQueryRefresh(service(cache))
+    for index in range(20):
+        await warmer.observe("waze", raw_key(index))
+    assert len(cache.jobs) == 20
+    original = next(iter(cache.jobs.values()))["last_requested_at"]
+    cache.now += timedelta(days=2)
+    token = background_acquisition.set(True)
+    try:
+        await warmer.observe("waze", raw_key())
+    finally:
+        background_acquisition.reset(token)
+    assert next(iter(cache.jobs.values()))["last_requested_at"] == original
+
+
+async def test_shared_lease_prevents_two_workers_from_loading_same_query():
+    cache = DurableCache()
+    started, release = asyncio.Event(), asyncio.Event()
+
+    class SlowProvider:
+        async def stations(self, query):
+            started.set()
+            await release.wait()
+            return []
+
+    first, second = DemandQueryRefresh(service(cache, SlowProvider())), DemandQueryRefresh(service(cache))
+    await first.observe("waze", raw_key())
+    cache.now += timedelta(minutes=16)
+    task = asyncio.create_task(first.step())
+    await started.wait()
+    assert not await second.step()
+    release.set()
+    assert await task
+    assert len(cache.calls) == 1
+
+
+async def test_exhausted_budget_never_claims_a_job_or_loads_provider():
+    cache = DurableCache()
+    warmer = DemandQueryRefresh(service(cache))
+    await warmer.observe("waze", raw_key())
+    cache.now += timedelta(minutes=16)
+    cache.budget["background_day_used"] = 100
+    assert not await warmer.step()
+    assert cache.calls == []
+    assert not next(iter(cache.jobs.values())).get("owner")
+
+
+async def test_failures_back_off_without_extending_retention_or_storing_transport_details():
+    cache = DurableCache()
+
+    class BrokenProvider:
+        async def stations(self, query):
+            raise RuntimeError("private transport diagnostics")
+
+    warmer = DemandQueryRefresh(service(cache, BrokenProvider()))
+    await warmer.observe("waze", raw_key())
+    job = next(iter(cache.jobs.values()))
+    expires = job["expires_at"]
+    cache.now += timedelta(minutes=16)
+    assert await warmer.step()
+    assert job["error"] == "unclassified"
+    assert job["expires_at"] == expires
+    assert job["next_due"] > cache.now
+
+
+async def test_shutdown_releases_the_durable_lease_without_renewing_demand():
+    cache = DurableCache()
+    started = asyncio.Event()
+
+    class SlowProvider:
+        async def stations(self, query):
+            started.set()
+            await asyncio.Event().wait()
+
+    warmer = DemandQueryRefresh(service(cache, SlowProvider()))
+    await warmer.observe("waze", raw_key())
+    job = next(iter(cache.jobs.values()))
+    expires = job["expires_at"]
+    cache.now += timedelta(minutes=16)
+    task = asyncio.create_task(warmer.step())
+    await started.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert job["owner"] is None
+    assert job["error"] == "service_shutdown"
+    assert job["expires_at"] == expires
+
+
+async def test_registration_cannot_persist_routes_or_visitor_fields():
+    cache = DurableCache()
+    warmer = DemandQueryRefresh(service(cache))
+    with pytest.raises(ValueError):
+        await warmer.observe("waze", 'waze:{"origin":{"lat":34,"lng":-118},"vehicle_id":123}')
+    assert not cache.jobs

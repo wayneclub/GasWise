@@ -27,6 +27,23 @@ CREATE TABLE IF NOT EXISTS gaswise.query_cache (
     CHECK (length(key) = 64)
 );
 CREATE INDEX IF NOT EXISTS query_cache_expiry ON gaswise.query_cache (stale_until);
+-- Only public provider queries are retained. Background refresh never renews demand.
+CREATE TABLE IF NOT EXISTS gaswise.warm_queries (
+    key text PRIMARY KEY CHECK(length(key)=64),
+    source text NOT NULL CHECK(source IN ('gasbuddy','maps','waze')),
+    raw_key text NOT NULL CHECK(length(raw_key)<=16384),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    last_requested_at timestamptz NOT NULL DEFAULT now(),
+    expires_at timestamptz NOT NULL DEFAULT now()+interval '14 days',
+    next_due timestamptz NOT NULL,
+    lease_owner text,
+    lease_until timestamptz,
+    last_attempt_at timestamptz,
+    last_success_at timestamptz,
+    last_error text
+);
+CREATE INDEX IF NOT EXISTS warm_queries_due ON gaswise.warm_queries(next_due,source);
+CREATE INDEX IF NOT EXISTS warm_queries_expiry ON gaswise.warm_queries(expires_at);
 CREATE TABLE IF NOT EXISTS gaswise.stations (
     source text NOT NULL,
     station_id text NOT NULL,
