@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { DEFAULT_PREFS, loadPrefs } from './prefs'
-import { useFuelSession } from './session'
+import { haversineDistanceMeters, useFuelSession } from './session'
 import fixture from '../test/fixtures/demo-search.json'
 
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
@@ -151,4 +151,60 @@ it('restores the route destination from tab recovery without long-lived location
   expect(loadPrefs().tripMode).toBe('on_route')
   expect(loadPrefs().destination).toEqual(destination)
   expect(localStorage.getItem('gaswise.fuel-session.v1')).toBeNull()
+})
+
+it('accurately computes Haversine distance between two coordinates', () => {
+  // ~111km per latitude degree
+  const p1 = { lat: 34.0, lng: -118.0 }
+  const p2 = { lat: 34.005, lng: -118.0 } // ~556 meters north
+  const dist = haversineDistanceMeters(p1, p2)
+  expect(dist).toBeGreaterThan(550)
+  expect(dist).toBeLessThan(560)
+})
+
+it('updates dynamic routes and rankings in background when device location moves past threshold', async () => {
+  let watchCallback: ((pos: GeolocationPosition) => void) | null = null
+  let clearWatchCalled = false
+
+  Object.defineProperty(window, 'isSecureContext', { configurable: true, value: true })
+  Object.defineProperty(navigator, 'geolocation', {
+    configurable: true,
+    value: {
+      getCurrentPosition: (ok: PositionCallback) =>
+        ok({ coords: { latitude: 34.0522, longitude: -118.2437 } } as GeolocationPosition),
+      watchPosition: vi.fn((ok: PositionCallback) => {
+        watchCallback = ok
+        return 99
+      }),
+      clearWatch: vi.fn((id: number) => {
+        if (id === 99) clearWatchCalled = true
+      }),
+    },
+  })
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')
+
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify(fixture)))
+  const session = renderHook(() => useFuelSession(DEFAULT_PREFS))
+
+  await act(async () => session.result.current.start({ userInitiated: true }))
+  expect(session.result.current.phase).toBe('ready')
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+  expect(watchCallback).not.toBeNull()
+
+  // Small drift (< 400m): ~10 meters east -> should NOT trigger background fetch
+  await act(async () => {
+    watchCallback?.({ coords: { latitude: 34.0522, longitude: -118.2436 } } as GeolocationPosition)
+  })
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+
+  // Significant movement (> 400m): ~600 meters north -> triggers background fetch
+  await act(async () => {
+    watchCallback?.({ coords: { latitude: 34.0576, longitude: -118.2437 } } as GeolocationPosition)
+  })
+  expect(fetchMock).toHaveBeenCalledTimes(2)
+  // Background fetch does not force refresh provider cache, uses background mode
+  expect(JSON.parse(String(fetchMock.mock.calls[1][1]?.body)).origin).toEqual({ lat: 34.0576, lng: -118.2437 })
+
+  session.unmount()
+  expect(clearWatchCalled).toBe(true)
 })

@@ -54,7 +54,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
         <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">{t('experience.locationLead')}</p>
       </div> : null}
       {hero ? <h1 className="sr-only">{t('experience.ready')}</h1> : null}
-      <SearchContext prefs={prefs} label={session.originLabel} source={session.originKind} permission={session.locationPermission} locating={phase === 'locating'} searching={phase === 'searching'}
+      <SearchContext prefs={prefs} label={session.originLabel} source={session.originKind} permission={session.locationPermission} locating={phase === 'locating'} searching={phase === 'searching'} refreshing={session.refreshing}
         onLocate={() => void start({ userInitiated: true })} onChange={() => setLocationOpen(open => !open)} onSettings={onSettings} onRefresh={() => void session.refresh()}>
         {locationOpen || !session.origin ? <>
           {error?.kind === 'location' && !['prompt', 'permission_pending'].includes(error.code) ? <div role="status" className="mb-3"><h3 className="text-sm font-semibold">{t(`error.${messageId(error)}.title` as MessageKey)}</h3><p className="mt-1 text-sm text-muted">{t(`error.${messageId(error)}.body` as MessageKey)}</p></div> : null}

@@ -84,6 +84,18 @@ export function locate(): Promise<Origin> {
   })
 }
 
+export function haversineDistanceMeters(a: Origin, b: Origin): number {
+  const R = 6371e3
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180
+  const lat1 = (a.lat * Math.PI) / 180
+  const lat2 = (b.lat * Math.PI) / 180
+  const sinDlat = Math.sin(dLat / 2)
+  const sinDlng = Math.sin(dLng / 2)
+  const aVal = sinDlat * sinDlat + Math.cos(lat1) * Math.cos(lat2) * sinDlng * sinDlng
+  return R * 2 * Math.atan2(Math.sqrt(aVal), Math.sqrt(1 - aVal))
+}
+
 /**
  * One fuel decision transaction: locate once, refresh visible prices on a bounded interval, then rerank
  * locally-held snapshots with zero upstream calls. No polling in hidden tabs; manual refresh still respects the shared price freshness window and provider budgets.
@@ -104,6 +116,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
   const [reranking, setReranking] = useState(false)
   const [expired, setExpired] = useState(() => !!restored && Date.parse(restored.result.snapshot.expires_at) <= Date.now())
   const [refreshing, setRefreshing] = useState(false)
+  const lastTrackedOrigin = useRef<Origin | null>(restored?.origin ?? null)
   const lastCheck = useRef(restored?.checkedAt ?? 0)
   const needsRecoveryCheck = useRef(expired)
   const retryDelay = useRef(120000)
@@ -128,6 +141,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
     controller.current?.abort()
     rerankController.current?.abort()
     setReranking(false)
+    lastTrackedOrigin.current = at
     const abort = new AbortController()
     controller.current = abort
     if (!background) setPhase('searching')
@@ -311,6 +325,53 @@ export function useFuelSession(prefs: Prefs, active = true) {
     document.addEventListener('visibilitychange', check)
     return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', check) }
   }, [active, origin, result, phase, refreshing, reranking, search])
+
+  // Dynamic movement tracking: when moving with device GPS, recalculate routes & ranks in background
+  useEffect(() => {
+    if (
+      !active ||
+      originKind !== 'device' ||
+      !origin ||
+      phase !== 'ready' ||
+      typeof navigator === 'undefined' ||
+      !('geolocation' in navigator) ||
+      typeof navigator.geolocation?.watchPosition !== 'function'
+    ) {
+      return
+    }
+
+    let watchId: number | null = null
+    try {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const newOrigin: Origin = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          }
+          const base = lastTrackedOrigin.current ?? origin
+          const distance = haversineDistanceMeters(base, newOrigin)
+          // 400m movement threshold (~0.25 mi) avoids jitter while capturing meaningful route change
+          if (distance >= 400 && document.visibilityState === 'visible' && !refreshing && !reranking) {
+            lastTrackedOrigin.current = newOrigin
+            setOrigin(newOrigin)
+            void search(newOrigin, false, true)
+          }
+        },
+        () => {
+          // Transient watchPosition error in background is non-fatal
+        },
+        { enableHighAccuracy: true, maximumAge: 30000, timeout: 20000 },
+      )
+    } catch {
+      // Ignored if watchPosition throws in non-supporting runtime
+    }
+
+    return () => {
+      if (watchId !== null && typeof navigator.geolocation?.clearWatch === 'function') {
+        navigator.geolocation.clearWatch(watchId)
+      }
+    }
+  }, [active, originKind, origin, phase, refreshing, reranking, search])
 
   useEffect(() => () => {
     locationRequest.current++

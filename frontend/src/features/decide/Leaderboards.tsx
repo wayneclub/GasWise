@@ -25,7 +25,7 @@ export function Leaderboards({result, primary, onStrategyChange, navApp, tripMod
     ]} onChange={onStrategyChange ?? setCategory}/>
     {current==='best_value' ? <p className="mt-2 text-xs text-muted">{t('board.costGuide')}<span className="mt-1 block">{t('board.value')} · ${result.snapshot.query.time_value_per_hour ?? '15'}</span></p> : null}
     <ol className="mt-3 divide-y divide-line">
-      {rows.map((row,index) => <li key={row.price_comparison?.station_key ?? row.station.id} className="grid min-w-0 grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-3 py-3">
+      {rows.map((row,index) => <li key={row.price_comparison?.station_key ?? row.station.id} className="grid min-w-0 grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-3 py-3 transition-all duration-300">
         <span className={`num flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${index===0?'bg-accent-soft text-accent':'bg-sunken text-muted'}`}>{index+1}</span>
         <div className="min-w-0">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
