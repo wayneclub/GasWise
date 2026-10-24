@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { navigationUrl } from './navigation'
 import { DEFAULT_PREFS } from './prefs'
-import { searchBody } from './session'
+import { backgroundGasBuddyPageLimit, searchBody } from './session'
 
 const origin = { lat: 34.05, lng: -118.24 }
 
@@ -29,14 +29,23 @@ describe('searchBody', () => {
     })
   })
 
-  it('requests extra GasBuddy pages only for grades Maps summaries omit', () => {
-    expect(searchBody({ ...DEFAULT_PREFS }, origin).gasbuddy_page_limit).toBe(3)
-    expect(searchBody({ ...DEFAULT_PREFS, fuelType: 'premium' }, origin).gasbuddy_page_limit).toBe(5)
+  it('keeps cold GasBuddy discovery to one page for every fuel grade', () => {
+    expect(searchBody({ ...DEFAULT_PREFS }, origin).gasbuddy_page_limit).toBe(1)
+    expect(searchBody({ ...DEFAULT_PREFS, fuelType: 'premium' }, origin).gasbuddy_page_limit).toBe(1)
     const vehicle = searchBody(
       { ...DEFAULT_PREFS, vehicle: { id: 40000, label: 'E400', fuelType: 'premium', combinedMpg: '22' } },
       origin,
     )
-    expect(vehicle.gasbuddy_page_limit).toBe(5)
+    expect(vehicle.gasbuddy_page_limit).toBe(1)
+  })
+
+  it('uses the previous page limits for non-blocking background coverage', () => {
+    expect(backgroundGasBuddyPageLimit({ ...DEFAULT_PREFS })).toBe(3)
+    expect(backgroundGasBuddyPageLimit({ ...DEFAULT_PREFS, fuelType: 'premium' })).toBe(5)
+    expect(backgroundGasBuddyPageLimit({
+      ...DEFAULT_PREFS,
+      vehicle: { id: 40000, label: 'E400', fuelType: 'premium', combinedMpg: '22' },
+    })).toBe(5)
   })
 
   it('routes a bounded shortlist first and leaves expansion explicit', () => {

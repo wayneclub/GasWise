@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { DEFAULT_PREFS, loadPrefs } from './prefs'
 import { haversineDistanceMeters, useFuelSession } from './session'
 import fixture from '../test/fixtures/demo-search.json'
+import type { SmartResult } from '../api/types'
 
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
 
@@ -28,6 +29,27 @@ it('refreshes visible prices on the interval, pauses hidden tabs, and bypasses p
   session.unmount()
   await act(async () => vi.advanceTimersByTimeAsync(600000))
   expect(fetch).toHaveBeenCalledTimes(4)
+})
+
+it('shows a one-page cold result before optimistically replacing it with background coverage', async () => {
+  const first = structuredClone(fixture) as unknown as SmartResult
+  first.snapshot.acquisition_options = { gasbuddy_page_limit: 1 }
+  const enriched = structuredClone(first)
+  enriched.signature = 'b'.repeat(64)
+  enriched.snapshot.acquisition_options = { gasbuddy_page_limit: 3 }
+  let releaseEnrichment!: (value: Response) => void
+  const fetch = vi.spyOn(globalThis, 'fetch')
+    .mockResolvedValueOnce(new Response(JSON.stringify(first)))
+    .mockImplementationOnce(() => new Promise((resolve) => { releaseEnrichment = resolve }))
+  const session = renderHook(() => useFuelSession(DEFAULT_PREFS))
+
+  await act(async () => session.result.current.start({ override: { lat: 34, lng: -118 } }))
+  expect(session.result.current.result?.signature).toBe(first.signature)
+  expect(JSON.parse(String(fetch.mock.calls[0][1]?.body)).gasbuddy_page_limit).toBe(1)
+  expect(JSON.parse(String(fetch.mock.calls[1][1]?.body)).gasbuddy_page_limit).toBe(3)
+
+  await act(async () => releaseEnrichment(new Response(JSON.stringify(enriched))))
+  expect(session.result.current.result?.signature).toBe(enriched.signature)
 })
 
 it('keeps the displayed snapshot on update failure and backs off instead of looping', async () => {

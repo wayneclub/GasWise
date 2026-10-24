@@ -46,11 +46,9 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
     route_limit: 0,
     estimate_unrouted_routes: true,
     discovery_tiles: 8,
-    // Maps website summaries only publish Regular, so non-regular searches rely on
-    // GasBuddy/Waze for grade-specific quotes. Five pages measured 87 vs 39 raw
-    // premium quotes and 30 vs 14 eligible stations; Regular already has Maps
-    // coverage, where extra pages added no eligible stations.
-    gasbuddy_page_limit: (prefs.vehicle?.fuelType ?? prefs.fuelType) === 'regular' ? 3 : 5,
+    // Keep a cold search to one GasBuddy page so pagination does not delay the
+    // first result. Shared cache and background collection can still add coverage.
+    gasbuddy_page_limit: 1,
     station_lookup_limit: 5,
     maps_detail_limit: 5,
     trip_mode: prefs.tripMode,
@@ -59,6 +57,10 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
       ? { vehicle_id: prefs.vehicle.id }
       : { fuel_type: prefs.fuelType, mpg: prefs.mpg }),
   } as SmartSearchBody
+}
+
+export function backgroundGasBuddyPageLimit(prefs: Prefs): number {
+  return (prefs.vehicle?.fuelType ?? prefs.fuelType) === 'regular' ? 3 : 5
 }
 
 /** Ask the browser only after a tap when permission was never granted, so the prompt has context. */
@@ -185,8 +187,24 @@ export function useFuelSession(prefs: Prefs, active = true) {
       setExpired(false)
       retryDelay.current = 120000
       setPhase('ready')
-      if (next.ranking?.results.some((r) => r.route.source === 'straight_line_estimate')) {
-        void api.routes(next.snapshot, next.signature, abort.signal, 3)
+      const enhance = async () => {
+        let latest = next
+        const coldOnePageSearch = !canRefreshPrices && next.snapshot.acquisition_options?.gasbuddy_page_limit === 1
+        if (coldOnePageSearch) {
+          try {
+            latest = await api.search({
+              ...body,
+              gasbuddy_page_limit: backgroundGasBuddyPageLimit(requestedPrefs),
+              force_refresh: false,
+            }, abort.signal)
+            if (abort.signal.aborted) return
+            setResult(latest)
+          } catch {
+            // Non-fatal: keep the fast one-page result if background coverage fails.
+          }
+        }
+        if (!latest.ranking?.results.some((r) => r.route.source === 'straight_line_estimate')) return
+        void api.routes(latest.snapshot, latest.signature, abort.signal, 3)
           .then((routed) => {
             if (!abort.signal.aborted && routed.ranking) {
               setResult(routed)
@@ -196,6 +214,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
             // Non-fatal: straight-line estimated ranking remains active if Google Maps route enrichment fails
           })
       }
+      void enhance()
     } catch (caught) {
       if (abort.signal.aborted) return
       const apiError = caught instanceof ApiError ? caught : new ApiError(0, 'unexpected_error')
