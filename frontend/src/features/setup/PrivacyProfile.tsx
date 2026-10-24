@@ -11,7 +11,7 @@ import { clearFuelAssistant, replaceFuelAssistant } from '../../lib/fuelAssistan
 type Notice = 'exported' | 'imported' | 'cleared' | 'error' | null
 
 export function PrivacyProfile({ prefs, replace }: { prefs: Prefs; replace: (prefs: Prefs) => void }) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const { identity, setIdentity } = useVehicleIdentity()
   const [profile, setProfile] = useState('…')
   const [passphrase, setPassphrase] = useState('')
@@ -72,22 +72,112 @@ export function PrivacyProfile({ prefs, replace }: { prefs: Prefs; replace: (pre
     } catch { setNotice('error') } finally { setBusy(false) }
   }
 
-  return <section className="flex min-w-0 flex-col gap-5 liquid-panel rounded-box p-4 sm:p-6 lg:col-span-2" aria-label={t('privacy.title')}>
-    <div><h2 className="font-semibold">{t('privacy.title')}</h2><p className="mt-1 text-xs leading-relaxed text-muted">{t('privacy.description')}</p></div>
-    <p className="font-mono text-xs text-muted">{t('privacy.profileId', { id: profile })}</p>
-    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <Field label={t('privacy.passphrase')} hint={t('privacy.passphraseHint')}>
-        <TextInput type="password" autoComplete="new-password" minLength={8} value={passphrase} onChange={event => setPassphrase(event.target.value)} />
-      </Field>
-      <Field label={t('privacy.backupFile')}>
-        <input ref={input} type="file" accept="application/json,.json" onChange={event => setFile(event.target.files?.[0] ?? null)} className="block min-h-11 w-full rounded-control border border-line bg-canvas p-2 text-sm" />
-      </Field>
-    </div>
-    <div className="flex flex-wrap gap-3">
-      <button type="button" disabled={busy || passphrase.length < 8} onClick={() => void download()} className="rounded-control border border-line px-4 py-2 text-sm disabled:opacity-50">{t('privacy.export')}</button>
-      <button type="button" disabled={busy || passphrase.length < 8 || !file} onClick={() => void restore()} className="rounded-control border border-line px-4 py-2 text-sm disabled:opacity-50">{t('privacy.import')}</button>
-      <button type="button" disabled={busy} onClick={() => void clear()} className="rounded-control border border-caution px-4 py-2 text-sm text-caution disabled:opacity-50">{t('privacy.clearAll')}</button>
-    </div>
-    {notice ? <p role="status" className={`text-xs ${notice === 'error' ? 'text-caution' : 'text-muted'}`}>{t(`privacy.${notice}`)}</p> : null}
-  </section>
+  return (
+    <>
+      <section
+        id="section-privacy"
+        className="grid grid-cols-1 gap-6 border-b border-line py-8 first:pt-0 last:border-b-0 lg:grid-cols-[280px_1fr] lg:gap-10 lg:py-10"
+        aria-label={t('privacy.title')}
+      >
+        <div className="flex flex-col gap-2 lg:pt-1">
+          <h2 className="text-base font-semibold text-ink">{t('privacy.title')}</h2>
+          <p className="text-[13px] leading-relaxed text-muted">{t('privacy.description')}</p>
+          <div className="mt-2 inline-flex items-center gap-1.5 rounded-control bg-sunken px-2.5 py-1.5 text-xs text-muted self-start">
+            <span className="num font-mono">{t('privacy.profileId', { id: profile })}</span>
+          </div>
+        </div>
+
+        <div className="liquid-panel rounded-box p-5 sm:p-6 flex flex-col gap-6 min-w-0">
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field label={t('privacy.passphrase')} hint={t('privacy.passphraseHint')}>
+              <TextInput
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                value={passphrase}
+                onChange={event => setPassphrase(event.target.value)}
+                placeholder="••••••••"
+              />
+            </Field>
+            <Field label={t('privacy.backupFile')}>
+              <div className="relative flex min-h-11 items-center gap-2 rounded-control border border-line bg-surface p-1.5">
+                <button
+                  type="button"
+                  onClick={() => input.current?.click()}
+                  className="inline-flex h-8 shrink-0 items-center justify-center rounded-[10px] border border-line bg-canvas px-3 text-xs font-medium text-ink hover:bg-sunken"
+                >
+                  {file ? (locale.startsWith('zh') ? '更換檔案' : 'Change') : (locale.startsWith('zh') ? '選擇檔案' : 'Select file')}
+                </button>
+                <span className="truncate text-xs text-muted px-1">
+                  {file ? file.name : (locale.startsWith('zh') ? '未選取任何檔案 (.json)' : 'No file chosen (.json)')}
+                </span>
+                <input
+                  ref={input}
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={event => setFile(event.target.files?.[0] ?? null)}
+                  className="sr-only"
+                  aria-label={t('privacy.backupFile')}
+                />
+              </div>
+            </Field>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
+            <button
+              type="button"
+              disabled={busy || passphrase.length < 8}
+              onClick={() => void download()}
+              className="inline-flex h-11 items-center justify-center rounded-control border border-line bg-surface px-4 text-sm font-medium text-ink hover:bg-sunken active:scale-[0.98] disabled:opacity-50"
+            >
+              {t('privacy.export')}
+            </button>
+            <button
+              type="button"
+              disabled={busy || passphrase.length < 8 || !file}
+              onClick={() => void restore()}
+              className="inline-flex h-11 items-center justify-center rounded-control border border-line bg-surface px-4 text-sm font-medium text-ink hover:bg-sunken active:scale-[0.98] disabled:opacity-50"
+            >
+              {t('privacy.import')}
+            </button>
+          </div>
+
+          {notice ? (
+            <p role="status" className={`text-xs ${notice === 'error' ? 'text-caution' : 'text-muted'}`}>
+              {t(`privacy.${notice}`)}
+            </p>
+          ) : null}
+        </div>
+      </section>
+
+      <section
+        id="section-danger"
+        className="grid grid-cols-1 gap-6 border-b border-line py-8 first:pt-0 last:border-b-0 lg:grid-cols-[280px_1fr] lg:gap-10 lg:py-10"
+        aria-label={t('privacy.clearAll')}
+      >
+        <div className="flex flex-col gap-2 lg:pt-1">
+          <h2 className="text-base font-semibold text-danger">{t('privacy.clearAll')}</h2>
+          <p className="text-[13px] leading-relaxed text-muted">
+            {t('privacy.clearConfirm')}
+          </p>
+        </div>
+
+        <div className="liquid-panel rounded-box border border-danger/20 p-5 sm:p-6 flex flex-col gap-4 min-w-0">
+          <p className="text-xs leading-relaxed text-muted">
+            {t('privacy.clearConfirm')}
+          </p>
+          <div>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void clear()}
+              className="inline-flex h-11 items-center justify-center rounded-control border border-danger/40 bg-danger/5 px-4 text-sm font-medium text-danger hover:bg-danger/10 active:scale-[0.98] disabled:opacity-50"
+            >
+              {t('privacy.clearAll')}
+            </button>
+          </div>
+        </div>
+      </section>
+    </>
+  )
 }

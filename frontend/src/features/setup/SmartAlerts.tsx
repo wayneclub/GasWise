@@ -23,12 +23,61 @@ export function SmartAlerts() {
     } catch { setNotice('error') } finally { setBusy(false) }
   }
 
-  return <section id="smart-alerts" tabIndex={-1} className="flex min-w-0 scroll-mt-24 flex-col gap-4 liquid-panel rounded-box p-4 outline-none sm:p-6 lg:col-span-2" aria-label={t('alerts.title')}>
-    <div><h2 className="font-semibold">{t('alerts.title')}</h2><p className="mt-1 text-xs leading-relaxed text-muted">{t('alerts.description')}</p></div>
-    <p className="text-xs leading-relaxed text-muted">{t('alerts.privacy')}</p>
-    <div><button type="button" disabled={busy || !supported} onClick={() => void toggle()} className="rounded-control border border-line px-4 py-2 text-sm disabled:opacity-50">{t(enabled ? 'alerts.disable' : 'alerts.enable')}</button></div>
-    {!supported ? <p role="status" className="text-xs text-caution">{t('alerts.unsupported')}</p> : null}
-    {notice ? <p role="status" className={`text-xs ${notice === 'error' ? 'text-caution' : 'text-muted'}`}>{t(notice === 'error' ? 'alerts.error' : enabled ? 'alerts.enabled' : 'alerts.disabled')}</p> : null}
-    {items.length ? <div className="border-t border-line pt-3"><h3 className="text-sm font-medium">{t('alerts.inbox')}</h3><ul className="mt-2 space-y-2">{items.slice(0, 5).map(item => <li key={item.id} className="rounded-control bg-sunken p-3"><p className="text-sm font-medium">{item.title}</p><p className="mt-1 text-xs text-muted">{item.body}</p></li>)}</ul></div> : null}
-  </section>
+  return (
+    <section
+      id="smart-alerts"
+      tabIndex={-1}
+      className="grid grid-cols-1 gap-6 border-b border-line py-8 first:pt-0 last:border-b-0 lg:grid-cols-[280px_1fr] lg:gap-10 lg:py-10 scroll-mt-24 outline-none"
+      aria-label={t('alerts.title')}
+    >
+      <div className="flex flex-col gap-2 lg:pt-1">
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-semibold text-ink">{t('alerts.title')}</h2>
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${enabled ? 'bg-accent-soft text-accent' : 'bg-sunken text-muted'}`}>
+            {enabled ? 'Active' : 'Off'}
+          </span>
+        </div>
+        <p className="text-[13px] leading-relaxed text-muted">{t('alerts.description')}</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted">{t('alerts.privacy')}</p>
+      </div>
+
+      <div className="liquid-panel rounded-box p-5 sm:p-6 flex flex-col gap-5 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[15px] font-medium text-ink">{t('alerts.title')}</span>
+            <span className="text-xs text-muted">{enabled ? t('alerts.enabled') : t('alerts.description')}</span>
+          </div>
+          <button
+            type="button"
+            disabled={busy || !supported}
+            onClick={() => void toggle()}
+            className={`inline-flex h-11 shrink-0 items-center justify-center rounded-control px-4 text-sm font-medium transition active:scale-[0.98] disabled:opacity-50 ${
+              enabled
+                ? 'border border-line bg-surface text-ink hover:bg-sunken'
+                : 'bg-ink text-surface hover:opacity-90'
+            }`}
+          >
+            {t(enabled ? 'alerts.disable' : 'alerts.enable')}
+          </button>
+        </div>
+
+        {!supported ? <p role="status" className="text-xs text-caution">{t('alerts.unsupported')}</p> : null}
+        {notice ? <p role="status" className={`text-xs ${notice === 'error' ? 'text-caution' : 'text-muted'}`}>{t(notice === 'error' ? 'alerts.error' : enabled ? 'alerts.enabled' : 'alerts.disabled')}</p> : null}
+
+        {items.length ? (
+          <div className="border-t border-line pt-4">
+            <h3 className="text-sm font-medium text-ink">{t('alerts.inbox')}</h3>
+            <ul className="mt-3 space-y-2.5">
+              {items.slice(0, 5).map(item => (
+                <li key={item.id} className="rounded-control bg-sunken p-3.5">
+                  <p className="text-sm font-medium text-ink">{item.title}</p>
+                  <p className="mt-1 text-xs text-muted">{item.body}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  )
 }

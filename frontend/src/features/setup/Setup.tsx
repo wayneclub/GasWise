@@ -13,7 +13,7 @@ export function Setup({ prefs, update }: { prefs: Prefs; update: (change: Partia
         <GasPumpIcon size={22} weight="fill" className="text-ink" />
         <span className="text-[15px] font-semibold tracking-tight">{t('app.name')}</span>
       </div>
-      <h1 className="mt-6 text-[28px] font-semibold leading-tight tracking-tight lg:text-4xl">{t('setup.title')}</h1>
+      <h1 className="mt-6 text-2xl font-semibold leading-tight tracking-tight text-ink sm:text-[26px]">{t('setup.title')}</h1>
       <p className="mt-2 max-w-[65ch] text-[15px] leading-relaxed text-muted">
         {t('setup.lead')}
       </p>

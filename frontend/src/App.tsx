@@ -47,7 +47,24 @@ function ServiceTabs({ prefs, update, replace }: { prefs: Prefs; update: (change
     </header>
     <div role="tabpanel" id="panel-fuel" aria-labelledby="tab-fuel" hidden={settingsOpen || tab !== 'fuel'}><Decide active={!settingsOpen && tab === 'fuel'} prefs={prefs} update={update} onSettings={() => setSettingsView('all')} /></div>
     <div role="tabpanel" id="panel-parts" aria-labelledby="tab-parts" hidden={settingsOpen || tab !== 'parts'}><Parts key={prefs.vehicle?.id ?? 'manual'} vehicle={prefs.vehicle} onChooseCar={() => setSettingsView('all')} /></div>
-    {settingsOpen ? <main aria-label={t('decide.settings')} className="mx-auto max-w-5xl px-4 py-6 lg:py-10"><div className="mb-6 flex items-center justify-between"><h1 className="text-2xl font-semibold">{t('decide.settings')}</h1><button type="button" onClick={() => setSettingsView(null)} className="rounded-control border border-line px-4 py-2 text-sm">{t('settings.back')}</button></div><PreferencesForm prefs={prefs} update={update} replace={replace} advanced /></main> : null}
+    {settingsOpen ? (
+      <main aria-label={t('decide.settings')} className="mx-auto max-w-5xl px-4 py-6 sm:py-8 lg:py-10">
+        <div className="mb-6 flex items-center justify-between border-b border-line pb-5">
+          <div className="flex flex-col gap-0.5">
+            <h1 className="text-2xl font-semibold tracking-tight text-ink">{t('decide.settings')}</h1>
+            <p className="text-xs sm:text-sm text-muted">{t('setup.lead')}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSettingsView(null)}
+            className="inline-flex h-10 items-center justify-center rounded-control border border-line bg-surface px-4 text-sm font-medium text-ink hover:bg-sunken active:scale-[0.98]"
+          >
+            {t('settings.back')}
+          </button>
+        </div>
+        <PreferencesForm prefs={prefs} update={update} replace={replace} advanced />
+      </main>
+    ) : null}
   </>
 }
 export default function App() {

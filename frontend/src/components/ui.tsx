@@ -13,7 +13,7 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
   const tone = {
-    primary: 'bg-ink text-surface shadow-soft hover:opacity-90',
+    primary: 'bg-ink text-surface hover:opacity-90',
     secondary: 'liquid-control text-ink hover:bg-sunken',
     ghost: 'text-muted hover:text-ink hover:bg-sunken',
   }[variant]
@@ -40,7 +40,7 @@ export function LinkButton({
       href={href}
       target="_blank"
       rel="noreferrer"
-      className={`inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-control bg-ink px-5 text-[15px] font-semibold text-surface shadow-soft hover:opacity-90 ${press} ${focus} ${className}`}
+      className={`inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-control bg-ink px-5 text-[15px] font-semibold text-surface hover:opacity-90 ${press} ${focus} ${className}`}
     >
       {children}
     </a>

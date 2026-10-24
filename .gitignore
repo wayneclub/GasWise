@@ -90,5 +90,6 @@ Thumbs.db
 # Local research outputs and workspace-specific tools
 artifacts/
 .claude/
+.taste-skill/
 .docker-secrets/
 compose.private.yaml
