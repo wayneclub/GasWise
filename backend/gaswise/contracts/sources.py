@@ -136,7 +136,7 @@ class GasBuddyQuote(Model):
 
 
 class GasBuddyPrices(Model):
-    page_requests: int = Field(default=1, ge=1, le=5)
+    page_requests: int = Field(default=1, ge=1, le=10)
     transport: Literal["http", "browser", "session_http"] = "http"
     fetched_at: AwareDatetime
     postal_code: str | None = None

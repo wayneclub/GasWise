@@ -166,6 +166,54 @@ async def test_cursor_pages_recover_later_station_with_its_own_metadata():
         await worker.close()
 
 
+async def test_batch_query_accepts_all_eight_requested_pages():
+    from gaswise.contracts.sources import GasBuddySearch
+
+    pages = []
+
+    def handler(request):
+        if request.method == "GET":
+            return httpx.Response(200, text='<script>window.gbcsrf = "fixture";</script>')
+        cursor = json.loads(request.content)["variables"].get("cursor")
+        pages.append(cursor)
+        number = len(pages)
+        return httpx.Response(200, json={"data": {"locationBySearchTerm": {"stations": {
+            "cursor": {"next": str(number) if number < 8 else None},
+            "results": [{
+                "id": str(number),
+                "name": f"Station {number}",
+                "priceUnit": "dollars_per_gallon",
+                "address": {
+                    "country": "US",
+                    "line1": f"{number} Main St",
+                    "locality": "San Diego",
+                    "region": "CA",
+                    "postalCode": "92101",
+                },
+                "prices": [{
+                    "fuelProduct": "premium_gas",
+                    "credit": {"price": 5 + number / 100, "postedTime": datetime.now(UTC).isoformat()},
+                }],
+            }],
+        }}}})
+
+    worker = GasBuddyHTTPSession(
+        client_factory=lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    )
+    provider = GasBuddyWebProvider(None, snapshot_loader=worker.snapshot, transport="http")
+    try:
+        result = await provider.prices(
+            GasBuddySearch(search="San Diego, CA", max_pages=8, max_results=160)
+        )
+    finally:
+        await worker.close()
+
+    assert pages == [None, "1", "2", "3", "4", "5", "6", "7"]
+    assert result.page_requests == 8
+    assert len(result.prices) == 8
+    assert result.partial is False
+
+
 async def test_default_client_routes_only_through_configured_proxy():
     worker = GasBuddyHTTPSession(proxy="http://gluetun:8888")
     client = worker._factory()
