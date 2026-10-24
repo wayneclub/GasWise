@@ -129,6 +129,7 @@ async def test_one_nearby_matches_gasbuddy_without_text_or_routes():
     }
     assert result.snapshot.stations[0].source == "gasbuddy_web"
     assert result.snapshot.stations[0].canonical_id == "google_places:gp1"
+    assert result.snapshot.stations[0].details["location_source"] == "google_places"
     assert not result.snapshot.unlocated_gasbuddy
     assert result.ranking is None
 
@@ -262,6 +263,7 @@ async def test_three_sources_share_inventory_routes_and_keep_payment_evidence():
     assert (gb.calls, maps.calls, waze.calls, router.routes) == (1, 1, 1, 1)
     assert len(first.snapshot.stations) == 3
     assert {s.canonical_id for s in first.snapshot.stations} == {"google_places:gp1"}
+    assert all(s.details.get("location_source") == "google_maps_web" for s in first.snapshot.stations)
     assert len(first.ranking.results) == 1
     row = first.ranking.results[0]
     assert row.station.source == "gasbuddy_web"
@@ -270,6 +272,7 @@ async def test_three_sources_share_inventory_routes_and_keep_payment_evidence():
     assert all(not e.eligible for e in row.price_comparison.evidence if e.payment_type == "unknown")
     assert first.upstream_calls["google_nearby"] == 0
     assert first.upstream_calls["routes"] == 1
+    assert {"discovery_gasbuddy", "discovery_maps", "discovery_waze", "routes", "aaa_averages"} <= first.timings_ms.keys()
     changed = await service.rerank(
         SmartRerank(
             snapshot=first.snapshot,
@@ -483,6 +486,7 @@ async def test_closed_inventory_station_excludes_matched_quotes_before_routing()
     result = await service.search(SmartSearch(origin=Point(lat=34, lng=-118), calculate_routes=True))
     gasbuddy = next(s for s in result.snapshot.stations if s.source == "gasbuddy_web")
     assert gasbuddy.open_now is False
+    assert gasbuddy.details["location_source"] == "google_maps_web"
     assert result.ranking.results == [] and router.routes == 0
     reopened = await service.rerank(
         SmartRerank(

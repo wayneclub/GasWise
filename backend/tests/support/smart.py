@@ -108,6 +108,7 @@ class MapsInventory:
                     payment_type="unknown",
                     price_updated_at=now,
                     fetched_at=now,
+                    details={"location_source": "google_maps_web"},
                 )
             ],
             warnings=[],

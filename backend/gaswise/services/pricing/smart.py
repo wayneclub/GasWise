@@ -75,7 +75,7 @@ def gasbuddy_station(quote, matched=None):
             canonical_id=f"gasbuddy:{quote.id}",
             location=quote.location,
             attribution=["GasBuddy"],
-            details={"source_url": quote.source_url},
+            details={"source_url": quote.source_url, "location_source": "gasbuddy_web"},
         )
     return Station(
         **common,
@@ -89,6 +89,7 @@ def gasbuddy_station(quote, matched=None):
             "opening_status": matched.opening_status,
             "source_url": quote.source_url,
             "location_source_name": matched.name,
+            "location_source": "google_maps_web",
         },
         **merged_opening(matched),
     )
@@ -272,6 +273,7 @@ class SmartService:
 
     async def _collect(self, query, vehicle_override=None):
         started = perf_counter()
+        stage_timings = {}
         if query.calculate_routes and self.router is None and self.demo is None:
             # Fail before collecting any price or Places data.
             raise ProviderError("smart_routing_not_configured")
@@ -301,7 +303,7 @@ class SmartService:
             stations = await self.demo.stations(search.model_copy(update={"max_results": 10}))
             statuses.append(SourceStatus(source="synthetic", status="ok", quote_count=len(stations)))
         else:
-            acquisitions = await acquire(self, search, query)
+            acquisitions = await acquire(self, search, query, stage_timings)
             if self.gasbuddy is not None:
                 try:
                     # Do not apply ranking choices at acquisition time.
@@ -474,6 +476,7 @@ class SmartService:
                                 rating=place.get("rating"),
                                 review_count=place.get("userRatingCount"),
                                 rating_source="Google Maps" if place.get("rating") is not None else None,
+                                details=self.google.opening_details(place),
                                 **self.google.opening(place),
                             )
                         )
@@ -517,6 +520,7 @@ class SmartService:
                     calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
                     gasbuddy_sites = [s for s in stations if (s.canonical_id or "").startswith("gasbuddy:")]
                     for quote in quotes:
+                        quote = quote.model_copy(update={"details": {**quote.details, "location_source": "waze"}})
                         matched = located_inventory_match(matching_inventory, quote)
                         if matched is None and (site := site_match(gasbuddy_sites, quote)) is not None:
                             quote = quote.model_copy(update={"canonical_id": site.canonical_id})
@@ -526,7 +530,7 @@ class SmartService:
                                     "canonical_id": f"google_places:{matched.place_id}",
                                     "location": matched.location,
                                     **merged_opening(quote, matched),
-                                    "details": {**quote.details, "regional_address": matched.address},
+                                    "details": {**quote.details, "regional_address": matched.address, "location_source": "google_maps_web"},
                                     "rating": matched.rating if matched.rating is not None else quote.rating,
                                     "review_count": matched.review_count if matched.rating is not None else quote.review_count,
                                     "rating_source": matched.rating_source if matched.rating is not None else quote.rating_source,
@@ -599,14 +603,32 @@ class SmartService:
                     snapshot.warnings.append("AAA regional average unavailable for " + state)
 
         discovery_done = perf_counter()
+
+        async def timed(name, operation):
+            started = perf_counter()
+            try:
+                await operation
+            finally:
+                stage_timings[name] = round((perf_counter() - started) * 1000, 1)
+
         if query.calculate_routes:
-            await asyncio.gather(self.collect_routes(snapshot, min(query.route_limit, 20) if query.estimate_unrouted_routes else query.route_limit, calls), averages())
+            await asyncio.gather(
+                timed("routes", self.collect_routes(snapshot, min(query.route_limit, 20) if query.estimate_unrouted_routes else query.route_limit, calls)),
+                timed("aaa_averages", averages()),
+            )
         else:
-            await averages()
+            await timed("aaa_averages", averages())
         routes_done = perf_counter()
         signature = self.sign(snapshot)
         ranking = await self.rank(snapshot, search) if query.calculate_routes else None
-        return SmartResult(snapshot=snapshot, signature=signature, ranking=ranking, cache_hits=calls.pop("_cache_hits", 0), upstream_calls=calls, timings_ms={"discovery": round((discovery_done-started)*1000, 1), "routes_and_averages": round((routes_done-discovery_done)*1000, 1), "ranking": round((perf_counter()-routes_done)*1000, 1), "total": round((perf_counter()-started)*1000, 1)})
+        timings_ms = {
+            "discovery": round((discovery_done - started) * 1000, 1),
+            "routes_and_averages": round((routes_done - discovery_done) * 1000, 1),
+            "ranking": round((perf_counter() - routes_done) * 1000, 1),
+            **stage_timings,
+            "total": round((perf_counter() - started) * 1000, 1),
+        }
+        return SmartResult(snapshot=snapshot, signature=signature, ranking=ranking, cache_hits=calls.pop("_cache_hits", 0), upstream_calls=calls, timings_ms=timings_ms)
 
     async def collect_routes(self, snapshot, route_limit, calls):
         search = snapshot.query

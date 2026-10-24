@@ -372,9 +372,15 @@ class MapsWebProvider:
                         membership_required=membership_for_name(row[11]),
                         open_now=opening["open_now"],
                         business_status=opening["business_status"],
-                        details={"opening_status": opening["opening_status"]}
-                        if opening["opening_status"]
-                        else {},
+                        details={
+                            "location_source": "google_maps_web",
+                            "opening_status_checked_at": now.isoformat(),
+                            **(
+                                {"opening_status": opening["opening_status"]}
+                                if opening["opening_status"]
+                                else {}
+                            ),
+                        },
                     )
                     all_quotes.append(station)
                     if kind == query.fuel_type:

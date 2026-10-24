@@ -1,6 +1,7 @@
 """Independent price acquisition, bounded globally by SmartService cache loaders."""
 import asyncio
 import math
+from time import perf_counter
 
 import h3
 
@@ -84,7 +85,15 @@ async def discover_maps(service, search, query):
     return outcomes, coverage.fraction()
 
 
-async def acquire(service, search, query):
+async def acquire(service, search, query, timings=None):
+    async def timed(name, operation):
+        started = perf_counter()
+        try:
+            return await operation
+        finally:
+            if timings is not None:
+                timings[name] = round((perf_counter() - started) * 1000, 1)
+
     requests = {}
     if service.gasbuddy is not None:
         # Coordinates, not ZIP: a ZIP search stops at the ZIP line. The snapped centre lets
@@ -95,13 +104,19 @@ async def acquire(service, search, query):
                             radius_meters=min(60000, shared_radius),
                             fuel_type=search.fuel_type, payment_type="cash_or_credit",
                             include_payment_variants=True, max_results=100)
-        requests["gasbuddy"] = service.cached("gasbuddy:" + gb.model_dump_json(), lambda: service.gasbuddy.prices(gb), refresh=query.force_refresh)
+        requests["gasbuddy"] = timed(
+            "discovery_gasbuddy",
+            service.cached("gasbuddy:" + gb.model_dump_json(), lambda: service.gasbuddy.prices(gb), refresh=query.force_refresh),
+        )
     if service.maps_web is not None:
-        requests["maps"] = discover_maps(service, search, query)
+        requests["maps"] = timed("discovery_maps", discover_maps(service, search, query))
     if service.waze is not None:
         centre, radius = shared_viewport(search.origin, search_limit_meters(search))
         waze = GooglePriceSearch(origin=centre, fuel_type=search.fuel_type, radius_meters=min(50000, radius), max_results=20)
-        requests["waze"] = service.cached("waze:" + waze.model_dump_json(), lambda: service.waze.stations(waze), refresh=query.force_refresh)
+        requests["waze"] = timed(
+            "discovery_waze",
+            service.cached("waze:" + waze.model_dump_json(), lambda: service.waze.stations(waze), refresh=query.force_refresh),
+        )
     # Per-source failures stay isolated; cancellation still propagates to all waiters.
     values = await asyncio.gather(*requests.values(), return_exceptions=True)
     return dict(zip(requests, values, strict=True))

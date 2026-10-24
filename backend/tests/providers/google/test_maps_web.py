@@ -374,7 +374,8 @@ def test_observed_opening_status_labels(short, label, open_now, status):
 def test_missing_opening_block_is_unknown_not_open():
     result = MapsWebProvider.parse([record()], query())
     assert result.inventory[0].open_now is None and result.inventory[0].opening_status is None
-    assert result.stations[0].open_now is None and result.stations[0].details == {}
+    assert result.stations[0].open_now is None
+    assert result.stations[0].details["location_source"] == "google_maps_web"
 
 
 def test_public_rating_count_retained_and_invalid_rating_does_not_drop_station():

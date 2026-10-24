@@ -8,6 +8,48 @@ from gaswise.contracts.search import Search
 from gaswise.contracts.sources import GooglePriceSearch
 from gaswise.domain.ports import ProviderError
 
+DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+
+def clock(value, limit: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= limit:
+        raise ValueError
+    return value
+
+
+def weekly_hours(periods) -> list[dict]:
+    """Convert Places regularOpeningHours.periods to the Waze/frontend weekly shape."""
+    if not isinstance(periods, list):
+        return []
+    grouped: dict[tuple[str, str, bool], set[int]] = {}
+    for period in periods:
+        try:
+            opened = period["open"]
+            day = opened["day"]
+            if isinstance(day, bool) or not isinstance(day, int) or not 0 <= day <= 6:
+                continue
+            start = f"{clock(opened['hour'], 23):02d}:{clock(opened.get('minute', 0), 59):02d}"
+            closed = period.get("close")
+            if isinstance(closed, dict):
+                end = f"{clock(closed['hour'], 23):02d}:{clock(closed.get('minute', 0), 59):02d}"
+            elif start == "00:00":
+                end = "00:00"
+            else:
+                continue
+        except (KeyError, TypeError, ValueError):
+            continue
+        grouped.setdefault((start, end, start == end == "00:00"), set()).add(day)
+    return [
+        {
+            "days": sorted(days),
+            "day_names": [DAY_NAMES[day] for day in sorted(days)],
+            "from": start,
+            "to": end,
+            "is_24_hours": is_24,
+        }
+        for (start, end, is_24), days in sorted(grouped.items(), key=lambda item: (min(item[1]), item[0][0]))
+    ]
+
 
 class GoogleProvider:
     types = {"regular": "REGULAR_UNLEADED", "midgrade": "MIDGRADE", "premium": "PREMIUM", "diesel": "DIESEL"}
@@ -51,9 +93,11 @@ class GoogleProvider:
                     }
                 },
             },
-            # businessStatus/openNow stay within the Enterprise + Atmosphere SKU fuelOptions already triggers.
+            # businessStatus/openNow/hours stay within the Enterprise + Atmosphere SKU fuelOptions already triggers.
             "places.id,places.displayName,places.location,places.fuelOptions,places.attributions,"
-            "places.addressComponents,places.businessStatus,places.currentOpeningHours.openNow,places.rating,places.userRatingCount",
+            "places.addressComponents,places.businessStatus,places.currentOpeningHours.openNow,"
+            "places.regularOpeningHours.periods,places.regularOpeningHours.weekdayDescriptions,"
+            "places.rating,places.userRatingCount",
         )
 
     async def stations(self, query: Search | GooglePriceSearch) -> list[Station]:
@@ -70,6 +114,21 @@ class GoogleProvider:
                 "CLOSED_PERMANENTLY": "permanently_closed",
             }.get(place.get("businessStatus")),
         }
+
+    @staticmethod
+    def opening_details(place) -> dict:
+        """Weekly hours and provenance; current open/closed stays in the Station fields."""
+        details = {"location_source": "google_places"}
+        hours = place.get("regularOpeningHours")
+        if not isinstance(hours, dict):
+            return details
+        periods = weekly_hours(hours.get("periods"))
+        if periods:
+            details["opening_hours"] = periods
+        descriptions = hours.get("weekdayDescriptions")
+        if isinstance(descriptions, list) and descriptions and all(isinstance(row, str) for row in descriptions):
+            details["opening_hours_text"] = descriptions
+        return details
 
     def prices_from_places(self, data, query) -> list[Station]:
         now = datetime.now(UTC)
@@ -100,6 +159,7 @@ class GoogleProvider:
                             rating=place.get("rating"),
                             review_count=place.get("userRatingCount"),
                             rating_source="Google Maps" if place.get("rating") is not None else None,
+                            details={**self.opening_details(place), "opening_status_checked_at": now.isoformat()},
                             price_per_gallon=price,
                             fuel_type=query.fuel_type,
                             price_updated_at=datetime.fromisoformat(fuel["updateTime"].replace("Z", "+00:00"))

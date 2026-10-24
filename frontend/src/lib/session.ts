@@ -41,7 +41,9 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
     radius_meters: (prefs.searchRadiusMiles ?? 5) * 1609.344,
     max_results: 100,
     calculate_routes: true,
-    route_limit: 20,
+    // Ten routes measured the same top five as twenty at 34.10,-118.30 while
+    // cutting the cold route phase from ~4.2s to ~2.0s; expansion stays explicit.
+    route_limit: 10,
     estimate_unrouted_routes: true,
     discovery_tiles: 20,
     // Maps website summaries only publish Regular, so non-regular searches rely on

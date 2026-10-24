@@ -12,6 +12,7 @@ async def test_google_wire_format_and_unknown_octane():
         assert request.headers["X-Goog-Api-Key"] == "fixture"
         assert "fuelOptions" in request.headers["X-Goog-FieldMask"]
         assert "places.currentOpeningHours.openNow" in request.headers["X-Goog-FieldMask"]
+        assert "places.regularOpeningHours.periods" in request.headers["X-Goog-FieldMask"]
         return httpx.Response(
             200,
             json={
@@ -23,6 +24,22 @@ async def test_google_wire_format_and_unknown_octane():
                         "location": {"latitude": 34, "longitude": -118},
                         "businessStatus": "OPERATIONAL",
                         "currentOpeningHours": {"openNow": False},
+                        "regularOpeningHours": {
+                            "periods": [
+                                {
+                                    "open": {"day": 0, "hour": 0, "minute": 0},
+                                    "close": {"day": 0, "hour": 0, "minute": 0},
+                                },
+                                {
+                                    "open": {"day": 1, "hour": 6, "minute": 0},
+                                    "close": {"day": 1, "hour": 22, "minute": 0},
+                                },
+                            ],
+                            "weekdayDescriptions": [
+                                "Sunday: Open 24 hours",
+                                "Monday: 6:00 AM – 10:00 PM",
+                            ],
+                        },
                         "fuelOptions": {
                             "fuelPrices": [
                                 {
@@ -43,6 +60,25 @@ async def test_google_wire_format_and_unknown_octane():
     assert stations[0].octane is None
     assert stations[0].price_updated_at.tzinfo is not None
     assert stations[0].open_now is False and stations[0].business_status == "operational"
+    assert stations[0].details["location_source"] == "google_places"
+    assert stations[0].details["opening_hours"] == [
+        {
+            "days": [0],
+            "day_names": ["Sunday"],
+            "from": "00:00",
+            "to": "00:00",
+            "is_24_hours": True,
+        },
+        {
+            "days": [1],
+            "day_names": ["Monday"],
+            "from": "06:00",
+            "to": "22:00",
+            "is_24_hours": False,
+        },
+    ]
+    assert stations[0].details["opening_hours_text"][1] == "Monday: 6:00 AM – 10:00 PM"
+    assert stations[0].details["opening_status_checked_at"]
 
 
 async def test_route_sends_stopover_and_reads_duration():
@@ -198,3 +234,39 @@ def test_google_opening_status_is_unknown_without_hours():
     assert GoogleProvider.opening({"businessStatus": "CLOSED_TEMPORARILY"})["business_status"] == (
         "temporarily_closed"
     )
+
+
+def test_google_regular_opening_hours_are_normalized_for_display():
+    details = GoogleProvider.opening_details(
+        {
+            "regularOpeningHours": {
+                "periods": [
+                    {"open": {"day": 2, "hour": 9, "minute": 30}, "close": {"day": 2, "hour": 18, "minute": 0}},
+                    {"open": {"day": 2, "hour": 9, "minute": 30}, "close": {"day": 2, "hour": 18, "minute": 0}},
+                    {"open": {"day": 0, "hour": 0, "minute": 0}, "close": {"day": 0, "hour": 0, "minute": 0}},
+                    {"open": {"day": 3, "hour": 24, "minute": 0}, "close": {"day": 3, "hour": 25, "minute": 0}},
+                    {"open": {"day": 8, "hour": 1, "minute": 0}, "close": {"day": 8, "hour": 2, "minute": 0}},
+                ],
+                "weekdayDescriptions": ["Sunday: Open 24 hours"],
+            }
+        }
+    )
+    assert details["location_source"] == "google_places"
+    assert details["opening_hours"] == [
+        {
+            "days": [0],
+            "day_names": ["Sunday"],
+            "from": "00:00",
+            "to": "00:00",
+            "is_24_hours": True,
+        },
+        {
+            "days": [2],
+            "day_names": ["Tuesday"],
+            "from": "09:30",
+            "to": "18:00",
+            "is_24_hours": False,
+        },
+    ]
+    assert details["opening_hours_text"] == ["Sunday: Open 24 hours"]
+    assert GoogleProvider.opening_details({}) == {"location_source": "google_places"}

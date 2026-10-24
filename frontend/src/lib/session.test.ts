@@ -38,6 +38,12 @@ describe('searchBody', () => {
     )
     expect(vehicle.gasbuddy_page_limit).toBe(5)
   })
+
+  it('routes a bounded shortlist first and leaves expansion explicit', () => {
+    const body = searchBody({ ...DEFAULT_PREFS }, origin)
+    expect(body.route_limit).toBe(10)
+    expect(body.estimate_unrouted_routes).toBe(true)
+  })
 })
 
 describe('navigationUrl', () => {

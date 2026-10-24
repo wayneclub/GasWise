@@ -15,6 +15,60 @@ from gaswise.domain.pricing.daily_ramp import reviewed_limit
 from gaswise.domain.pricing.shared_cache import CachedQuery
 from gaswise.providers.storage.collection_events import CollectionEvents
 
+GOOGLE_LOCATION_SOURCES = {"google_maps_web", "google_places"}
+STATION_DETAIL_KEYS = (
+    "opening_status",
+    "opening_hours",
+    "opening_hours_text",
+    "opening_status_checked_at",
+    "services",
+    "source_url",
+)
+
+
+def station_metadata(quote):
+    """Provider coordinates and station facts; Google Maps remains the master record."""
+    metadata = {key: quote[key] for key in ("name", "address") if quote.get(key) is not None}
+    details = quote.get("details") if isinstance(quote.get("details"), dict) else {}
+    location = quote.get("location")
+    if isinstance(location, dict):
+        lat, lng = location.get("lat"), location.get("lng")
+        if (
+            isinstance(lat, int | float) and not isinstance(lat, bool)
+            and isinstance(lng, int | float) and not isinstance(lng, bool)
+            and -90 <= lat <= 90 and -180 <= lng <= 180
+            and (lat, lng) != (0, 0)
+        ):
+            metadata["location"] = {"lat": lat, "lng": lng}
+            metadata["location_source"] = details.get("location_source") or quote.get("source", "unknown")
+    for key in ("rating", "review_count", "rating_source", "open_now", "business_status"):
+        if quote.get(key) is not None:
+            metadata[key] = quote[key]
+    for key in STATION_DETAIL_KEYS:
+        value = details.get(key)
+        if value not in (None, [], {}):
+            metadata[key] = value
+    return metadata
+
+
+def station_attributes(quote):
+    """History attributes include hours/status so later changes are retained."""
+    attributes = {
+        key: quote.get(key)
+        for key in (
+            "name", "address", "location", "membership_required", "octane", "currency", "unit",
+            "rating", "review_count", "rating_source", "open_now", "business_status",
+        )
+    }
+    details = quote.get("details") if isinstance(quote.get("details"), dict) else {}
+    if quote.get("location") is not None:
+        attributes["location_source"] = details.get("location_source") or quote.get("source", "unknown")
+    for key in STATION_DETAIL_KEYS:
+        value = details.get(key)
+        if value not in (None, [], {}):
+            attributes[key] = value
+    return attributes
+
 
 class PostgresPricingCache(CollectionEvents):
     def __init__(self, pool):
@@ -466,7 +520,7 @@ class PostgresPricingCache(CollectionEvents):
         for quote in quotes:
             source = quote.get("source", "unknown")
             station_id = str(quote["id"])
-            metadata = {k: quote[k] for k in ("name", "address", "location") if k in quote}
+            metadata = station_metadata(quote)
             fetched = datetime.fromisoformat(quote["fetched_at"].replace("Z", "+00:00"))
             stations.append((source, station_id, quote.get("canonical_id"), json.dumps(metadata), fetched))
             expires = quote_expiry(quote)
@@ -483,9 +537,7 @@ class PostgresPricingCache(CollectionEvents):
                         condition, str(quote["price_per_gallon"]),
                         reported.isoformat() if reported else fetched.date().isoformat())
             observation = hashlib.sha256(json.dumps(identity).encode()).hexdigest()
-            attributes = {k: quote.get(k) for k in (
-                "name", "address", "location", "membership_required", "octane", "currency", "unit"
-            )}
+            attributes = station_attributes(quote)
             history.append((observation, source, station_id, quote.get("canonical_id"),
                             quote["fuel_type"], quote["payment_type"], condition,
                             quote["price_per_gallon"], reported, fetched, json.dumps(attributes)))
@@ -496,8 +548,25 @@ class PostgresPricingCache(CollectionEvents):
             await connection.executemany("""
                 INSERT INTO gaswise.stations (source, station_id, canonical_id, metadata, seen_at)
                 VALUES ($1,$2,$3,$4::jsonb,$5) ON CONFLICT (source,station_id) DO UPDATE
-                SET canonical_id=COALESCE(EXCLUDED.canonical_id, stations.canonical_id),
-                    metadata=EXCLUDED.metadata, seen_at=GREATEST(stations.seen_at, EXCLUDED.seen_at)
+                SET canonical_id=CASE
+                        WHEN (
+                            COALESCE(stations.metadata->>'location_source', stations.source) IN ('google_maps_web','google_places')
+                            OR (stations.metadata->>'location_source' IS NULL AND stations.canonical_id LIKE 'google_places:%')
+                        )
+                             AND COALESCE(EXCLUDED.metadata->>'location_source', '') NOT IN ('google_maps_web','google_places')
+                        THEN stations.canonical_id
+                        ELSE COALESCE(EXCLUDED.canonical_id, stations.canonical_id)
+                    END,
+                    metadata=CASE
+                        WHEN (
+                            COALESCE(stations.metadata->>'location_source', stations.source) IN ('google_maps_web','google_places')
+                            OR (stations.metadata->>'location_source' IS NULL AND stations.canonical_id LIKE 'google_places:%')
+                        )
+                             AND COALESCE(EXCLUDED.metadata->>'location_source', '') NOT IN ('google_maps_web','google_places')
+                        THEN EXCLUDED.metadata || stations.metadata
+                        ELSE stations.metadata || EXCLUDED.metadata
+                    END,
+                    seen_at=GREATEST(stations.seen_at, EXCLUDED.seen_at)
                 WHERE stations.metadata IS DISTINCT FROM EXCLUDED.metadata
                    OR EXCLUDED.canonical_id IS NOT NULL AND stations.canonical_id IS DISTINCT FROM EXCLUDED.canonical_id
                    OR EXCLUDED.seen_at > stations.seen_at
