@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from gaswise.domain.pricing.shared_cache import background_acquisition
-from gaswise.services.pricing.base_collection import BaseCollection
+from gaswise.services.pricing.base_collection import BaseCollection, collection_jobs
 
 
 class Cache:
@@ -24,6 +24,8 @@ class Cache:
             self.jobs.pop(args[0], None)
         elif method == "base_job_status":
             return list(self.jobs.values())
+        elif method == "new_collection_canonical_count":
+            return 1
 
     async def budget_state(self, source):
         return {"used": self.used, "background_day_used": 0}
@@ -42,7 +44,10 @@ class Provider:
     async def prices(self, query):
         assert background_acquisition.get()
         self.calls.append(query)
-        return SimpleNamespace(prices=[SimpleNamespace(id="station")])
+        return SimpleNamespace(prices=[SimpleNamespace(
+            id="station", source="gasbuddy_web", canonical_id=None,
+            location=SimpleNamespace(lat=34.0, lng=-118.0), price_per_gallon=5,
+        )])
 
 
 def setup():
@@ -63,6 +68,8 @@ async def test_fixed_bases_collect_without_any_foreground_uses_and_persist_due_j
     assert {query.fuel_type for query in provider.calls} == {"regular", "premium"}
     assert all(args[2:4] == (86400, None) for args in cache.saved)
     assert all(args[4:6] == (1, 1) for args in cache.saved)
+    assert all(args[6]["canonical_count"] == 1 for args in cache.saved)
+    assert all(args[6]["new_canonical_count"] == 1 for args in cache.saved)
     assert not background_acquisition.get()
 
 
@@ -171,3 +178,43 @@ async def test_pacing_pauses_optional_jobs_but_allows_due_mandatory_work():
     state["mandatory_due"] = True
     assert await collector.step()
     assert len(provider.calls) == 1
+
+
+def test_isolated_radius_plan_expands_edges_without_adding_jobs_or_request_reserve():
+    from gaswise.domain.pricing.collection_bases import BASES
+
+    collector, _, _ = setup()
+    collector.service.maps_web = object()
+    collector.service.waze = object()
+    legacy = collection_jobs(collector.service, list(BASES), coverage_strategy="legacy")
+    adaptive = collection_jobs(collector.service, list(BASES), coverage_strategy="isolated_radius_v1")
+
+    assert len(legacy) == len(adaptive) == 425
+    assert sum(job.request_reserve for job in legacy.values()) == 1360
+    assert sum(job.request_reserve for job in adaptive.values()) == 1360
+    assert adaptive["blythe:regular:gasbuddy"].query.radius_meters > 20000
+    assert adaptive["la:regular:gasbuddy"].query.radius_meters == legacy["la:regular:gasbuddy"].query.radius_meters
+    assert max(job.query.radius_meters for job in adaptive.values()) <= 20600
+
+
+def test_collection_rate_budget_guard_rejects_plan_before_any_provider_work():
+    collector, _, _ = setup()
+    with pytest.raises(ValueError, match="request reserve"):
+        BaseCollection(collector.service, ["la", "irvine", "sd"], cycle_request_budget=23)
+
+
+async def test_status_exposes_rollback_friendly_batch_plan_without_changing_smart_contract():
+    collector, cache, _ = setup()
+    collector = BaseCollection(
+        collector.service,
+        ["la", "blythe"],
+        coverage_strategy="isolated_radius_v1",
+        cycle_request_budget=100,
+    )
+    await collector.initialize()
+    status = await collector.status()
+    assert status["coverage_plan"]["strategy"] == "isolated_radius_v1"
+    assert status["coverage_plan"]["rollback_strategy"] == "legacy"
+    assert status["coverage_plan"]["request_reserve"] == 16
+    assert status["coverage_plan"]["expanded_bases"] == ["blythe", "la"]
+    assert cache.jobs["blythe:regular:gasbuddy"]["descriptor"]["radius_meters"] > 20000

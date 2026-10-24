@@ -298,6 +298,35 @@ Provider failures can therefore miss the target; authenticated refresh status
 exposes `mandatory_due`, `priority_score`, last success and errors for inspection.
 The target covers the existing bounded city samples, not every station in LA.
 
+### Batch coverage feedback loop
+
+Fixed-base coverage is planned independently from the foreground Smart search
+contract. `GASWISE_BASE_COLLECTION_COVERAGE_STRATEGY=isolated_radius_v1` keeps
+the same 85 bases, five jobs per base, provider page/detail limits and request
+reserve. Dense bases retain the legacy 10 km requested radius. Only bases whose
+nearest configured neighbour leaves an uncovered half-gap expand, capped at
+20 km. Set the strategy to `legacy` for an immediate configuration rollback.
+
+Run `uv run python ../scripts/diagnostics/batch_coverage.py --json` from
+`backend/` before changing the plan. It reports effective radii after viewport
+snapping, simulated covered/overlap area, largest between-base gaps, jobs and
+the conservative request reserve. The command makes no provider requests and
+exits nonzero if the plan exceeds
+`GASWISE_BASE_COLLECTION_CYCLE_REQUEST_BUDGET`.
+
+Each successful collection journal row records raw quote and provider-station
+counts plus distinct canonical identities, newly persisted canonical identities,
+valid coordinates/prices and Google inventory overlap. These are sanitized
+counts, not raw payloads or user locations. `100 * new_canonical_count /
+http_requests` is the comparable marginal-yield measure; compare it by
+source/base/fuel before spending more pages or adding bases. Geometry estimates
+show sampling area, not proof that a capped website response is exhaustive.
+
+The Smart snapshot `inventory` maximum of 250 is a serving/serialization bound.
+It does not cap `stations`, `quotes`, `quote_history` or `station_history`
+persistence. Raising it would increase response/display work and must be
+evaluated separately from batch collection coverage.
+
 ### GasBuddy task pacing
 
 `GASWISE_GASBUDDY_BACKGROUND_PACING_ENABLED` defaults to true. PostgreSQL reserves
@@ -343,5 +372,13 @@ With a managed secondary exit, set `GASWISE_PRICING_EGRESS_HEALTH_FILE` to
 with unavailable lane indexes. Before a new query, an offline secondary or a
 missing/stale (>30 seconds) heartbeat selects the primary lane. Selection is pinned
 for the entire query; failed provider requests are not retried on another lane.
-The supervisor watches VPN health/authentication only, with three persisted city
-attempts and no change to source-level rejection cooldowns or shared budgets.
+The supervisor requires both container health and a bounded HTTPS request through
+each lane's own HTTP proxy returning a US location before publishing it available.
+The primary container is never deleted by this supervisor: when its verification
+fails, lane 0 is excluded and new queries use a verified managed replacement.
+Watch mode rechecks that evidence every five minutes; failure marks the lane
+unavailable before removing it and generating the next configured US-city exit.
+Three attempts form one persisted generation. Exhaustion waits two hours before
+a new generation, while systemd checks the cooldown every five minutes. Provider
+403/429 responses never rotate a lane and retain source-level cooldowns and
+shared budgets.

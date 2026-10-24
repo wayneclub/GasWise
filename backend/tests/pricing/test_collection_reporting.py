@@ -36,7 +36,9 @@ def test_internal_budget_and_interruptions_do_not_inflate_source_failure_statist
     assert completion('interrupted') == ('interrupted', 'interrupted')
     assert completion('collection_failed', 'secret=abc') == ('failure', 'unclassified')
     assert safe_metrics({'http_status': 'token=private', 'phase': 'private URL', 'egress_lane': 99}) == {
-        'http_status': None, 'http_requests': 0, 'phase': None, 'egress_lane': None}
+        'http_status': None, 'http_requests': 0, 'phase': None, 'egress_lane': None,
+        'canonical_count': 0, 'new_canonical_count': 0, 'located_count': 0,
+        'priced_count': 0, 'inventory_overlap_count': 0}
 
 
 def test_hourly_summary_distinguishes_deferral_and_does_not_claim_unique_stations():

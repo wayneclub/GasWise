@@ -311,7 +311,11 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             smart.base_collection = BaseCollection(
                 smart, settings.base_collection_bases, interval=settings.base_collection_interval_seconds,
                 limits=budget.limits, daily_limit=settings.hot_pricing_refresh_daily_requests,
-                egress_lanes=len(settings.pricing_egress_proxies) or 1)
+                egress_lanes=len(settings.pricing_egress_proxies) or 1,
+                coverage_strategy=settings.base_collection_coverage_strategy,
+                base_radius=settings.base_collection_radius_meters,
+                max_radius=settings.base_collection_max_radius_meters,
+                cycle_request_budget=settings.base_collection_cycle_request_budget)
             await smart.base_collection.initialize()
             base_task = asyncio.create_task(smart.base_collection.run())
 

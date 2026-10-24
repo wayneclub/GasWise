@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     base_collection_preset: Literal["custom", "socal"] = "custom"
     base_collection_bases: list[str] = Field(default_factory=lambda: ["la", "irvine", "sd"], min_length=1, max_length=200)
     base_collection_interval_seconds: int = Field(default=86400, ge=86400, le=604800)
+    base_collection_coverage_strategy: Literal["legacy", "isolated_radius_v1"] = "isolated_radius_v1"
+    base_collection_radius_meters: int = Field(default=10000, ge=1000, le=50000)
+    base_collection_max_radius_meters: int = Field(default=20000, ge=1000, le=50000)
+    base_collection_cycle_request_budget: int = Field(default=1360, ge=1, le=10000)
     gasbuddy_background_daily_requests: int | None = Field(default=None, ge=1, le=1000)
     gasbuddy_background_pacing_enabled: bool = True
     pricing_daily_ramp_enabled: bool = False
@@ -121,6 +125,8 @@ class Settings(BaseSettings):
         if self.base_collection_preset == "socal":
             from gaswise.domain.pricing.collection_bases import BASES
             self.base_collection_bases = list(BASES)
+        if self.base_collection_max_radius_meters < self.base_collection_radius_meters:
+            raise ValueError("Base collection maximum radius must not be smaller than its base radius")
         return self
 
     @field_validator("base_collection_bases")

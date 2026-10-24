@@ -154,6 +154,11 @@ CREATE TABLE IF NOT EXISTS gaswise.collection_runs (
     UNIQUE(job_id,owner)
 );
 CREATE INDEX IF NOT EXISTS collection_runs_time ON gaswise.collection_runs(finished_at DESC);
+ALTER TABLE gaswise.collection_runs ADD COLUMN IF NOT EXISTS canonical_count integer NOT NULL DEFAULT 0;
+ALTER TABLE gaswise.collection_runs ADD COLUMN IF NOT EXISTS new_canonical_count integer NOT NULL DEFAULT 0;
+ALTER TABLE gaswise.collection_runs ADD COLUMN IF NOT EXISTS located_count integer NOT NULL DEFAULT 0;
+ALTER TABLE gaswise.collection_runs ADD COLUMN IF NOT EXISTS priced_count integer NOT NULL DEFAULT 0;
+ALTER TABLE gaswise.collection_runs ADD COLUMN IF NOT EXISTS inventory_overlap_count integer NOT NULL DEFAULT 0;
 CREATE TABLE IF NOT EXISTS gaswise.collection_notifications (
     id bigserial PRIMARY KEY, dedupe_key text NOT NULL UNIQUE,
     kind text NOT NULL, payload jsonb NOT NULL,

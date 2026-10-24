@@ -15,12 +15,19 @@ class CollectionEvents:
         metrics = safe_metrics(info)
         run_id = await connection.fetchval("""
             INSERT INTO gaswise.collection_runs(job_id,owner,base,source,fuel,started_at,outcome,reason,
-                http_status,phase,egress_lane,http_requests,quote_count,station_count,retry_at)
-            VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+                http_status,phase,egress_lane,http_requests,quote_count,station_count,retry_at,
+                canonical_count,new_canonical_count,located_count,priced_count,inventory_overlap_count)
+            VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
             ON CONFLICT(job_id,owner) DO NOTHING RETURNING id
         """, job['id'], owner, job['base'], job['source'], job['fuel'], job.get('last_started_at'), outcome, reason,
             metrics['http_status'] if outcome != 'deferred' else None, metrics['phase'], metrics['egress_lane'],
-            metrics['http_requests'], quotes if outcome == 'success' else 0, stations if outcome == 'success' else 0, retry_at)
+            metrics['http_requests'], quotes if outcome == 'success' else 0,
+            stations if outcome == 'success' else 0, retry_at,
+            metrics['canonical_count'] if outcome == 'success' else 0,
+            metrics['new_canonical_count'] if outcome == 'success' else 0,
+            metrics['located_count'] if outcome == 'success' else 0,
+            metrics['priced_count'] if outcome == 'success' else 0,
+            metrics['inventory_overlap_count'] if outcome == 'success' else 0)
         if run_id and outcome in ('failure', 'interrupted'):
             await connection.execute("""INSERT INTO gaswise.collection_notifications(dedupe_key,kind,payload)
                 VALUES($1,'failure',$2::jsonb) ON CONFLICT(dedupe_key) DO NOTHING""",

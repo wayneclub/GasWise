@@ -203,6 +203,28 @@ class PostgresPricingCache(CollectionEvents):
         await self.pool.execute("""UPDATE gaswise.base_collection_jobs SET
             last_failure_code=$3,last_failure_at=now() WHERE id=$1 AND lease_owner=$2""", job_id, owner, code)
 
+    async def new_collection_canonical_count(self, job_id, station_keys):
+        if not station_keys:
+            return 0
+        return await self.pool.fetchval("""
+            WITH incoming AS (
+                SELECT source,station_id,canonical_id
+                FROM jsonb_to_recordset($2::jsonb)
+                AS x(source text,station_id text,canonical_id text)
+            ), started AS (
+                SELECT last_started_at FROM gaswise.base_collection_jobs WHERE id=$1
+            )
+            SELECT count(DISTINCT COALESCE(i.canonical_id,i.source||':'||i.station_id))
+            FROM incoming i,started r
+            WHERE NOT EXISTS (
+                SELECT 1 FROM gaswise.stations old
+                WHERE old.seen_at < r.last_started_at AND (
+                    (i.canonical_id IS NOT NULL AND old.canonical_id=i.canonical_id)
+                    OR (i.canonical_id IS NULL AND old.source=i.source AND old.station_id=i.station_id)
+                )
+            )
+        """, job_id, json.dumps(station_keys))
+
     async def finish_base_job(self, job_id, owner, delay, error, quotes, stations, info=None):
         return await self.finish_collection_attempt(job_id, owner, delay, error, quotes, stations, info)
 

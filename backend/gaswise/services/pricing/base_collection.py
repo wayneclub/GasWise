@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from gaswise.contracts.common import Point
 from gaswise.contracts.sources import GasBuddySearch, GooglePriceSearch, MapsWebSearch
 from gaswise.domain.ports import ProviderError
+from gaswise.domain.pricing.batch_coverage import requested_radii, run_metrics
 from gaswise.domain.pricing.collection_bases import BASE_CATALOG, BASES
 from gaswise.domain.pricing.collection_errors import safe_failure_code
 from gaswise.domain.pricing.shared_cache import (
@@ -32,15 +33,22 @@ class CollectionJob:
     provider: object
 
     @property
+    def request_reserve(self):
+        return 4 if self.source == "gasbuddy" else (3 if self.source == "waze" else 1 + self.query.detail_limit)
+
+    @property
     def raw_key(self):
         namespace = "waze:all-fuels-v1:" if self.source == "waze" else self.source + ":"
         return namespace + self.query.model_dump_json()
 
 
-def collection_jobs(service, bases):
+def collection_jobs(service, bases, *, coverage_strategy="legacy", base_radius=10000, max_radius=20000):
     jobs = {}
+    radii = requested_radii(
+        bases, strategy=coverage_strategy, base_radius=base_radius, max_radius=max_radius
+    )
     for base in bases:
-        centre, radius = shared_viewport(Point(lat=BASES[base][0], lng=BASES[base][1]), 10000)
+        centre, radius = shared_viewport(Point(lat=BASES[base][0], lng=BASES[base][1]), radii[base])
         for fuel in ("regular", "premium"):
             for source, provider, query in (
                 ("gasbuddy", service.gasbuddy, GasBuddySearch(
@@ -59,10 +67,25 @@ def collection_jobs(service, bases):
 
 
 class BaseCollection:
-    def __init__(self, service, bases, *, interval=86400, limits=None, daily_limit=40, egress_lanes=1):
+    def __init__(self, service, bases, *, interval=86400, limits=None, daily_limit=40, egress_lanes=1,
+                 coverage_strategy="legacy", base_radius=10000, max_radius=20000,
+                 cycle_request_budget=1360):
         self.service = service
         self.cache = service.shared_cache
-        self.jobs = collection_jobs(service, bases)
+        self.coverage_strategy = coverage_strategy
+        self.base_radius = base_radius
+        self.max_radius = max_radius
+        self.jobs = collection_jobs(
+            service, bases, coverage_strategy=coverage_strategy,
+            base_radius=base_radius, max_radius=max_radius,
+        )
+        reserve = sum(job.request_reserve for job in self.jobs.values())
+        if reserve > cycle_request_budget:
+            raise ValueError(
+                f"Base collection request reserve {reserve} exceeds cycle request reserve budget "
+                f"{cycle_request_budget}"
+            )
+        self.cycle_request_budget = cycle_request_budget
         self.interval = interval
         self.limits = limits or {"gasbuddy": 12, "maps": 60, "waze": 20}
         self.daily_limit = daily_limit
@@ -72,7 +95,7 @@ class BaseCollection:
         populations = {base["id"]: base["population_2026"] or 0 for base in BASE_CATALOG["bases"]}
         descriptors = [{"id": job.id, "population_priority": populations[job.base], "base": job.base, "source": job.source,
                         "fuel": job.fuel, "mandatory": job.base == "la",
-                        "request_reserve": 4 if job.source == "gasbuddy" else (3 if job.source == "waze" else 1 + job.query.detail_limit), "descriptor": job.query.model_dump(mode="json")}
+                        "request_reserve": job.request_reserve, "descriptor": job.query.model_dump(mode="json")}
                        for job in self.jobs.values()]
         await self.cache._db("configure_base_jobs", descriptors)
 
@@ -126,6 +149,10 @@ class BaseCollection:
 
             result, _ = await self.cache.get(job.source, job.raw_key, load, wait_refresh=True)
             quotes = result if job.source == "waze" else result.prices if job.source == "gasbuddy" else result.all_prices or result.stations
+            attempt.update(run_metrics(quotes))
+            attempt["new_canonical_count"] = await self.cache._db(
+                "new_collection_canonical_count", job.id, attempt.pop("station_keys")
+            )
             await self.cache._db("finish_base_job", job.id, owner, self.interval, None,
                                  len(quotes), len({quote.id for quote in quotes}), dict(attempt))
             completed = True
@@ -161,10 +188,24 @@ class BaseCollection:
                     logger.warning("Fixed base lease release deferred to expiry")
 
     async def status(self):
+        base_radii = {
+            job.base: job.query.radius_meters
+            for job in self.jobs.values()
+        }
         return {"enabled": True, "interval_seconds": self.interval,
-                "radius_meters": 10000, "coverage": "partial",
+                "radius_meters": self.base_radius, "coverage": "partial",
                 "base_count": len({job.base for job in self.jobs.values()}),
                 "total_jobs": len(self.jobs), "schedule": "weighted_rotation",
+                "coverage_plan": {
+                    "strategy": self.coverage_strategy,
+                    "rollback_strategy": "legacy",
+                    "max_radius_meters": self.max_radius,
+                    "request_reserve": sum(job.request_reserve for job in self.jobs.values()),
+                    "cycle_request_budget": self.cycle_request_budget,
+                    "expanded_bases": sorted(
+                        base for base, radius in base_radii.items() if radius > self.base_radius + 1000
+                    ),
+                },
                 "mandatory_bases": ["la"] if any(job.base == "la" for job in self.jobs.values()) else [],
                 "score_policy": {"population_log_weight": 10, "overdue_hour_weight": 2, "never_sampled_bonus": 30},
                 "mandatory_target_seconds": self.interval,

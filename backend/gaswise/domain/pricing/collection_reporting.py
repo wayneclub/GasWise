@@ -44,6 +44,10 @@ def safe_metrics(info):
         result[name] = value if type(value) is int and low <= value <= high else None
     result['http_requests'] = result['http_requests'] or 0
     result['phase'] = info.get('phase') if info.get('phase') in ('bootstrap', 'graphql', 'source_http', 'login') else None
+    for name in ('canonical_count', 'new_canonical_count', 'located_count', 'priced_count',
+                 'inventory_overlap_count'):
+        value = info.get(name)
+        result[name] = value if type(value) is int and 0 <= value <= 1000 else 0
     return result
 
 

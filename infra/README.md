@@ -78,7 +78,11 @@ supervisor does not observe provider HTTP responses and does not rotate on 403/4
 Install the script in `/home/ubuntu/apps/gaswise/recovery/` and the supplied
 `gaswise-egress-supervisor.service` in systemd. `--watch` supervises a successful
 secondary exit and resumes the same owned container after a process restart.
-If all three attempts fail, the service exits with status 2 and leaves the
-production exit alone. Verify service credentials and account connection capacity
-before explicitly removing its `egress-2-state.json` to allow a new attempt cycle.
+The lane is published only after its own HTTP proxy completes an HTTPS location
+request with status 200 and country US. A failed verification removes that owned
+secondary and advances to the next city. If all three attempts fail, the service
+leaves the production exit alone and waits two hours before opening a new
+replacement generation; systemd checks the persisted cooldown every five minutes.
+This bounds authentication/rebuild attempts without requiring an operator to
+delete `egress-2-state.json`.
 Do not enable an unhealthy exit in `GASWISE_PRICING_EGRESS_PROXIES`.
