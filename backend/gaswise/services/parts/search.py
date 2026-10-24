@@ -35,7 +35,7 @@ async def search_parts(query, parts, decoder, plate_provider):
     try:
         record = nav["searchResults"]["skuRecord"]
         path, group = record["taxonomyPath"], record["partGroupId"]
-        if not isinstance(path, str) or not re.fullmatch(r"/[a-zA-Z0-9/-]+", path) or not re.fullmatch(r"azpg\d+", group):
+        if not isinstance(path, str) or not re.fullmatch(r"/[a-zA-Z0-9/-]+", path) or not re.fullmatch(r"(?:azpg)?\d+", group):
             return result
     except (KeyError, TypeError):
         if nav is not None:

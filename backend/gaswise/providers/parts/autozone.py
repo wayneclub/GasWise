@@ -56,7 +56,7 @@ class AutoZoneParts:
                 if (
                     not isinstance(path, str)
                     or not path.startswith("/")
-                    or not re.fullmatch(r"azpg\d+", group)
+                    or not re.fullmatch(r"(?:azpg)?\d+", group)
                 ):
                     continue
             except (KeyError, TypeError):

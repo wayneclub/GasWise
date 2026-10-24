@@ -1,20 +1,76 @@
-import { CarIcon, FunnelIcon, WindIcon, DiscIcon } from '@phosphor-icons/react'
+import {
+  CarBatteryIcon,
+  CarIcon,
+  DiscIcon,
+  DropIcon,
+  FunnelIcon,
+  GaugeIcon,
+  HeadlightsIcon,
+  LightningIcon,
+  SparkleIcon,
+  ThermometerIcon,
+  WavesIcon,
+  WindIcon,
+  WrenchIcon,
+} from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../../api/client'
 import type { PartsResult, PartsSearchResult } from '../../api/types'
 import { Button, Field, TextInput, Segmented } from '../../components/ui'
-import { useI18n } from '../../i18n'
+import { useI18n, type MessageKey } from '../../i18n'
 import type { SavedVehicle } from '../../lib/prefs'
 import { useVehicleIdentity } from '../../lib/vehicleIdentity'
 import { validIdentity } from '../../lib/identity'
 
 import { safeProductLink, isAmazonProduct } from '../../lib/partsLinks'
 
+type PartCategory = 'all' | 'maintenance' | 'brakes' | 'electrical' | 'chassis'
+
+interface PartChoice {
+  value: string
+  label: MessageKey
+  icon: typeof FunnelIcon
+  category: 'maintenance' | 'brakes' | 'electrical' | 'chassis'
+}
+
+const PART_CHOICES: readonly PartChoice[] = [
+  { value: 'oil filter', label: 'parts.oilFilter', icon: FunnelIcon, category: 'maintenance' },
+  { value: 'engine air filter', label: 'parts.airFilter', icon: WindIcon, category: 'maintenance' },
+  { value: 'cabin air filter', label: 'parts.cabinFilter', icon: WindIcon, category: 'maintenance' },
+  { value: 'wiper blades', label: 'parts.wiperBlades', icon: WavesIcon, category: 'maintenance' },
+  { value: 'spark plug', label: 'parts.sparkPlugs', icon: SparkleIcon, category: 'maintenance' },
+  { value: 'fuel filter', label: 'parts.fuelFilter', icon: FunnelIcon, category: 'maintenance' },
+  { value: 'brake pads', label: 'parts.brakePads', icon: DiscIcon, category: 'brakes' },
+  { value: 'brake rotor', label: 'parts.brakeRotors', icon: DiscIcon, category: 'brakes' },
+  { value: 'brake caliper', label: 'parts.brakeCaliper', icon: DiscIcon, category: 'brakes' },
+  { value: 'battery', label: 'parts.battery', icon: CarBatteryIcon, category: 'electrical' },
+  { value: 'alternator', label: 'parts.alternator', icon: LightningIcon, category: 'electrical' },
+  { value: 'starter', label: 'parts.starter', icon: LightningIcon, category: 'electrical' },
+  { value: 'ignition coil', label: 'parts.ignitionCoil', icon: LightningIcon, category: 'electrical' },
+  { value: 'headlight bulb', label: 'parts.headlightBulb', icon: HeadlightsIcon, category: 'electrical' },
+  { value: 'serpentine belt', label: 'parts.serpentineBelt', icon: WavesIcon, category: 'chassis' },
+  { value: 'water pump', label: 'parts.waterPump', icon: DropIcon, category: 'chassis' },
+  { value: 'coolant thermostat', label: 'parts.thermostat', icon: ThermometerIcon, category: 'chassis' },
+  { value: 'shock absorber', label: 'parts.shockAbsorber', icon: WrenchIcon, category: 'chassis' },
+  { value: 'control arm', label: 'parts.controlArm', icon: WrenchIcon, category: 'chassis' },
+  { value: 'wheel hub assembly', label: 'parts.wheelBearing', icon: DiscIcon, category: 'chassis' },
+  { value: 'oxygen sensor', label: 'parts.oxygenSensor', icon: GaugeIcon, category: 'chassis' },
+]
+
+const CATEGORIES: readonly { id: PartCategory; label: MessageKey }[] = [
+  { id: 'all', label: 'parts.catAll' },
+  { id: 'maintenance', label: 'parts.catMaintenance' },
+  { id: 'brakes', label: 'parts.catBrakes' },
+  { id: 'electrical', label: 'parts.catElectrical' },
+  { id: 'chassis', label: 'parts.catChassis' },
+]
+
 export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; onChooseCar: () => void }) {
   const { t } = useI18n()
   const { identity } = useVehicleIdentity()
   const [mode, setMode] = useState<'search' | 'product'>('search')
   const [keyword, setKeyword] = useState('oil filter')
+  const [partCategory, setPartCategory] = useState<PartCategory>('all')
   const [searchResult, setSearchResult] = useState<PartsSearchResult | null>(null)
   const [url, setUrl] = useState('')
   const [result, setResult] = useState<PartsResult | null>(null)
@@ -65,7 +121,43 @@ export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; 
         <div className="rounded-control bg-sunken p-3"><p className="text-sm">{identity ? t('vehicle.sharedReady') : t('vehicle.sharedMissing')}</p><Button variant="ghost" onClick={onChooseCar}>{t('vehicle.openSettings')}</Button></div>
         {mode === 'search' ? <Field label={t('parts.keyword')}>
           <TextInput aria-label={t('parts.keyword')} value={keyword} maxLength={100} onChange={(e) => { invalidate(); setKeyword(e.target.value) }} />
-          <div className="flex flex-wrap gap-2">{([{ value: 'oil filter', label: 'parts.oilFilter', icon: FunnelIcon }, { value: 'engine air filter', label: 'parts.airFilter', icon: WindIcon }, { value: 'cabin air filter', label: 'parts.cabinFilter', icon: WindIcon }, { value: 'brake pads', label: 'parts.brakePads', icon: DiscIcon }] as const).map((choice) => <Button key={choice.value} variant="ghost" className={`h-auto min-h-11 px-3 text-xs ${keyword === choice.value ? 'bg-sunken text-ink' : ''}`} onClick={() => { invalidate(); setKeyword(choice.value) }}><choice.icon size={18} />{t(choice.label)}</Button>)}</div>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setPartCategory(cat.id)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                  partCategory === cat.id
+                    ? 'bg-ink text-surface shadow-xs'
+                    : 'border border-line bg-surface text-muted hover:bg-sunken hover:text-ink'
+                }`}
+              >
+                {t(cat.label)}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {(partCategory === 'all' ? PART_CHOICES : PART_CHOICES.filter((p) => p.category === partCategory)).map((choice) => {
+              const isSelected = keyword.toLowerCase() === choice.value
+              return (
+                <Button
+                  key={choice.value}
+                  variant="ghost"
+                  className={`h-auto min-h-10 px-3 py-1.5 text-xs ${
+                    isSelected ? 'bg-sunken text-ink font-semibold ring-1 ring-accent' : ''
+                  }`}
+                  onClick={() => {
+                    invalidate()
+                    setKeyword(choice.value)
+                  }}
+                >
+                  <choice.icon size={16} />
+                  {t(choice.label)}
+                </Button>
+              )
+            })}
+          </div>
         </Field> : <Field label={t('parts.url')}><TextInput type="url" aria-label={t('parts.url')} value={url} placeholder="https://www.amazon.com/dp/…" onChange={(e) => { invalidate(); setUrl(e.target.value) }} /></Field>}
         <Button type="submit" className="h-auto min-h-11 py-2" style={{ whiteSpace: 'normal' }} disabled={pending || !(identity && validIdentity(identity)) || (mode === 'search' ? keyword.trim().length < 2 : !isAmazonProduct(url.trim()))}>{pending ? t(mode === 'search' ? 'parts.finding' : 'parts.pending') : t(mode === 'search' ? 'parts.find' : 'parts.submit')}</Button>
       </form>
