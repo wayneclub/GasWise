@@ -100,7 +100,6 @@ async def test_existing_postgres_shares_results_refresh_leases_budget_and_cleans
         await second.close()
         await store.pool.execute("DELETE FROM gaswise.query_cache WHERE key=$1",key)
         await store.pool.execute("DELETE FROM gaswise.quotes WHERE station_id=$1",station_id)
-        await store.pool.execute("DELETE FROM gaswise.station_history WHERE station_id=$1",station_id)
         await store.pool.execute("DELETE FROM gaswise.stations WHERE station_id=$1",station_id)
         await store.pool.execute("DELETE FROM gaswise.source_limits WHERE source=$1",source)
         await other.close()

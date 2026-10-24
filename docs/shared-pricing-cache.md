@@ -323,7 +323,7 @@ source/base/fuel before spending more pages or adding bases. Geometry estimates
 show sampling area, not proof that a capped website response is exhaustive.
 
 The Smart snapshot `inventory` maximum of 250 is a serving/serialization bound.
-It does not cap `stations`, `quotes`, `quote_history` or `station_history`
+It does not cap `stations`, `quotes` or `quote_history`
 persistence. Raising it would increase response/display work and must be
 evaluated separately from batch collection coverage.
 

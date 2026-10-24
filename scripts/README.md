@@ -77,3 +77,10 @@ uv run python ../scripts/research/edmunds/clean_http_probe.py
 ## Adding a script
 
 Choose the appropriate purpose and provider folder. Document the command, dependencies, upstream calls and output location in this index. Resolve repository/output paths from `__file__` when needed, and write research evidence to `artifacts/` rather than beside script source. Keep automated offline regression tests under `backend/tests/`.
+
+`tooling/analyze_price_observations.py INPUT OUTPUT` analyzes an exported public
+quote JSON offline, taking a deterministic 100-observation sample balanced across
+GasBuddy, Waze and Maps when available. It reports the actual sample size and
+precision, without assigning payment types or making upstream calls.
+
+`smoke/check_payment_history.py` runs inside the deployed backend: PostgreSQL history read/write, station spread estimate, repeat ranking and missing-history fallback. It uses a rollback-only transaction and makes zero provider requests.
