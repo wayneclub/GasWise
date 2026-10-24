@@ -11,22 +11,35 @@ export function FuelAssistant({ prefs }: { prefs: Prefs }) {
   const [events, setEvents] = useState<RefuelEvent[]>([])
   const [estimate, setEstimate] = useState<NeedEstimate>(() => estimateNeed([], DEFAULT_FUEL_ASSISTANT_SETTINGS, mpg, new Date(), mpgBasis))
   const [busy, setBusy] = useState(false)
-  async function refresh(nextSettings = settings) {
+  async function refresh(now: Date, nextSettings = settings) {
     const loaded = await loadFuelAssistant()
     setSettings(loaded.settings); setEvents(loaded.events)
-    const next = estimateNeed(loaded.events, nextSettings === settings ? loaded.settings : nextSettings, mpg, new Date(), mpgBasis)
+    const next = estimateNeed(loaded.events, nextSettings === settings ? loaded.settings : nextSettings, mpg, now, mpgBasis)
     setEstimate(next); await syncNeedEstimate(next)
   }
-  useEffect(() => { void refresh().catch(() => {}) }, [mpg]) // eslint-disable-line react-hooks/exhaustive-deps
-  async function filled() {
+  useEffect(() => {
+    let cancelled = false
+    void loadFuelAssistant()
+      .then(async (loaded) => {
+        if (cancelled) return
+        const next = estimateNeed(loaded.events, loaded.settings, mpg, new Date(), mpgBasis)
+        setSettings(loaded.settings)
+        setEvents(loaded.events)
+        setEstimate(next)
+        await syncNeedEstimate(next)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [mpg, mpgBasis])
+  async function filled(now: Date) {
     setBusy(true)
-    try { await recordRefuel(); await refresh() } finally { setBusy(false) }
+    try { await recordRefuel(now); await refresh(now) } finally { setBusy(false) }
   }
-  async function save(next: FuelAssistantSettings) {
+  async function save(next: FuelAssistantSettings, now: Date) {
     setSettings(next); await saveFuelAssistantSettings(next)
-    const value = estimateNeed(events, next, mpg, new Date(), mpgBasis); setEstimate(value); await syncNeedEstimate(value)
+    const value = estimateNeed(events, next, mpg, now, mpgBasis); setEstimate(value); await syncNeedEstimate(value)
   }
-  async function remove(id: string) { await deleteRefuel(id); await refresh() }
+  async function remove(id: string, now: Date) { await deleteRefuel(id); await refresh(now) }
   const range = estimate.earliestDays == null ? t('assistant.unknown') : t('assistant.range', { start: estimate.earliestDays, end: estimate.latestDays ?? estimate.earliestDays })
   const basis = estimate.basis === 'refuel_cadence'
     ? t('assistant.basis.cadence', { count: estimate.observations })
@@ -57,7 +70,7 @@ export function FuelAssistant({ prefs }: { prefs: Prefs }) {
           <button
             type="button"
             disabled={busy}
-            onClick={() => void filled()}
+            onClick={() => void filled(new Date())}
             className="inline-flex h-11 items-center justify-center rounded-control bg-ink px-4 text-sm font-medium text-surface transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
           >
             {t('assistant.justFilled')}
@@ -77,7 +90,7 @@ export function FuelAssistant({ prefs }: { prefs: Prefs }) {
                 min="10"
                 max="2000"
                 value={settings.weeklyMiles}
-                onChange={event => void save({ ...settings, weeklyMiles: Number(event.target.value) })}
+                onChange={event => void save({ ...settings, weeklyMiles: Number(event.target.value) }, new Date())}
                 className="h-11 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent"
               />
             </label>
@@ -88,7 +101,7 @@ export function FuelAssistant({ prefs }: { prefs: Prefs }) {
                 min="1"
                 max="30"
                 value={settings.typicalGallons}
-                onChange={event => void save({ ...settings, typicalGallons: Number(event.target.value) })}
+                onChange={event => void save({ ...settings, typicalGallons: Number(event.target.value) }, new Date())}
                 className="h-11 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent"
               />
             </label>
@@ -104,7 +117,7 @@ export function FuelAssistant({ prefs }: { prefs: Prefs }) {
               {events.slice(0, 6).map(event => (
                 <li key={event.id} className="flex items-center justify-between py-2.5 text-xs">
                   <span>{new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.at))}</span>
-                  <button type="button" onClick={() => void remove(event.id)} className="text-caution underline hover:opacity-80">
+                  <button type="button" onClick={() => void remove(event.id, new Date())} className="text-caution underline hover:opacity-80">
                     {t('assistant.delete')}
                   </button>
                 </li>

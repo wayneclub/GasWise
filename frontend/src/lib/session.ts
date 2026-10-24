@@ -110,8 +110,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
   const [locationPermission, setLocationPermission] = useState<PermissionState | 'unknown'>('unknown')
   const [originKind, setOriginKind] = useState<'device' | 'manual' | null>(restored?.originKind ?? null)
   const [originLabel, setOriginLabel] = useState<string | null>(restored?.originLabel ?? null)
-  const resultRef = useRef<SmartResult | null>(null)
-  resultRef.current = result
+  const resultRef = useRef<SmartResult | null>(restored?.result ?? null)
   const [origin, setOrigin] = useState<Origin | null>(restored?.origin ?? null)
   const [reranking, setReranking] = useState(false)
   const [expired, setExpired] = useState(() => !!restored && Date.parse(restored.result.snapshot.expires_at) <= Date.now())
@@ -124,7 +123,14 @@ export function useFuelSession(prefs: Prefs, active = true) {
   const controller = useRef<AbortController | null>(null)
   const rerankController = useRef<AbortController | null>(null)
   const prefsRef = useRef(prefs)
-  prefsRef.current = prefs
+
+  useEffect(() => {
+    resultRef.current = result
+  }, [result])
+
+  useEffect(() => {
+    prefsRef.current = prefs
+  }, [prefs])
 
   // Ranking choices rerank the held snapshot. Vehicle or fuel changes need new prices.
   const lastRankKey = useRef(rankKey)
@@ -274,8 +280,9 @@ export function useFuelSession(prefs: Prefs, active = true) {
     if (searchKey !== lastSearchKey.current) {
       lastSearchKey.current = searchKey
       lastRankKey.current = rankKey
-      if (origin && phase !== 'idle') void search(origin)
-      return
+      if (!origin || phase === 'idle') return
+      const timer = window.setTimeout(() => { void search(origin) }, 0)
+      return () => window.clearTimeout(timer)
     }
     if (rankKey === lastRankKey.current || !result || phase !== 'ready') return
     const abort = new AbortController()
