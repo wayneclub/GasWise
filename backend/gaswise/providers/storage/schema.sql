@@ -81,6 +81,25 @@ CREATE INDEX IF NOT EXISTS quote_history_station_time
 CREATE INDEX IF NOT EXISTS quote_history_canonical_time
     ON gaswise.quote_history (canonical_id, fuel_type, reported_at);
 
+-- Station state changes are independent of price observations. One row represents
+-- one distinct station metadata state; repeated observations only advance the
+-- timestamps. opening_status_checked_at is volatile fetch metadata, so it is
+-- stored as checked_at rather than included in state identity.
+CREATE TABLE IF NOT EXISTS gaswise.station_history (
+    history_key text PRIMARY KEY CHECK (length(history_key) = 64),
+    source text NOT NULL,
+    station_id text NOT NULL,
+    canonical_id text,
+    state jsonb NOT NULL,
+    checked_at timestamptz NOT NULL,
+    first_seen_at timestamptz NOT NULL,
+    last_seen_at timestamptz NOT NULL
+);
+CREATE INDEX IF NOT EXISTS station_history_station_time
+    ON gaswise.station_history (source, station_id, first_seen_at);
+CREATE INDEX IF NOT EXISTS station_history_canonical_time
+    ON gaswise.station_history (canonical_id, first_seen_at);
+
 -- Fixed public city-base collection; no visitor-derived locations or credentials.
 CREATE TABLE IF NOT EXISTS gaswise.base_collection_jobs (
     id text PRIMARY KEY,

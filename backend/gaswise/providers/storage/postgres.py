@@ -70,6 +70,37 @@ def station_attributes(quote):
     return attributes
 
 
+def station_history_state(metadata):
+    """Station facts that define one distinct state in the station change log."""
+    return {key: value for key, value in metadata.items() if key != "opening_status_checked_at"}
+
+
+def station_checked_at(metadata, fallback):
+    """Provider status-check time, or the fetch time when the provider did not send one."""
+    value = metadata.get("opening_status_checked_at")
+    if isinstance(value, datetime):
+        checked = value
+    elif isinstance(value, str):
+        try:
+            checked = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return fallback
+    else:
+        return fallback
+    return checked.replace(tzinfo=UTC) if checked.tzinfo is None else checked
+
+
+def station_history_key(source, station_id, state):
+    """Stable identity for one station state, independent of JSON key order.
+
+    canonical_id is stored on the row but is not part of state identity: a
+    later observation that omits the mapping must not duplicate the same state.
+    """
+    identity = (source, station_id, state)
+    serialized = json.dumps(identity, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode()).hexdigest()
+
+
 class PostgresPricingCache(CollectionEvents):
     def __init__(self, pool):
         self.pool = pool
@@ -516,12 +547,31 @@ class PostgresPricingCache(CollectionEvents):
 
     async def _observe(self, connection, quotes):
         now = datetime.now(UTC)
-        stations, prices, history = [], [], []
+        stations, prices, history, station_states = [], [], [], {}
         for quote in quotes:
             source = quote.get("source", "unknown")
             station_id = str(quote["id"])
             metadata = station_metadata(quote)
             fetched = datetime.fromisoformat(quote["fetched_at"].replace("Z", "+00:00"))
+            if fetched.tzinfo is None:
+                fetched = fetched.replace(tzinfo=UTC)
+            state_key = (source, station_id)
+            state = station_states.setdefault(
+                state_key,
+                {
+                    "metadata": {},
+                    "canonical_id": quote.get("canonical_id"),
+                    "first_seen": fetched,
+                    "last_seen": fetched,
+                    "checked_at": fetched,
+                },
+            )
+            if quote.get("canonical_id") is not None:
+                state["canonical_id"] = quote["canonical_id"]
+            state["metadata"].update(metadata)
+            state["first_seen"] = min(state["first_seen"], fetched)
+            state["last_seen"] = max(state["last_seen"], fetched)
+            state["checked_at"] = max(state["checked_at"], station_checked_at(metadata, fetched))
             stations.append((source, station_id, quote.get("canonical_id"), json.dumps(metadata), fetched))
             expires = quote_expiry(quote)
             if expires is None or expires <= now:
@@ -543,6 +593,16 @@ class PostgresPricingCache(CollectionEvents):
                             quote["price_per_gallon"], reported, fetched, json.dumps(attributes)))
             prices.append((source, station_id, quote["fuel_type"], quote["payment_type"], condition,
                            json.dumps(quote), reported, fetched, expires))
+        station_history = []
+        for (source, station_id), observed in station_states.items():
+            canonical_id = observed["canonical_id"]
+            state = station_history_state(observed["metadata"])
+            station_history.append((
+                station_history_key(source, station_id, state),
+                source, station_id, canonical_id,
+                json.dumps(state, sort_keys=True, separators=(",", ":")),
+                observed["checked_at"], observed["first_seen"], observed["last_seen"],
+            ))
         # Pipeline batches instead of making two network round-trips per quote.
         if stations:
             await connection.executemany("""
@@ -592,6 +652,19 @@ class PostgresPricingCache(CollectionEvents):
                     canonical_id=COALESCE(EXCLUDED.canonical_id,quote_history.canonical_id),
                     attributes=quote_history.attributes || jsonb_strip_nulls(EXCLUDED.attributes)
             """, history)
+
+        if station_history:
+            await connection.executemany("""
+                INSERT INTO gaswise.station_history
+                    (history_key, source, station_id, canonical_id, state,
+                     checked_at, first_seen_at, last_seen_at)
+                VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8)
+                ON CONFLICT (history_key) DO UPDATE
+                SET canonical_id=COALESCE(EXCLUDED.canonical_id, station_history.canonical_id),
+                    first_seen_at=LEAST(station_history.first_seen_at, EXCLUDED.first_seen_at),
+                    last_seen_at=GREATEST(station_history.last_seen_at, EXCLUDED.last_seen_at),
+                    checked_at=GREATEST(station_history.checked_at, EXCLUDED.checked_at)
+            """, station_history)
 
     async def mappings(self, source, ids):
         rows = await self.pool.fetch("""
@@ -718,6 +791,7 @@ class PostgresPricingCache(CollectionEvents):
         await self.pool.execute("DELETE FROM gaswise.collection_notifications WHERE created_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.collection_runs WHERE finished_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.quote_history WHERE last_seen_at < now() - interval '90 days'")
+        await self.pool.execute("DELETE FROM gaswise.station_history WHERE last_seen_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.quotes WHERE expires_at <= now()")
         await self.pool.execute("""
             DELETE FROM gaswise.query_cache WHERE
