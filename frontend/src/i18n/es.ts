@@ -1,6 +1,16 @@
 import type { MessageKey } from './en'
 
 export const es: Record<MessageKey, string> = {
+  "fallback.title": "Estaciones cercanas y datos",
+  "fallback.note": "Solo se muestran estaciones y precios de las fuentes. Los precios vencidos o no válidos no son recomendaciones actuales.",
+  "fallback.failed": "Algunas fuentes no están disponibles",
+  "fallback.staleOnly": "Solo hay precios vencidos",
+  "fallback.empty": "No hay precios actuales aptos cerca",
+  "fallback.expand": "Ampliar a {miles} millas",
+  "fallback.count": "{count} estaciones adicionales reportadas",
+  "fallback.stale": "Precio vencido",
+  "fallback.unranked": "No apto para esta comparación",
+  "fallback.noPrice": "Precio no reportado",
   "history.title": "Historial de precios",
   "history.show": "Ver tendencia",
   "history.hide": "Ocultar",

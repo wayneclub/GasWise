@@ -141,6 +141,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
   const [reranking, setReranking] = useState(false)
   const [expired, setExpired] = useState(() => !!restored && Date.parse(restored.result.snapshot.expires_at) <= Date.now())
   const [refreshing, setRefreshing] = useState(false)
+  const [completing, setCompleting] = useState(false)
   const lastTrackedOrigin = useRef<Origin | null>(restored?.origin ?? null)
   const lastCheck = useRef(restored?.checkedAt ?? 0)
   const needsRecoveryCheck = useRef(expired)
@@ -179,6 +180,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
     if (!background) setPhase('searching')
     if (!background) clearFuelSession()
     setRefreshing(background)
+    setCompleting(true)
     lastCheck.current = Date.now()
     setError(null)
     try {
@@ -255,7 +257,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
       retryDelay.current = Math.min(600000, retryDelay.current * 2)
       setPhase(background && resultRef.current ? 'ready' : 'error')
     } finally {
-      if (!abort.signal.aborted) setRefreshing(false)
+      if (!abort.signal.aborted) { setRefreshing(false); setCompleting(false) }
     }
   }, [])
 
@@ -438,5 +440,5 @@ export function useFuelSession(prefs: Prefs, active = true) {
     rerankController.current?.abort()
   }, [])
 
-  return { phase, error, result, origin, originKind, originLabel, locationPermission, reranking, refreshing, expired, start, refresh, expandRoutes }
+  return { phase, error, result, origin, originKind, originLabel, locationPermission, reranking, refreshing, completing, expired, start, refresh, expandRoutes }
 }

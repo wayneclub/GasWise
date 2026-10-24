@@ -1,5 +1,15 @@
 /** Source of truth for UI copy. Other locales must provide every key (type-checked). */
 export const en = {
+  "fallback.title": "Nearby stations and data status",
+  "fallback.note": "Only source-reported stations and prices are shown. Expired quotes and prices that do not meet your settings are excluded from live recommendations.",
+  "fallback.failed": "Some price sources could not be reached",
+  "fallback.staleOnly": "Only expired price reports are available",
+  "fallback.empty": "No eligible live fuel prices nearby",
+  "fallback.expand": "Expand to {miles} miles",
+  "fallback.count": "{count} additional reported stations",
+  "fallback.stale": "Expired report",
+  "fallback.unranked": "Not eligible for this comparison",
+  "fallback.noPrice": "Price not reported",
   "history.title": "Price history",
   "history.show": "View trend",
   "history.hide": "Hide",

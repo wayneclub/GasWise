@@ -289,7 +289,7 @@ class SmartService:
             "warnings": warnings,
             "unlocated_gasbuddy": list(unlocated.values()),
         })
-        ranking = await self.rank(snapshot, snapshot.query)
+        ranking = await self.rank(snapshot, snapshot.query) if snapshot.baseline is not None else None
         return SmartResult(
             snapshot=snapshot,
             signature=self.sign(snapshot),
@@ -488,7 +488,7 @@ class SmartService:
                                 key = (item.source, item.id, item.payment_type)
                                 old = quotes_by_id.get(key)
                                 quotes_by_id[key] = item.model_copy(update=merged_opening(old, item)) if old else item
-                    if not inventory_by_id:
+                    if not inventory_by_id and not any(not isinstance(outcome, BaseException) for outcome in outcomes):
                         raise ProviderError("google_maps_web_discovery_unavailable")
                     if discovery_area_covered < 0.995:
                         warnings.append(
@@ -692,7 +692,7 @@ class SmartService:
                     calls["waze_search"] += int(not getattr(error, "cache_hit", False))
                     calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(getattr(error, "cache_hit", False))
                     statuses.append(SourceStatus(source="waze", status="unavailable", detail=str(error)))
-            if not any(s.status == "ok" for s in statuses):
+            if sources is None and not any(s.status == "ok" for s in statuses):
                 # Preserve the actionable deferral code when every configured source
                 # failed because no verified US pricing lane was available.
                 if statuses and all(s.detail == "pricing_egress_unavailable" for s in statuses):

@@ -1,6 +1,16 @@
 import type { MessageKey } from './en'
 
 export const zhTW: Record<MessageKey, string> = {
+  "fallback.title": "附近站點與資料狀態",
+  "fallback.note": "只顯示來源實際提供的站點與油價；過期或未符合條件的報價不作即時推薦。",
+  "fallback.failed": "部分油價來源暫時無法取得",
+  "fallback.staleOnly": "目前只有過期油價回報",
+  "fallback.empty": "附近暫無符合條件的即時油價",
+  "fallback.expand": "擴大至 {miles} 英里",
+  "fallback.count": "另有 {count} 個真實來源站點",
+  "fallback.stale": "過期油價",
+  "fallback.unranked": "未符合本次比較條件",
+  "fallback.noPrice": "油價待更新",
   "history.title": "歷史油價",
   "history.show": "查看走勢",
   "history.hide": "收合",

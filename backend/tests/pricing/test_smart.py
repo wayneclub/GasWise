@@ -242,6 +242,40 @@ async def test_progressive_search_publishes_each_live_source_as_a_revision():
     await service.close()
 
 
+async def test_progressive_empty_town_is_complete_not_source_failure():
+    class EmptyMaps(MapsInventory):
+        async def prices(self, query):
+            data = await super().prices(query)
+            return data.model_copy(update={"inventory": [], "stations": []})
+
+    service = SmartService(b"test", "prices_only", maps_web=EmptyMaps(), router=CountingProvider())
+    job = await service.start_progressive_search(SmartSearch(origin=Point(lat=34, lng=-118), calculate_routes=True))
+    await asyncio.gather(*service.progressive_tasks)
+    state = await service.poll_progressive_search(job.job_id)
+    assert state.status == "complete"
+    assert state.result.snapshot.stations == []
+    assert state.result.snapshot.inventory == []
+    assert state.result.snapshot.source_statuses[0].status == "ok"
+    assert state.result.ranking.results == []
+    await service.close()
+
+
+async def test_progressive_all_failed_sources_preserve_failure_evidence():
+    class BrokenWaze(WazeQuotes):
+        async def stations(self, query):
+            raise ProviderError("waze_timeout")
+
+    service = SmartService(b"test", "prices_only", waze=BrokenWaze(), router=CountingProvider())
+    job = await service.start_progressive_search(SmartSearch(origin=Point(lat=34, lng=-118), calculate_routes=True))
+    await asyncio.gather(*service.progressive_tasks)
+    state = await service.poll_progressive_search(job.job_id)
+    assert state.status == "complete"
+    assert state.result.snapshot.stations == []
+    assert state.result.snapshot.source_statuses[0].status == "unavailable"
+    assert state.result.snapshot.source_statuses[0].detail == "waze_timeout"
+    await service.close()
+
+
 async def test_separate_routing_stage_does_not_refetch_prices():
     from gaswise.contracts.smart import SmartRouteRequest
 

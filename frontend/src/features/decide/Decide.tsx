@@ -12,7 +12,8 @@ import { messageId } from '../../lib/errorMessages'
 import { useFuelSession } from '../../lib/session'
 import { LocationSearch } from '../setup/LocationSearch'
 import { HeroPick } from './PickCards'
-import { EmptyState, ErrorState, PickSkeleton } from './States'
+import { ErrorState, PickSkeleton } from './States'
+import { SearchFallback } from './SearchFallback'
 import { NearbyStations } from './NearbyStations'
 import { StationList } from './StationList'
 import { Leaderboards } from './Leaderboards'
@@ -135,14 +136,8 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
                 tripMode={prefs.tripMode}
               />
             </div>
-          ) : result && assessment ? (
-            <EmptyState
-              reasons={assessment.reasons.map((reason) => t(reason.key, reason.vars))}
-              canWiden={!prefs.allowUnknownPayment}
-              onWiden={() => update({ allowUnknownPayment: true })}
-              onSettings={onSettings}
-            />
           ) : null}
+          {result && phase === 'ready' ? <SearchFallback result={result} completing={session.completing} radius={prefs.searchRadiusMiles ?? 5} navApp={prefs.navApp} onRadius={searchRadiusMiles => update({ searchRadiusMiles })} onRetry={() => void session.refresh()} /> : null}
         </div>
 
         {(phase === 'ready' || phase === 'locating') && result ? (

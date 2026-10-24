@@ -163,7 +163,7 @@ describe('Decide', () => {
     expect(fetchMock.mock.calls[1][1]?.signal?.aborted).toBe(true)
   })
 
-  it('offers to widen eligibility when no station fits', async () => {
+  it('starts a new wider geographic search when no station fits', async () => {
     localStorage.setItem('gaswise.prefs.v1', JSON.stringify({ ...JSON.parse(localStorage.getItem('gaswise.prefs.v1') ?? '{}'), allowUnknownPayment: false, paymentPolicyVersion: 2 }))
     const empty = structuredClone(demo)
     empty.ranking!.results = []
@@ -174,10 +174,14 @@ describe('Decide', () => {
         decision: { recommended_station_id: null, status: 'no_eligible_stations', reason: 'none' },
       }
     }
-    vi.spyOn(globalThis, 'fetch').mockImplementation(() => respond(empty))
+    const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => respond(empty))
     render(<App />)
-    expect(await screen.findByText('No station fits right now')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Include unconfirmed prices' })).toBeInTheDocument()
+    expect(await screen.findByText('No eligible live fuel prices nearby')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Expand to 20 miles' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Expand to 10 miles' }))
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2))
+    expect(fetch.mock.calls[1][0]).toBe('/api/v1/smart/search-jobs/start')
+    expect(JSON.parse(String(fetch.mock.calls[1][1]?.body))).toMatchObject({ radius_meters: 16093.44, allow_unknown_payment: false })
   })
 
   it('renders the same decision in Traditional Chinese', async () => {

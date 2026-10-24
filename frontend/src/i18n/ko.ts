@@ -1,6 +1,16 @@
 import type { MessageKey } from './en'
 
 export const ko: Record<MessageKey, string> = {
+  "fallback.title": "주변 주유소 및 데이터 상태",
+  "fallback.note": "출처에서 보고한 주유소와 가격만 표시합니다. 오래되거나 조건에 맞지 않는 가격은 실시간 추천에 포함하지 않습니다.",
+  "fallback.failed": "일부 가격 출처에 연결할 수 없습니다",
+  "fallback.staleOnly": "오래된 가격 정보만 있습니다",
+  "fallback.empty": "주변에 조건에 맞는 최신 가격이 없습니다",
+  "fallback.expand": "{miles} 마일로 확대",
+  "fallback.count": "추가 보고 주유소 {count}곳",
+  "fallback.stale": "오래된 가격",
+  "fallback.unranked": "이번 비교 조건에 맞지 않음",
+  "fallback.noPrice": "가격 미보고",
   "history.title": "가격 기록",
   "history.show": "추이 보기",
   "history.hide": "숨기기",

@@ -1,6 +1,16 @@
 import type { MessageKey } from './en'
 
 export const ja: Record<MessageKey, string> = {
+  "fallback.title": "周辺のスタンドとデータ状況",
+  "fallback.note": "情報源が報告した店舗と価格のみ表示します。期限切れや条件外の価格は現在のおすすめに含めません。",
+  "fallback.failed": "一部の価格情報源に接続できません",
+  "fallback.staleOnly": "期限切れの価格情報のみあります",
+  "fallback.empty": "周辺に条件を満たす最新価格がありません",
+  "fallback.expand": "{miles} マイルに拡大",
+  "fallback.count": "追加の報告店舗 {count} 件",
+  "fallback.stale": "期限切れ価格",
+  "fallback.unranked": "今回の比較条件外",
+  "fallback.noPrice": "価格未報告",
   "history.title": "価格履歴",
   "history.show": "推移を見る",
   "history.hide": "閉じる",
