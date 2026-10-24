@@ -152,10 +152,6 @@ export function useFuelSession(prefs: Prefs, active = true) {
   const prefsRef = useRef(prefs)
 
   useEffect(() => {
-    resultRef.current = result
-  }, [result])
-
-  useEffect(() => {
     prefsRef.current = prefs
   }, [prefs])
 
@@ -210,6 +206,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
           abort.signal,
           (revision) => {
             if (abort.signal.aborted) return
+            resultRef.current = revision
             setResult(revision)
             setExpired(false)
             setPhase('ready')
@@ -218,6 +215,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
       }
       if (abort.signal.aborted) return
       lastRankKey.current = JSON.stringify(rankOptions(requestedPrefs))
+      resultRef.current = next
       setResult(next)
       setExpired(false)
       retryDelay.current = 120000
@@ -233,6 +231,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
               force_refresh: false,
             }, abort.signal)
             if (abort.signal.aborted) return
+            resultRef.current = latest
             setResult(latest)
           } catch {
             // Non-fatal: keep the fast one-page result if background coverage fails.
@@ -242,6 +241,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
         void api.routes(latest.snapshot, latest.signature, abort.signal, 3)
           .then((routed) => {
             if (!abort.signal.aborted && routed.ranking) {
+              resultRef.current = routed
               setResult(routed)
             }
           })
@@ -321,6 +321,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
     try {
       const next = await api.routes(result.snapshot, result.signature, abort.signal, 100)
       if (abort.signal.aborted) return
+      resultRef.current = next
       setResult(next); setPhase('ready')
     } catch (caught) {
       if (abort.signal.aborted) return
@@ -348,6 +349,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
       try {
         const next = await api.rerank(result.snapshot, result.signature, rankOptions(prefsRef.current), abort.signal)
         if (abort.signal.aborted) return
+        resultRef.current = next
         setResult(next)
         setError(null)
       } catch (caught) {

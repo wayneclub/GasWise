@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react'
+import { useLayoutEffect, useRef } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { DEFAULT_PREFS, loadPrefs } from './prefs'
 import { haversineDistanceMeters, useFuelSession } from './session'
@@ -6,6 +7,28 @@ import fixture from '../test/fixtures/demo-search.json'
 import type { SmartResult } from '../api/types'
 
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
+
+it('refreshes the displayed snapshot even before passive effects have synchronized', async () => {
+  const current = structuredClone(fixture) as unknown as SmartResult
+  current.snapshot.expires_at = new Date(Date.now() + 600000).toISOString()
+  current.snapshot.query.radius_meters = 5 * 1609.344
+  const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify(current)))
+  const session = renderHook(() => {
+    const session = useFuelSession({ ...DEFAULT_PREFS, fuelType: current.snapshot.query.fuel_type })
+    const refreshed = useRef(false)
+    useLayoutEffect(() => {
+      if (session.result && !refreshed.current) {
+        refreshed.current = true
+        void session.refresh()
+      }
+    }, [session])
+    return session
+  })
+  await act(async () => session.result.current.start({ override: current.snapshot.query.origin }))
+  expect(fetch.mock.calls.map(([url]) => url)).toEqual([
+    '/api/v1/smart/search-jobs/start', '/api/v1/smart/refresh-prices',
+  ])
+})
 
 it('refreshes visible prices on the interval, pauses hidden tabs, and bypasses prices on manual refresh', async () => {
   vi.useFakeTimers()
