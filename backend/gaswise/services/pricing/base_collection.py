@@ -126,6 +126,7 @@ class BaseCollection:
             await self.cache._db("finish_base_job", job_id, owner, 3600, "configuration_changed", 0, 0)
             return False
         completed = False
+        interruption = "interrupted"
         attempt = {}
         attempt_token = collection_attempt.set(attempt)
         token = background_acquisition.set(True)
@@ -158,6 +159,9 @@ class BaseCollection:
             completed = True
             return True
         except asyncio.CancelledError:
+            # Only service shutdown (e.g. a deploy restart) cancels the collector:
+            # retry soon without counting it as a source failure or alerting.
+            interruption = "service_shutdown"
             raise
         except Exception as error:
             # Deliberately exclude transport messages, query data and secrets.
@@ -183,7 +187,7 @@ class BaseCollection:
             mandatory_acquisition.reset(mandatory_token)
             if not completed:
                 try:
-                    await self.cache._db("finish_base_job", job.id, owner, 60, "interrupted", 0, 0, dict(attempt))
+                    await self.cache._db("finish_base_job", job.id, owner, 60, interruption, 0, 0, dict(attempt))
                 except Exception:
                     logger.warning("Fixed base lease release deferred to expiry")
 

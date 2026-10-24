@@ -6,7 +6,7 @@ from gaswise.domain.pricing.collection_bases import BASE_CATALOG
 from gaswise.domain.pricing.collection_errors import SAFE_CODES
 
 LOCAL_ZONE = ZoneInfo('America/Los_Angeles')
-DEFERRALS = {'source_budget_deferred', 'configuration_changed'} | {
+DEFERRALS = {'source_budget_deferred', 'configuration_changed', 'service_shutdown'} | {
     f'{source}_{suffix}' for source in ('gasbuddy', 'maps', 'waze') for suffix in (
         'mandatory_budget_reserved', 'background_daily_budget_exhausted', 'background_budget_exhausted',
         'request_budget_exhausted', 'background_wait_exhausted')}
@@ -22,6 +22,7 @@ LABELS = {
     'unclassified': '未分類錯誤（已省略原始訊息）',
     'lease_expired': '程序未完成，任務租約已到期',
     'interrupted': '採集程序中斷',
+    'service_shutdown': '服務重啟（部署），稍後自動重試',
 }
 
 

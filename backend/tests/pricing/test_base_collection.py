@@ -93,7 +93,8 @@ async def test_failure_is_retryable_and_never_counts_as_success():
     assert not background_acquisition.get()
 
 
-async def test_cancellation_releases_job_without_marking_completion():
+async def test_shutdown_cancellation_defers_job_for_prompt_retry_without_source_failure():
+    # Deploys cancel the collector mid-job; that is an operator restart, not a provider failure.
     collector, cache, provider = setup()
     await collector.initialize()
     async def cancel(*args, **kwargs):
@@ -101,8 +102,19 @@ async def test_cancellation_releases_job_without_marking_completion():
     cache.get = cancel
     with pytest.raises(asyncio.CancelledError):
         await collector.step()
-    assert cache.saved[0][3] == "interrupted"
+    assert cache.saved[0][2:4] == (60, "service_shutdown")
     assert not background_acquisition.get()
+
+
+async def test_unexpected_base_exception_still_releases_job_as_interrupted():
+    collector, cache, provider = setup()
+    await collector.initialize()
+    async def explode(*args, **kwargs):
+        raise KeyboardInterrupt
+    cache.get = explode
+    with pytest.raises(KeyboardInterrupt):
+        await collector.step()
+    assert cache.saved[0][2:4] == (60, "interrupted")
 
 
 def test_socal_catalog_covers_population_centers_and_corridor_supplements():

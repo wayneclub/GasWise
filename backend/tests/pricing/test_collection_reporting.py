@@ -34,6 +34,8 @@ def test_failure_is_localized_and_has_reason_status_time_and_lane():
 def test_internal_budget_and_interruptions_do_not_inflate_source_failure_statistics():
     assert completion('gasbuddy_background_daily_budget_exhausted') == ('deferred', 'gasbuddy_background_daily_budget_exhausted')
     assert completion('interrupted') == ('interrupted', 'interrupted')
+    assert completion('lease_expired') == ('interrupted', 'lease_expired')
+    assert completion('service_shutdown') == ('deferred', 'service_shutdown')
     assert completion('collection_failed', 'secret=abc') == ('failure', 'unclassified')
     assert safe_metrics({'http_status': 'token=private', 'phase': 'private URL', 'egress_lane': 99}) == {
         'http_status': None, 'http_requests': 0, 'phase': None, 'egress_lane': None,
