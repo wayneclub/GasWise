@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     base_collection_coverage_strategy: Literal["legacy", "isolated_radius_v1"] = "isolated_radius_v1"
     base_collection_radius_meters: int = Field(default=10000, ge=1000, le=50000)
     base_collection_max_radius_meters: int = Field(default=20000, ge=1000, le=50000)
-    base_collection_cycle_request_budget: int = Field(default=1360, ge=1, le=10000)
+    base_collection_cycle_request_budget: int = Field(default=1700, ge=1, le=10000)
     gasbuddy_background_daily_requests: int | None = Field(default=None, ge=1, le=1000)
     gasbuddy_background_pacing_enabled: bool = True
     pricing_daily_ramp_enabled: bool = False

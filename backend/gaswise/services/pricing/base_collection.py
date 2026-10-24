@@ -34,7 +34,7 @@ class CollectionJob:
 
     @property
     def request_reserve(self):
-        return 4 if self.source == "gasbuddy" else (3 if self.source == "waze" else 1 + self.query.detail_limit)
+        return (1 + getattr(self.query, "max_pages", 1)) if self.source == "gasbuddy" else (3 if self.source == "waze" else 1 + self.query.detail_limit)
 
     @property
     def raw_key(self):
@@ -52,7 +52,7 @@ def collection_jobs(service, bases, *, coverage_strategy="legacy", base_radius=1
         for fuel in ("regular", "premium"):
             for source, provider, query in (
                 ("gasbuddy", service.gasbuddy, GasBuddySearch(
-                    origin=centre, radius_meters=radius, fuel_type=fuel, max_pages=3,
+                    origin=centre, radius_meters=radius, fuel_type=fuel, max_pages=5,
                     max_results=100, payment_type="cash_or_credit", include_payment_variants=True)),
                 ("maps", service.maps_web, MapsWebSearch(
                     origin=centre, radius_meters=radius, fuel_type=fuel, detail_limit=3 if fuel == "premium" else 0)),
