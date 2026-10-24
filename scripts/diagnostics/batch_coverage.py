@@ -25,7 +25,7 @@ def plan(strategy, base_radius, max_radius, cell_km):
     for base, radius in requested.items():
         point = Point(lat=BASES[base][0], lng=BASES[base][1])
         _, effective[base] = shared_viewport(point, radius)
-    reserve_per_base = 6 + 6 + 1 + 4 + 3  # GasBuddy x2 (max_pages=5), Maps regular/premium, Waze all-fuels.
+    reserve_per_base = 9 + 9 + 1 + 4 + 3  # GasBuddy x2 (max_pages=8), Maps regular/premium, Waze all-fuels.
     return {
         "strategy": strategy,
         "base_count": len(BASES),
@@ -109,7 +109,7 @@ def main():
     parser.add_argument("--base-radius", type=int, default=10000)
     parser.add_argument("--max-radius", type=int, default=20000)
     parser.add_argument("--cycle-request-budget", type=int,
-                        default=int(os.environ.get("GASWISE_BASE_COLLECTION_CYCLE_REQUEST_BUDGET", "1700")))
+                        default=int(os.environ.get("GASWISE_BASE_COLLECTION_CYCLE_REQUEST_BUDGET", "2300")))
     parser.add_argument("--cell-km", type=float, default=1.0)
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--database-url", default=os.environ.get("GASWISE_DATABASE_URL", ""),

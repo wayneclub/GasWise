@@ -52,8 +52,8 @@ def collection_jobs(service, bases, *, coverage_strategy="legacy", base_radius=1
         for fuel in ("regular", "premium"):
             for source, provider, query in (
                 ("gasbuddy", service.gasbuddy, GasBuddySearch(
-                    origin=centre, radius_meters=radius, fuel_type=fuel, max_pages=5,
-                    max_results=100, payment_type="cash_or_credit", include_payment_variants=True)),
+                    origin=centre, radius_meters=radius, fuel_type=fuel, max_pages=8,
+                    max_results=160, payment_type="cash_or_credit", include_payment_variants=True)),
                 ("maps", service.maps_web, MapsWebSearch(
                     origin=centre, radius_meters=radius, fuel_type=fuel, detail_limit=3 if fuel == "premium" else 0)),
                 ("waze", service.waze, GooglePriceSearch(
@@ -69,7 +69,7 @@ def collection_jobs(service, bases, *, coverage_strategy="legacy", base_radius=1
 class BaseCollection:
     def __init__(self, service, bases, *, interval=86400, limits=None, daily_limit=40, egress_lanes=1,
                  coverage_strategy="legacy", base_radius=10000, max_radius=20000,
-                 cycle_request_budget=1360):
+                 cycle_request_budget=2300):
         self.service = service
         self.cache = service.shared_cache
         self.coverage_strategy = coverage_strategy

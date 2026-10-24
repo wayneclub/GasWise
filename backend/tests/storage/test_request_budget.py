@@ -121,10 +121,10 @@ async def test_background_wait_has_deadline_and_respects_shared_cooldown():
     try:
         with pytest.raises(ProviderError, match="wait_exhausted"):
             await budget.before("gasbuddy")
-        assert sleeps == [60, 60, 60]
+        assert sleeps == [60, 60, 60, 60, 60, 60]
         store.blocked = 120
         with pytest.raises(ProviderError, match="background_budget"):
             await budget.before("gasbuddy")
-        assert len(sleeps) == 3
+        assert len(sleeps) == 6
     finally:
         background_acquisition.reset(token)

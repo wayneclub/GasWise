@@ -33,7 +33,7 @@ class RequestBudget:
         self.sleep, self.clock = sleep, clock
 
     async def before(self, source):
-        deadline = self.clock() + 180
+        deadline = self.clock() + 360
         while True:
             try:
                 if background_acquisition.get():

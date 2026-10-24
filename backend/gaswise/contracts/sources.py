@@ -75,7 +75,7 @@ class WazePriceSearch(Model):
 
 
 class GasBuddySearch(Model):
-    max_pages: int = Field(default=1, ge=1, le=5)
+    max_pages: int = Field(default=1, ge=1, le=10)
     include_payment_variants: bool = False
     search: str | None = Field(default=None, min_length=1, max_length=200)
     postal_code: str | None = Field(default=None, pattern=r"^\d{5}$")
@@ -84,7 +84,7 @@ class GasBuddySearch(Model):
     payment_type: Literal["cash", "credit", "cash_or_credit"] = "credit"
     brand_id: int | None = Field(default=None, gt=0)
     max_price_age_minutes: int | None = Field(default=None, ge=1, le=10080)
-    max_results: int = Field(default=5, ge=1, le=100)
+    max_results: int = Field(default=5, ge=1, le=200)
     # Coordinate searches come back nearest-first: stop paging once a whole page lies beyond this.
     radius_meters: float | None = Field(default=None, ge=100, le=60000)
 

@@ -190,8 +190,8 @@ def test_isolated_radius_plan_expands_edges_without_adding_jobs_or_request_reser
     adaptive = collection_jobs(collector.service, list(BASES), coverage_strategy="isolated_radius_v1")
 
     assert len(legacy) == len(adaptive) == 425
-    assert sum(job.request_reserve for job in legacy.values()) == 1700
-    assert sum(job.request_reserve for job in adaptive.values()) == 1700
+    assert sum(job.request_reserve for job in legacy.values()) == 2210
+    assert sum(job.request_reserve for job in adaptive.values()) == 2210
     assert adaptive["blythe:regular:gasbuddy"].query.radius_meters > 20000
     assert adaptive["la:regular:gasbuddy"].query.radius_meters == legacy["la:regular:gasbuddy"].query.radius_meters
     assert max(job.query.radius_meters for job in adaptive.values()) <= 20600
@@ -215,6 +215,6 @@ async def test_status_exposes_rollback_friendly_batch_plan_without_changing_smar
     status = await collector.status()
     assert status["coverage_plan"]["strategy"] == "isolated_radius_v1"
     assert status["coverage_plan"]["rollback_strategy"] == "legacy"
-    assert status["coverage_plan"]["request_reserve"] == 24
+    assert status["coverage_plan"]["request_reserve"] == 36
     assert status["coverage_plan"]["expanded_bases"] == ["blythe", "la"]
     assert cache.jobs["blythe:regular:gasbuddy"]["descriptor"]["radius_meters"] > 20000
