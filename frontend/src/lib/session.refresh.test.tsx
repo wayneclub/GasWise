@@ -14,7 +14,7 @@ it('refreshes the displayed snapshot even before passive effects have synchroniz
   current.snapshot.query.radius_meters = 5 * 1609.344
   const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify(current)))
   const session = renderHook(() => {
-    const session = useFuelSession({ ...DEFAULT_PREFS, fuelType: current.snapshot.query.fuel_type })
+    const session = useFuelSession({ ...DEFAULT_PREFS, fuelType: current.snapshot.query.fuel_type ?? DEFAULT_PREFS.fuelType })
     const refreshed = useRef(false)
     useLayoutEffect(() => {
       if (session.result && !refreshed.current) {
