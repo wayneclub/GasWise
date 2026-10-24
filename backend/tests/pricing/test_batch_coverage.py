@@ -19,3 +19,39 @@ def test_legacy_plan_is_exact_rollback_and_reports_geographic_gaps():
     report = simulated_area(legacy, cell_km=2)
     assert set(legacy.values()) == {10000.0}
     assert report["largest_gaps"][0]["gap_km"] > 80
+
+
+def test_run_metrics_accepts_gasbuddy_quotes_without_canonical_id():
+    from datetime import datetime, UTC
+    from decimal import Decimal
+    from gaswise.contracts.common import Point
+    from gaswise.contracts.sources import GasBuddyQuote
+    from gaswise.domain.pricing.batch_coverage import run_metrics
+
+    now = datetime.now(UTC)
+    quote = GasBuddyQuote(
+        id="123",
+        name="Test Station",
+        address="123 Main St, Los Angeles, CA 90001",
+        street="123 Main St",
+        city="Los Angeles",
+        region="CA",
+        postal_code="90001",
+        location=Point(lat=34.05, lng=-118.24),
+        price_per_gallon=Decimal("4.99"),
+        fuel_type="premium",
+        payment_type="credit",
+        price_updated_at=now,
+        fetched_at=now,
+        report_kind="datafeed",
+        source_url="https://www.gasbuddy.com/station/123",
+    )
+    metrics = run_metrics([quote])
+    assert metrics["canonical_count"] == 1
+    assert metrics["located_count"] == 1
+    assert metrics["priced_count"] == 1
+    assert metrics["inventory_overlap_count"] == 0
+    assert metrics["station_keys"] == [
+        {"source": "gasbuddy_web", "station_id": "123", "canonical_id": None}
+    ]
+

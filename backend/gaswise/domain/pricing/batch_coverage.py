@@ -46,7 +46,7 @@ def run_metrics(quotes):
     """Sanitized station-yield metrics; no raw payload or query location is retained."""
     provider = {(quote.source, str(quote.id)) for quote in quotes}
     canonical = {
-        quote.canonical_id or f"{quote.source}:{quote.id}"
+        getattr(quote, "canonical_id", None) or f"{quote.source}:{quote.id}"
         for quote in quotes
     }
     return {
@@ -54,13 +54,13 @@ def run_metrics(quotes):
         "located_count": sum(quote.location is not None for quote in quotes),
         "priced_count": sum(quote.price_per_gallon > 0 for quote in quotes),
         "inventory_overlap_count": len({
-            quote.canonical_id for quote in quotes
-            if quote.canonical_id and quote.canonical_id.startswith("google_places:")
+            getattr(quote, "canonical_id", None) for quote in quotes
+            if getattr(quote, "canonical_id", None) and getattr(quote, "canonical_id", "").startswith("google_places:")
         }),
         "station_keys": [
             {"source": source, "station_id": station_id, "canonical_id": next(
-                (quote.canonical_id for quote in quotes
-                 if quote.source == source and str(quote.id) == station_id and quote.canonical_id),
+                (getattr(quote, "canonical_id", None) for quote in quotes
+                 if quote.source == source and str(quote.id) == station_id and getattr(quote, "canonical_id", None)),
                 None,
             )}
             for source, station_id in sorted(provider)
