@@ -27,7 +27,7 @@ export const zhTW: Record<MessageKey, string> = {
   "history.show": "查看走勢",
   "history.hide": "收合",
   "history.days": "{days} 天",
-  "history.note": "這是報價觀測紀錄，非油站實際改價時間。來源與購買條件分開比較；虛線僅連接觀測點，空檔沒有已確認價格。",
+  "history.note": "每日確認以實際採集時間顯示，並保留來源原始回報時間；較早的紀錄使用來源回報時間。來源與購買條件分開比較，缺漏日期不補值。",
   "history.error": "歷史資料暫時無法讀取。",
   "history.retry": "重試",
   "history.loading": "正在讀取歷史油價…",
@@ -39,7 +39,8 @@ export const zhTW: Record<MessageKey, string> = {
   "history.chart": "油價觀測紀錄走勢",
   "history.single": "目前只有一筆紀錄，尚無法比較走勢或變化。",
   "history.records": "查看 {count} 筆紀錄",
-  "history.time": "來源回報時間（本地）",
+  "history.time": "觀測／回報時間（本地）",
+  "history.reported": "來源回報：{time}",
   "history.observed": "收集時間；來源回報時間不明",
   "history.truncated": "僅顯示最新 1,000 筆觀測，統計僅涵蓋這些紀錄。",
 

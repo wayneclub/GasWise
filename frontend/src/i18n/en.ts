@@ -26,7 +26,7 @@ export const en = {
   "history.show": "View trend",
   "history.hide": "Hide",
   "history.days": "{days} days",
-  "history.note": "Recorded quotes, not exact pump change times. Sources and purchase conditions stay separate. Dashed lines connect observations; gaps have no verified prices.",
+  "history.note": "Actual daily checks appear at collection time; the original source report time stays listed below. Older records use report time. Sources and purchase conditions stay separate; gaps are not filled.",
   "history.error": "History is temporarily unavailable.",
   "history.retry": "Retry",
   "history.loading": "Loading price history…",
@@ -38,7 +38,8 @@ export const en = {
   "history.chart": "Recorded price observations over time",
   "history.single": "One observation only; no trend or change yet.",
   "history.records": "View {count} observations",
-  "history.time": "Reported time (local)",
+  "history.time": "Observation / report time (local)",
+  "history.reported": "Source reported: {time}",
   "history.observed": "Collection time; report time unknown",
   "history.truncated": "Showing the latest 1,000 observations; statistics cover only these records.",
 

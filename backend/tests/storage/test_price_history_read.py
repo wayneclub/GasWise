@@ -25,7 +25,7 @@ async def test_observations_preserve_unknown_report_time_and_conditions():
     assert result["truncated"] is True
     assert len(result["observations"]) == 1000
     assert result["observations"][0] == dict(source="waze", station_id="one", payment_type="unknown",
-        condition="member", price="4.199", reported_at=None, observed_at=now.isoformat(), membership="Club", octane=91)
+        observation_kind="report", condition="member", price="4.199", reported_at=None, observed_at=now.isoformat(), membership="Club", octane=91)
     assert pool.fetch.call_args.args[1:] == ("waze", "one", "premium", 7)
     await PostgresPricingCache(pool).price_history("canonical:1", "waze", "one", "premium", 7)
     assert pool.fetch.call_args.args[1:] == ("canonical:1", "waze", "one", "premium", 7)

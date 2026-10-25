@@ -14,6 +14,7 @@ from gaswise.domain.pricing.cache_policy import prune_quotes, public_quotes, quo
 from gaswise.domain.pricing.daily_ramp import reviewed_limit
 from gaswise.domain.pricing.shared_cache import CachedQuery
 from gaswise.providers.storage.collection_events import CollectionEvents
+from gaswise.providers.storage.hotspot_coverage import HotspotCoverage
 from gaswise.providers.storage.warm_queries import WarmQueries
 
 GOOGLE_LOCATION_SOURCES = {"google_maps_web", "google_places"}
@@ -86,7 +87,7 @@ def station_checked_at(metadata, fallback):
     return checked.replace(tzinfo=UTC) if checked.tzinfo is None else checked
 
 
-class PostgresPricingCache(CollectionEvents, WarmQueries):
+class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
     def __init__(self, pool):
         self.pool = pool
 
@@ -221,30 +222,27 @@ class PostgresPricingCache(CollectionEvents, WarmQueries):
         return [dict(row) for row in rows]
 
     async def price_history(self, canonical_id, source, station_id, fuel_type, days):
-        if canonical_id:
-            rows = await self.pool.fetch("""
-                SELECT source, station_id, payment_type, purchase_condition,
-                       price_per_gallon, reported_at, first_seen_at, attributes
-                FROM gaswise.quote_history
-                WHERE (canonical_id = $1 OR (source = $2 AND station_id = $3))
-                  AND fuel_type = $4
-                  AND COALESCE(reported_at, first_seen_at) >= now() - make_interval(days => $5)
-                  AND COALESCE(reported_at, first_seen_at) <= now()
-                ORDER BY COALESCE(reported_at, first_seen_at) DESC, observation_key
-                LIMIT 1001
-            """, canonical_id, source, station_id, fuel_type, days)
-        else:
-            rows = await self.pool.fetch("""
-                SELECT source, station_id, payment_type, purchase_condition,
-                       price_per_gallon, reported_at, first_seen_at, attributes
-                FROM gaswise.quote_history
-                WHERE source = $1 AND station_id = $2
-                  AND fuel_type = $3
-                  AND COALESCE(reported_at, first_seen_at) >= now() - make_interval(days => $4)
-                  AND COALESCE(reported_at, first_seen_at) <= now()
-                ORDER BY COALESCE(reported_at, first_seen_at) DESC, observation_key
-                LIMIT 1001
-            """, source, station_id, fuel_type, days)
+        identity = "(canonical_id = $1 OR (source = $2 AND station_id = $3))" if canonical_id else "source = $1 AND station_id = $2"
+        fuel_arg, days_arg = (4, 5) if canonical_id else (3, 4)
+        args = (canonical_id, source, station_id, fuel_type, days) if canonical_id else (source, station_id, fuel_type, days)
+        rows = await self.pool.fetch(f"""
+            WITH observations AS (
+                SELECT source,station_id,payment_type,purchase_condition,price_per_gallon,
+                    reported_at,first_seen_at,attributes,'daily_check'::text AS observation_kind,
+                    first_seen_at AS timeline_at,observation_key
+                FROM gaswise.quote_daily WHERE {identity} AND fuel_type=${fuel_arg}
+                UNION ALL
+                SELECT source,station_id,payment_type,purchase_condition,price_per_gallon,
+                    reported_at,first_seen_at,attributes,'report'::text,
+                    COALESCE(reported_at,first_seen_at),observation_key
+                FROM gaswise.quote_history h WHERE {identity} AND fuel_type=${fuel_arg}
+                  AND NOT EXISTS(SELECT 1 FROM gaswise.quote_daily d
+                    WHERE d.observation_key=h.observation_key
+                      AND d.observed_day=(h.first_seen_at AT TIME ZONE 'America/Los_Angeles')::date)
+            ) SELECT * FROM observations
+            WHERE timeline_at >= now() - make_interval(days => ${days_arg}) AND timeline_at <= now()
+            ORDER BY timeline_at DESC,observation_key LIMIT 1001
+        """, *args)
         observations = []
         for row in rows[:1000]:
             attrs = json.loads(row["attributes"]) if isinstance(row["attributes"], str) else row["attributes"]
@@ -254,6 +252,7 @@ class PostgresPricingCache(CollectionEvents, WarmQueries):
                 "price": str(row["price_per_gallon"]),
                 "reported_at": row["reported_at"].isoformat() if row["reported_at"] else None,
                 "observed_at": row["first_seen_at"].isoformat(),
+                "observation_kind": row.get("observation_kind", "report"),
                 "membership": attrs.get("membership_required"), "octane": attrs.get("octane"),
             })
         return {"observations": observations, "truncated": len(rows) > 1000}
@@ -645,6 +644,17 @@ class PostgresPricingCache(CollectionEvents, WarmQueries):
                     attributes=quote_history.attributes || jsonb_strip_nulls(EXCLUDED.attributes)
             """, history)
 
+            await connection.executemany("""
+                INSERT INTO gaswise.quote_daily
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8::numeric,$9,$10,$10,$11::jsonb,
+                    ($10::timestamptz AT TIME ZONE 'America/Los_Angeles')::date)
+                ON CONFLICT(observation_key,observed_day) DO UPDATE
+                SET first_seen_at=LEAST(quote_daily.first_seen_at,EXCLUDED.first_seen_at),
+                    last_seen_at=GREATEST(quote_daily.last_seen_at,EXCLUDED.last_seen_at),
+                    canonical_id=COALESCE(EXCLUDED.canonical_id,quote_daily.canonical_id),
+                    attributes=quote_daily.attributes || jsonb_strip_nulls(EXCLUDED.attributes)
+            """, history)
+
     async def mappings(self, source, ids):
         rows = await self.pool.fetch("""
             SELECT station_id, canonical_id FROM gaswise.stations
@@ -771,6 +781,7 @@ class PostgresPricingCache(CollectionEvents, WarmQueries):
         await self.pool.execute("DELETE FROM gaswise.alert_inbox WHERE expires_at < now()")
         await self.pool.execute("DELETE FROM gaswise.collection_notifications WHERE created_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.collection_runs WHERE finished_at < now() - interval '90 days'")
+        await self.pool.execute("DELETE FROM gaswise.quote_daily WHERE last_seen_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.quote_history WHERE last_seen_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.quotes WHERE expires_at <= now()")
         await self.pool.execute("""

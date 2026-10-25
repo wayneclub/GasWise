@@ -99,6 +99,28 @@ CREATE INDEX IF NOT EXISTS quote_history_station_time
 CREATE INDEX IF NOT EXISTS quote_history_canonical_time
     ON gaswise.quote_history (canonical_id, fuel_type, reported_at DESC);
 
+-- Actual daily fetches, independent of source report identity. Never backfilled.
+CREATE TABLE IF NOT EXISTS gaswise.quote_daily (
+    observation_key text NOT NULL,
+    source text NOT NULL,
+    station_id text NOT NULL,
+    canonical_id text,
+    fuel_type text NOT NULL,
+    payment_type text NOT NULL,
+    purchase_condition text NOT NULL,
+    price_per_gallon numeric NOT NULL,
+    reported_at timestamptz,
+    first_seen_at timestamptz NOT NULL,
+    last_seen_at timestamptz NOT NULL,
+    attributes jsonb NOT NULL,
+    observed_day date NOT NULL,
+    PRIMARY KEY (observation_key, observed_day)
+);
+CREATE INDEX IF NOT EXISTS quote_daily_station_day
+    ON gaswise.quote_daily(source, station_id, fuel_type, observed_day);
+CREATE INDEX IF NOT EXISTS quote_daily_canonical_time
+    ON gaswise.quote_daily(canonical_id, fuel_type, first_seen_at DESC);
+
 -- Fixed public city-base collection; no visitor-derived locations or credentials.
 CREATE TABLE IF NOT EXISTS gaswise.base_collection_jobs (
     id text PRIMARY KEY,
@@ -118,6 +140,7 @@ CREATE TABLE IF NOT EXISTS gaswise.base_collection_jobs (
 );
 
 ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS population_priority integer NOT NULL DEFAULT 0;
+ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS coverage_station_id text;
 
 ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS adaptive_daily_limit integer;
 ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS adaptive_daily_floor integer;

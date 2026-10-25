@@ -4399,6 +4399,15 @@
       },
       "PriceObservation": {
         "properties": {
+          "observation_kind": {
+            "type": "string",
+            "enum": [
+              "report",
+              "daily_check"
+            ],
+            "title": "Observation Kind",
+            "default": "report"
+          },
           "source": {
             "type": "string",
             "title": "Source"

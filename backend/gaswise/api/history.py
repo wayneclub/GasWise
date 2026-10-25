@@ -21,6 +21,7 @@ class HistoryRequest(Model):
 
 
 class PriceObservation(Model):
+    observation_kind: Literal["report", "daily_check"] = "report"
     source: str
     station_id: str
     payment_type: str

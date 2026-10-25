@@ -71,3 +71,46 @@ this read endpoint. Results contain at most 1,000 latest observations; `truncate
 is explicit and limits all displayed statistics. No configured history store
 returns 503, while an empty matching period returns an empty list. Queries match a
 verified canonical identity or the exact source/station pair, never station names.
+
+## Daily checks and popular-area repair
+
+New actual fetches also write `quote_daily`, keyed by source-report identity and
+America/Los_Angeles fetch day. Repeated fetches of one report on the same day merge;
+a real fetch on a later day adds a check without changing the source's report time.
+No missing day is interpolated or reconstructed from a first/last-seen range.
+The history endpoint labels these `daily_check` and uses collection time on the
+chart; the original report time remains visible. Existing report-only history is
+retained and labelled `report`. Payment inference continues using `quote_history`
+so repeated checks cannot manufacture independent source report days.
+
+The initial popular area is a fixed 3 km circle around DTLA (34.0407, -118.266),
+including the 90015 example and Speedway Express 10929. It covers known GasBuddy
+stations seen within 90 days, excluding permanently closed stations; it is not
+an exhaustive ZIP polygon. Regular and premium are checked separately. Recent
+30-day payment/purchase-condition series must each have an actual fetch today;
+a cash-only result cannot complete a known cash/credit station's grade.
+
+Missing station/grade targets get durable mandatory jobs using one-page searches
+centred on the station (1.5 km). Any nearby acquisition can satisfy a target, so
+one search can remove several pending jobs. Every minute the collector recomputes
+missing work. Each target gets at most three completed price/missing-result/source
+failure attempts per Los Angeles calendar day, with hourly missing-result retries.
+Budget deferrals and shutdown do not consume that allowance. Leases coordinate
+workers, and missing target prices are deferred rather than marked successful.
+All requests retain shared source budgets, cooldowns and foreground reservations.
+The dynamic queue fits the unused cycle request reserve; excess targets rotate
+in as completed jobs leave the queue. It does not increase the configured caps.
+
+`base_collection.hotspot_daily_coverage` on the existing source status endpoint
+reports known station/grade targets, completed checks and missing targets. Partial
+coverage remains explicit even after the retry limit or source budget is exhausted.
+Daily fetching cannot guarantee a new source report or a price for every grade.
+Other popular areas require an explicit area policy; city-wide rotation remains
+unchanged outside the initial DTLA coverage area.
+
+Run `scripts/smoke/check_hotspot_daily.py` with backend dependencies and the private
+runtime database configuration. It creates a uniquely named isolated schema,
+checks real PostgreSQL daily identity, legacy/canonical reads, LA day boundaries,
+concurrent claims, ownership, repairs, payment separation and cooldowns, and removes
+its schema in `finally`. It sends no provider requests or notifications and never
+writes production pricing tables.

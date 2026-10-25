@@ -27,7 +27,7 @@ export const zhCN: Record<MessageKey, string> = {
   "history.show": "查看走势",
   "history.hide": "收起",
   "history.days": "{days} 天",
-  "history.note": "这是报价观测记录，非油站实际改价时间。来源与购买条件分开比较；虚线仅连接观测点，空档没有已确认价格。",
+  "history.note": "每日确认以实际采集时间显示，并保留来源原始报告时间；较早记录使用来源报告时间。来源与购买条件分开比较，缺失日期不补值。",
   "history.error": "历史数据暂时无法读取。",
   "history.retry": "重试",
   "history.loading": "正在读取历史油价…",
@@ -39,7 +39,8 @@ export const zhCN: Record<MessageKey, string> = {
   "history.chart": "油价观测记录走势",
   "history.single": "目前只有一条记录，尚无法比较走势或变化。",
   "history.records": "查看 {count} 条记录",
-  "history.time": "来源报告时间（本地）",
+  "history.time": "观测／报告时间（本地）",
+  "history.reported": "来源报告：{time}",
   "history.observed": "收集时间；来源报告时间不明",
   "history.truncated": "仅显示最新 1,000 条观测，统计仅涵盖这些记录。",
 

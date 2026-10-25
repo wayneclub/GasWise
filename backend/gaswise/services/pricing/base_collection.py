@@ -1,9 +1,11 @@
 """Persistent fixed public city-base sampling, independent of visitor searches."""
 
 import asyncio
+import json
 import logging
 import uuid
 from dataclasses import dataclass
+from time import monotonic
 
 from gaswise.contracts.common import Point
 from gaswise.contracts.sources import GasBuddySearch, GooglePriceSearch, MapsWebSearch
@@ -86,10 +88,13 @@ class BaseCollection:
                 f"{cycle_request_budget}"
             )
         self.cycle_request_budget = cycle_request_budget
+        self.hotspot_request_budget = cycle_request_budget - reserve
         self.interval = interval
         self.limits = limits or {"gasbuddy": 12, "maps": 60, "waze": 20}
         self.daily_limit = daily_limit
         self.egress_lanes = egress_lanes
+        self.hotspots_enabled = "la" in bases and service.gasbuddy is not None
+        self.hotspot_sync_at = 0.0
 
     async def initialize(self):
         populations = {base["id"]: base["population_2026"] or 0 for base in BASE_CATALOG["bases"]}
@@ -103,6 +108,9 @@ class BaseCollection:
         return await self.cache._db("base_jobs_pending", source)
 
     async def step(self):
+        if self.hotspots_enabled and monotonic() >= self.hotspot_sync_at:
+            await self.cache._db("sync_hotspot_jobs", self.hotspot_request_budget)
+            self.hotspot_sync_at = monotonic() + 60
         # Skip exhausted sources without moving their due dates behind newer jobs.
         # Thus older, unvisited bases keep priority across days and restarts.
         available = []
@@ -122,6 +130,16 @@ class BaseCollection:
         if job_id is None:
             return False
         job = self.jobs.get(job_id)
+        coverage_station_id = None
+        if job is None and self.hotspots_enabled:
+            repair = await self.cache._db("hotspot_job", job_id)
+            if repair:
+                descriptor = repair["descriptor"]
+                if isinstance(descriptor, str):
+                    descriptor = json.loads(descriptor)
+                job = CollectionJob(job_id, repair["base"], "gasbuddy", repair["fuel"],
+                                    GasBuddySearch.model_validate(descriptor), self.service.gasbuddy)
+                coverage_station_id = repair["coverage_station_id"]
         if job is None:
             await self.cache._db("finish_base_job", job_id, owner, 3600, "configuration_changed", 0, 0)
             return False
@@ -154,7 +172,12 @@ class BaseCollection:
             attempt["new_canonical_count"] = await self.cache._db(
                 "new_collection_canonical_count", job.id, attempt.pop("station_keys")
             )
-            await self.cache._db("finish_base_job", job.id, owner, self.interval, None,
+            if coverage_station_id and not await self.cache._db("hotspot_covered", coverage_station_id, job.fuel):
+                await self.cache._db("finish_base_job", job.id, owner, 3600, "coverage_missing",
+                                     len(quotes), len({quote.id for quote in quotes}), dict(attempt))
+                completed = True
+                return False
+            await self.cache._db("finish_base_job", job.id, owner, 60 if coverage_station_id else self.interval, None,
                                  len(quotes), len({quote.id for quote in quotes}), dict(attempt))
             completed = True
             return True
@@ -197,6 +220,8 @@ class BaseCollection:
             for job in self.jobs.values()
         }
         return {"enabled": True, "interval_seconds": self.interval,
+                "hotspot_request_reserve_budget": self.hotspot_request_budget if self.hotspots_enabled else 0,
+                "hotspot_daily_coverage": await self.cache._db("hotspot_status") if self.hotspots_enabled else None,
                 "radius_meters": self.base_radius, "coverage": "partial",
                 "base_count": len({job.base for job in self.jobs.values()}),
                 "total_jobs": len(self.jobs), "schedule": "weighted_rotation",

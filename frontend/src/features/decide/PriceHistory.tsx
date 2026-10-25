@@ -6,7 +6,7 @@ import { useI18n } from '../../i18n'
 import { fuelKey, perGallon, sourceLabel } from '../../lib/format'
 import type { StationSummary } from './StationDetails'
 
-const timestamp = (row: PriceObservation) => new Date(row.reported_at ?? row.observed_at).getTime()
+const timestamp = (row: PriceObservation) => new Date(row.observation_kind === 'daily_check' ? row.observed_at : row.reported_at ?? row.observed_at).getTime()
 const seriesKey = (row: PriceObservation) => JSON.stringify([row.source, row.station_id, row.payment_type, row.condition])
 
 export function PriceHistory({ station }: { station: StationSummary }) {
@@ -40,7 +40,8 @@ export function PriceHistory({ station }: { station: StationSummary }) {
   const prices = rows.map((r) => Number(r.price))
   const low = Math.min(...prices), high = Math.max(...prices)
   const delta = prices.length > 1 ? prices[prices.length - 1] - prices[0] : null
-  const date = (row: PriceObservation) => new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(timestamp(row)))
+  const formatDate = (value: number | string) => new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+  const date = (row: PriceObservation) => formatDate(timestamp(row))
   const label = (row: PriceObservation) => [sourceLabel(row.source), t(row.payment_type === 'cash' ? 'prefs.cash' : row.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment'), row.membership ? t('station.member', { name: row.membership }) : '', row.octane != null ? `${row.octane} AKI` : ''].filter(Boolean).join(' · ')
   const first = rows[0], last = rows[rows.length - 1]
   const span = last && first ? timestamp(last) - timestamp(first) : 0
@@ -58,7 +59,7 @@ export function PriceHistory({ station }: { station: StationSummary }) {
           options={[...groups].map(([value, observations]) => ({ value, label: label(observations[0]) }))} /></div>
         <dl className="grid grid-cols-3 gap-2 rounded-control bg-sunken p-3 text-center">{[['history.low', perGallon(String(low))], ['history.high', perGallon(String(high))], ['history.change', delta == null ? '—' : `${delta > 0 ? '+' : delta < 0 ? '−' : ''}${perGallon(String(Math.abs(delta)))}`]].map(([title, value]) => <div key={title}><dt className="text-[11px] text-muted">{t(title as 'history.low')}</dt><dd className="num mt-1 text-sm font-semibold">{value}</dd></div>)}</dl>
         {rows.length > 1 ? <div><svg viewBox="0 0 350 140" role="img" aria-label={t('history.chart')} className="w-full text-accent"><path d="M35 20V115H315" fill="none" stroke="currentColor" opacity="0.2"/><path d={rows.map((r, i) => `${i ? 'L' : 'M'}${x(r)},${y(Number(r.price))}`).join(' ')} fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4"/>{rows.map((r, i) => <circle key={i} cx={x(r)} cy={y(Number(r.price))} r="3" fill="currentColor"><title>{date(r)}: {perGallon(r.price)}</title></circle>)}<text x="5" y="25" fontSize="10" fill="currentColor">{perGallon(String(high))}</text><text x="5" y="132" fontSize="10" fill="currentColor">{perGallon(String(low))}</text></svg><div className="flex justify-between text-[10px] text-muted"><span>{date(first)}</span><span>{date(last)}</span></div></div> : <p className="text-xs text-muted">{t('history.single')}</p>}
-        <details><summary className="min-h-11 cursor-pointer py-3 text-xs font-medium">{t('history.records', { count: rows.length })}</summary><div className="max-h-60 overflow-auto"><table className="w-full text-xs"><thead><tr className="text-left text-muted"><th className="py-2 font-normal">{t('history.time')}</th><th className="py-2 text-right font-normal">USD/gal</th></tr></thead><tbody>{rows.toReversed().map((r, i) => <tr key={i} className="border-t border-line"><td className="py-2">{date(r)}{!r.reported_at ? <span className="block text-[10px] text-muted">{t('history.observed')}</span> : null}</td><td className="num text-right">{perGallon(r.price)}</td></tr>)}</tbody></table></div></details>
+        <details><summary className="min-h-11 cursor-pointer py-3 text-xs font-medium">{t('history.records', { count: rows.length })}</summary><div className="max-h-60 overflow-auto"><table className="w-full text-xs"><thead><tr className="text-left text-muted"><th className="py-2 font-normal">{t('history.time')}</th><th className="py-2 text-right font-normal">USD/gal</th></tr></thead><tbody>{rows.toReversed().map((r, i) => <tr key={i} className="border-t border-line"><td className="py-2">{date(r)}{r.observation_kind === 'daily_check' && r.reported_at ? <span className="block text-xs text-muted">{t('history.reported', { time: formatDate(r.reported_at) })}</span> : null}{!r.reported_at ? <span className="block text-[10px] text-muted">{t('history.observed')}</span> : null}</td><td className="num text-right">{perGallon(r.price)}</td></tr>)}</tbody></table></div></details>
       </>}
       {data?.truncated ? <p className="text-xs text-caution">{t('history.truncated')}</p> : null}
     </div> : null}

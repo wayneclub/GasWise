@@ -27,7 +27,7 @@ export const es: Record<MessageKey, string> = {
   "history.show": "Ver tendencia",
   "history.hide": "Ocultar",
   "history.days": "{days} días",
-  "history.note": "Cotizaciones observadas, no horas exactas de cambio en el surtidor. Fuentes y condiciones se comparan por separado. Las líneas discontinuas conectan observaciones; los intervalos no tienen precios verificados.",
+  "history.note": "Las comprobaciones diarias usan la hora de recopilación y conservan la hora original del reporte debajo. Los registros anteriores usan la hora reportada. Fuentes y condiciones se separan; no se rellenan los días sin datos.",
   "history.error": "El historial no está disponible temporalmente.",
   "history.retry": "Reintentar",
   "history.loading": "Cargando historial…",
@@ -39,7 +39,8 @@ export const es: Record<MessageKey, string> = {
   "history.chart": "Observaciones de precios a lo largo del tiempo",
   "history.single": "Solo una observación; aún no hay tendencia ni cambio.",
   "history.records": "Ver {count} observaciones",
-  "history.time": "Hora reportada (local)",
+  "history.time": "Hora de observación / reporte (local)",
+  "history.reported": "Reporte de la fuente: {time}",
   "history.observed": "Hora de recopilación; hora reportada desconocida",
   "history.truncated": "Se muestran las últimas 1.000 observaciones; las estadísticas solo cubren estos registros.",
 

@@ -1706,6 +1706,12 @@ export interface components {
         };
         /** PriceObservation */
         PriceObservation: {
+            /**
+             * Observation Kind
+             * @default report
+             * @enum {string}
+             */
+            observation_kind: "report" | "daily_check";
             /** Source */
             source: string;
             /** Station Id */

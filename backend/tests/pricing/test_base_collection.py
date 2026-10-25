@@ -1,8 +1,10 @@
 import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 
+from gaswise.contracts.sources import GasBuddySearch
 from gaswise.domain.pricing.shared_cache import background_acquisition
 from gaswise.services.pricing.base_collection import BaseCollection, collection_jobs
 
@@ -230,3 +232,52 @@ async def test_status_exposes_rollback_friendly_batch_plan_without_changing_smar
     assert status["coverage_plan"]["request_reserve"] == 36
     assert status["coverage_plan"]["expanded_bases"] == ["blythe", "la"]
     assert cache.jobs["blythe:regular:gasbuddy"]["descriptor"]["radius_meters"] > 20000
+
+
+
+
+
+
+async def repair_setup(covered=False):
+    collector, cache, provider = setup()
+    await collector.initialize()
+    db = cache._db
+    query = GasBuddySearch(origin={'lat': 34.04876, 'lng': -118.28225}, fuel_type='premium',
+                           max_results=200, include_payment_variants=True, payment_type='cash_or_credit',
+                           radius_meters=1500)
+    repair = dict(id='hotspot:dtla:premium:10929', base='la', fuel='premium',
+                  descriptor=query.model_dump_json(), coverage_station_id='10929')
+    async def execute(method, *args):
+        if method == 'claim_base_job':
+            return repair['id']
+        if method == 'hotspot_job':
+            return repair
+        if method == 'hotspot_covered':
+            assert args == ('10929', 'premium')
+            return covered
+        return await db(method, *args)
+    cache._db = AsyncMock(side_effect=execute)
+    return collector, cache, provider
+
+
+async def test_city_result_that_omits_target_is_not_daily_station_success():
+    collector, cache, provider = await repair_setup()
+    assert not await collector.step()
+    assert cache.saved[0][2:4] == (3600, 'coverage_missing')
+    assert provider.calls[0].origin.lat == 34.04876
+    assert provider.calls[0].max_pages == 1
+    assert provider.calls[0].include_payment_variants
+
+
+async def test_actual_daily_station_observation_completes_repair():
+    collector, cache, provider = await repair_setup(covered=True)
+    assert await collector.step()
+    assert cache.saved[0][2:4] == (60, None)
+
+
+async def test_repair_does_not_bypass_shared_budget():
+    collector, cache, provider = await repair_setup()
+    cache.used = 6
+    assert not await collector.step()
+    assert not provider.calls
+    assert not cache.saved

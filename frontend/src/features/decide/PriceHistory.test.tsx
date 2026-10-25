@@ -4,7 +4,7 @@ import { api } from '../../api/client'
 import { I18nProvider } from '../../i18n/I18nProvider'
 import { PriceHistory } from './PriceHistory'
 const station = { id: 'one', source: 'waze', name: 'Test', location: { lat: 34, lng: -118 }, fuel_type: 'regular' as const }
-const observation = { source: 'waze', station_id: 'one', payment_type: 'cash', condition: 'normal', price: '4.199', reported_at: '2026-10-12T12:00:00Z', observed_at: '2026-10-12T12:01:00Z', membership: null, octane: null }
+const observation = { observation_kind: 'report' as const, source: 'waze', station_id: 'one', payment_type: 'cash', condition: 'normal', price: '4.199', reported_at: '2026-10-12T12:00:00Z', observed_at: '2026-10-12T12:01:00Z', membership: null, octane: null }
 afterEach(() => vi.restoreAllMocks())
 const show = () => render(<I18nProvider locale="en"><PriceHistory station={station} /></I18nProvider>)
 it('loads only on expansion and keeps payment and membership series separate', async () => {
@@ -27,4 +27,18 @@ it('distinguishes missing history from a failed request and allows retry', async
   await screen.findByText('History is temporarily unavailable.')
   fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
   expect(await screen.findByText(/No observations in this period yet/)).toBeInTheDocument()
+})
+it('plots real daily checks separately while retaining the original source report time', async () => {
+  vi.spyOn(api, 'priceHistory').mockResolvedValue({ truncated: false, observations: [
+    { ...observation, observation_kind: 'daily_check', observed_at: '2026-10-13T12:00:00Z' },
+    { ...observation, observation_kind: 'daily_check', observed_at: '2026-10-15T12:00:00Z' },
+  ] })
+  show(); fireEvent.click(screen.getByRole('button', { name: /Price history/ }))
+  const chart = await screen.findByRole('img', { name: 'Recorded price observations over time' })
+  const circles = chart.querySelectorAll('circle')
+  expect(circles).toHaveLength(2)
+  expect(circles[0].getAttribute('cx')).not.toBe(circles[1].getAttribute('cx'))
+  expect(screen.getByText('View 2 observations')).toBeInTheDocument()
+  expect(screen.getAllByText(/Source reported:/)).toHaveLength(2)
+  expect(screen.getByText('$0.00')).toBeInTheDocument()
 })
