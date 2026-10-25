@@ -8,6 +8,7 @@ import { ExcludedStations } from './decide/ExcludedStations'
 import { StationList } from './decide/StationList'
 import type { RankedStation } from '../api/types'
 import { VehiclePicker } from './setup/VehiclePicker'
+import { IdentityFields } from './setup/IdentityFields'
 import fixture from '../test/fixtures/demo-search.json'
 
 const response = (body: unknown) => Promise.resolve(new Response(JSON.stringify(body)))
@@ -25,6 +26,10 @@ beforeEach(() => {
 })
 afterEach(() => { vi.restoreAllMocks(); localStorage.clear() })
 const english = (component: React.ReactNode) => <I18nProvider locale="en">{component}</I18nProvider>
+function chooseLanguage(label: string, option: string) {
+  fireEvent.click(screen.getByRole('button', { name: label }))
+  fireEvent.click(screen.getByRole('option', { name: option }))
+}
 
 it('saves cashback and reranks held prices without a new search', async () => {
   const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))
@@ -40,25 +45,46 @@ it('saves cashback and reranks held prices without a new search', async () => {
   expect(screen.getByRole('spinbutton', { name: 'Card cashback' })).toBeDisabled()
 })
 
+it('persists a radius selected through the shared custom listbox', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(() => response(fixture))
+  render(<App />)
+  await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+  fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Search radius' }))
+  fireEvent.click(screen.getByRole('option', { name: '10 mi' }))
+  await waitFor(() => expect(JSON.parse(localStorage.getItem('gaswise.prefs.v1')!).searchRadiusMiles).toBe(10))
+  expect(screen.getByRole('button', { name: 'Search radius' })).toHaveAccessibleDescription('10 mi')
+  expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+})
+
+it('changes the custom state selector without losing the private plate draft', () => {
+  const onChange = vi.fn()
+  render(english(<IdentityFields identity={{ kind: 'plate', value: { state: 'CA', plate: 'SAMPLE' } }} onChange={onChange} />))
+  fireEvent.click(screen.getByRole('button', { name: 'US state' }))
+  fireEvent.click(screen.getByRole('option', { name: 'TX' }))
+  expect(onChange).toHaveBeenCalledExactlyOnceWith({ kind: 'plate', value: { state: 'TX', plate: 'SAMPLE' } })
+  expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+})
+
 it('follows browser language until a manual choice, persists it, and can return to automatic', () => {
   localStorage.setItem('gaswise.prefs.v1', JSON.stringify({ onboarded: false }))
   let languages = ['zh-CN', 'en-US']
   vi.spyOn(navigator, 'languages', 'get').mockImplementation(() => languages)
   const app = render(<App />)
   expect(document.documentElement.lang).toBe('zh-CN')
-  expect(screen.getByRole('combobox', { name: '语言' })).toHaveValue('auto')
+  expect(screen.getByRole('button', { name: '语言' })).toHaveAccessibleDescription('跟随浏览器语言')
   languages = ['es-MX']
   fireEvent(window, new Event('languagechange'))
   expect(document.documentElement.lang).toBe('es')
-  fireEvent.change(screen.getByRole('combobox', { name: 'Idioma' }), { target: { value: 'zh-CN' } })
+  chooseLanguage('Idioma', '简体中文')
   languages = ['en-US']
   fireEvent(window, new Event('languagechange'))
   expect(document.documentElement.lang).toBe('zh-CN')
   app.unmount()
   render(<App />)
   expect(document.documentElement.lang).toBe('zh-CN')
-  expect(screen.getByRole('combobox', { name: '语言' })).toHaveValue('zh-CN')
-  fireEvent.change(screen.getByRole('combobox', { name: '语言' }), { target: { value: 'auto' } })
+  expect(screen.getByRole('button', { name: '语言' })).toHaveAccessibleDescription('简体中文')
+  chooseLanguage('语言', '跟随浏览器语言')
   expect(document.documentElement.lang).toBe('en')
   expect(JSON.parse(localStorage.getItem('gaswise.prefs.v1')!).locale).toBeNull()
 })
@@ -72,14 +98,14 @@ it.each([
   const app = render(<App />)
   expect(document.documentElement.lang).toBe(locale)
   expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
-  const language = screen.getByRole('combobox', { name: label })
-  expect(within(language).getByRole('option', { name: '日本語' })).toBeInTheDocument()
-  expect(within(language).getByRole('option', { name: '한국어' })).toBeInTheDocument()
-  fireEvent.change(language, { target: { value: selected } })
+  fireEvent.click(screen.getByRole('button', { name: label }))
+  expect(screen.getByRole('option', { name: '日本語' })).toBeInTheDocument()
+  expect(screen.getByRole('option', { name: '한국어' })).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('option', { name: selected === 'ko' ? '한국어' : '日本語' }))
   app.unmount()
   render(<App />)
   expect(document.documentElement.lang).toBe(selected)
-  expect(screen.getByRole('combobox', { name: selectedLabel })).toHaveValue(selected)
+  expect(screen.getByRole('button', { name: selectedLabel })).toHaveAccessibleDescription(selected === 'ko' ? '한국어' : '日本語')
 })
 
 describe('service integration', () => {
@@ -114,19 +140,19 @@ describe('service integration', () => {
     render(<App />)
     await screen.findByRole('heading', { name: 'Chevron', level: 2 })
     const header = within(screen.getByRole('banner'))
-    fireEvent.change(header.getByRole('combobox', { name: 'Language' }), { target: { value: 'ja' } })
+    chooseLanguage('Language', '日本語')
     expect(document.documentElement.lang).toBe('ja')
     expect(header.getByRole('tab', { name: '給油を節約' })).toBeInTheDocument()
     expect(JSON.parse(localStorage.getItem('gaswise.prefs.v1')!).locale).toBe('ja')
     fireEvent.click(header.getByRole('tab', { name: '自動車部品' }))
-    fireEvent.change(header.getByRole('combobox', { name: '言語' }), { target: { value: 'ko' } })
+    chooseLanguage('言語', '한국어')
     expect(document.documentElement.lang).toBe('ko')
     expect(header.getByRole('tab', { name: '자동차 부품' })).toHaveAttribute('aria-selected', 'true')
     fireEvent.click(header.getByRole('tab', { name: '주유비 절약' }))
     expect(screen.getByRole('heading', { name: 'Chevron', level: 2 })).toBeInTheDocument()
     expect(fetch).toHaveBeenCalledTimes(1)
     fireEvent.click(header.getByRole('button', { name: '설정' }))
-    expect(header.getByRole('combobox', { name: '언어' })).toHaveValue('ko')
+    expect(header.getByRole('button', { name: '언어' })).toHaveAccessibleDescription('한국어')
   })
 
   it('supports all payment conditions and defaults legacy preferences to Google Maps', async () => {
@@ -362,7 +388,6 @@ it('opens settings as a page and preserves the fuel session on return', async ()
     rows[0].station.price_updated_at = '2026-10-11T21:30:00Z'
     rows[0].station.fetched_at = '2026-10-12T16:30:00Z'
     render(english(<StationList rows={rows} />))
-    fireEvent.click(screen.getByRole('button', { name: /Compare/ }))
     const name = screen.getByRole('button', { name: `View details ${rows[0].station.name}` })
     expect(within(name.parentElement!).getByText('TOP TIER')).toBeInTheDocument()
     expect(within(name.closest('td')!).getByLabelText('Price source: Google Maps')).toBeInTheDocument()

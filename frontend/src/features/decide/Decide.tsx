@@ -4,6 +4,7 @@ import { SharedCacheStatus } from './SharedCacheStatus'
 import { SearchContext } from './SearchContext'
 import { useEffect, useRef, useState } from 'react'
 import { Segmented, Stepper } from '../../components/ui'
+import { Select } from '../../components/Select'
 import { type MessageKey, useI18n } from '../../i18n'
 import { age, fuelKey, gallons, sourceLabel } from '../../lib/format'
 import { effectiveFuel, type Prefs } from '../../lib/prefs'
@@ -48,11 +49,10 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
   const sources = result?.snapshot.source_statuses.filter((s) => s.status === 'ok') ?? []
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 pb-12 lg:max-w-5xl">
+    <div className="mx-auto w-full max-w-md px-4 pb-12 sm:max-w-2xl sm:px-6 lg:max-w-5xl">
       {!session.origin ? <div className="experience-intro pt-7 pb-2">
         <span className="mb-3 grid size-12 place-items-center rounded-2xl bg-accent-soft text-accent"><GasPumpIcon size={26} weight="duotone" /></span>
         <h1 className="text-3xl font-semibold tracking-tight">{t('experience.locationTitle')}</h1>
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">{t('experience.locationLead')}</p>
       </div> : null}
       {hero ? <h1 className="sr-only">{t('experience.ready')}</h1> : null}
       <SearchContext prefs={prefs} label={session.originLabel} source={session.originKind} permission={session.locationPermission} locating={phase === 'locating'} searching={phase === 'searching'} refreshing={session.refreshing}
@@ -82,11 +82,10 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
             <details className="mt-4 border-t border-line pt-3 text-xs text-muted">
               <summary className="cursor-pointer py-1">{t('board.radius')} {prefs.searchRadiusMiles ?? 5} mi · {t('fill.timeValue')} ${prefs.timeValuePerHour ?? 15}/h</summary>
               <div className="mt-3 grid grid-cols-2 gap-3">
-                <label className="flex flex-col gap-1.5">{t('board.radius')}
-                  <select aria-label={t('board.radius')} value={prefs.searchRadiusMiles ?? 5} onChange={e=>update({searchRadiusMiles:Number(e.target.value)})} className="h-11 min-w-0 rounded-control border border-line bg-surface px-3 text-ink">
-                    {[2,5,10,20].map(m=><option key={m} value={m}>{m} mi</option>)}
-                  </select>
-                </label>
+                <div className="flex min-w-0 flex-col gap-1.5"><span>{t('board.radius')}</span>
+                  <Select label={t('board.radius')} value={String(prefs.searchRadiusMiles ?? 5)} onChange={value=>update({searchRadiusMiles:Number(value)})}
+                    options={[2,5,10,20].map(value=>({value:String(value),label:`${value} mi`}))} />
+                </div>
                 <label className="flex flex-col gap-1.5">{t('board.value')}
                   <input type="number" min={0} max={500} step={5} aria-label={t('board.value')} value={prefs.timeValuePerHour ?? 15} onChange={e=>update({timeValuePerHour:Math.min(500,Math.max(0,Number(e.target.value)))})} className="num h-11 min-w-0 rounded-control border border-line bg-surface px-3 text-ink" />
                 </label>
@@ -141,9 +140,14 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
         </div>
 
         {(phase === 'ready' || phase === 'locating') && result ? (
-          <div className="flex flex-col gap-4">
+          <div className="contents">
+            <div className="min-w-0">
             <Leaderboards result={result} primary={primary} onStrategyChange={strategy=>update({preference:strategy==='cheapest_overall'?'money':strategy==='fastest_stop'?'time':'balanced'})} navApp={prefs.navApp} tripMode={prefs.tripMode} />
+            </div>
+            <div className="min-w-0 lg:col-span-2">
             <StationList rows={rows} navApp={prefs.navApp} tripMode={prefs.tripMode} />
+            </div>
+            <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
             <NearbyStations allowUnknownPayment={prefs.allowUnknownPayment} onUnknownPayment={(value) => update({ allowUnknownPayment: value })} result={result} navApp={prefs.navApp} onExpandRoutes={() => void session.expandRoutes()} />
             <footer className="px-1 text-[12px] leading-relaxed text-faint"><div className="mb-2 flex flex-wrap items-center gap-2">{result.snapshot.source_statuses.map(s=><SourcePill key={s.source} source={s.source} unavailable={s.status!=='ok'}/>)}<span>{age(result.snapshot.collected_at,t)}</span></div><details><summary className="cursor-pointer">{t('coverage.why')}</summary>
               <p>
@@ -158,8 +162,8 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
               <SharedCacheStatus caches={result.snapshot.source_cache}/>
               <p className="mt-1">{t('cache.policy')}</p>
               {result.cache_hits ? <p>{t('cache.reused', { count: result.cache_hits })}</p> : null}
-              <p className="mt-1">{t('decide.rerankNote')}</p>
             </details></footer>
+            </div>
           </div>
         ) : null}
       </div>

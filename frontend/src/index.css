@@ -16,8 +16,8 @@
   --color-line: #e3ddd2;
   --color-ink: #23211e;
   --color-muted: #6e6960;
-  --color-faint: #9a948a;
-  --color-accent: #4e7a5c;
+  --color-faint: #70695f;
+  --color-accent: #416c4e;
   --color-accent-soft: #e6ede3;
   --color-accent-ink: #fcfbf8;
   --color-caution: #85602a;
@@ -28,7 +28,7 @@
   --radius-box: 20px;
   --radius-control: 14px;
 
-  --shadow-raised: 0 1px 2px rgba(74, 62, 44, 0.05), 0 12px 32px -16px rgba(74, 62, 44, 0.18);
+  --shadow-raised: 0 1px 2px rgba(74, 62, 44, 0.06);
   --shadow-soft: 0 1px 2px rgba(74, 62, 44, 0.06);
 }
 
@@ -82,8 +82,7 @@ body::before {
     radial-gradient(50rem 36rem at -10% 110%, rgba(232, 224, 210, 0.55), transparent 60%);
 }
 
-/* Liquid material is reserved for navigation and controls. Data surfaces stay opaque.
-   The solid base is also the fallback when backdrop filtering is unavailable. */
+/* Opaque surfaces keep data legible while menus and dialogs remain distinct. */
 :root {
   --glass-fill: rgba(252, 251, 248, 0.82);
   --glass-edge: rgba(255, 255, 255, 0.9);
@@ -127,16 +126,6 @@ body::before {
 .liquid-segment { background: rgba(223, 228, 219, 0.7); }
 .liquid-sheet-heading { background: var(--color-surface); }
 
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .liquid-nav,
-  .liquid-panel,
-  .liquid-sheet {
-    background: var(--glass-fill);
-    -webkit-backdrop-filter: blur(18px) saturate(125%);
-    backdrop-filter: blur(18px) saturate(125%);
-  }
-}
-
 @media (prefers-reduced-transparency: reduce) {
   .liquid-nav,
   .liquid-panel,
@@ -164,13 +153,11 @@ body::before {
   --color-sunken: #315c43;
   --color-line: #63856b;
   color: #fcfbf8;
-  background:
-    radial-gradient(ellipse at 100% 0%, #416e50 0%, transparent 65%),
-    #234b35;
+  background: #234b35;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 .hero-spotlight a.bg-ink { color: #234b35; background: #fcfbf8; }
 .hero-spotlight a:focus-visible { outline: 2px solid #fcfbf8; outline-offset: 4px; }
 .hero-spotlight > .bg-sunken { margin-top: 12px; padding: 0; background: transparent; }
-.hero-spotlight > .bg-sunken > p:first-child { font-size: 21px; line-height: 1.35; }
+.hero-spotlight > .bg-sunken > p:first-child { font-size: 20px; line-height: 1.35; }
 .fill-panel { box-shadow: none; }

@@ -1,7 +1,9 @@
 import type { FuelType } from '../../api/types'
 import { useState } from 'react'
 import { Field, Segmented, Stepper, TextInput, Toggle } from '../../components/ui'
-import { LOCALES, useI18n } from '../../i18n'
+import { useI18n } from '../../i18n'
+import { LanguagePicker } from '../../components/LanguagePicker'
+import { Select } from '../../components/Select'
 import { gallons } from '../../lib/format'
 import { NAV_APPS } from '../../lib/navigation'
 import { useVehicleIdentity } from '../../lib/vehicleIdentity'
@@ -119,29 +121,10 @@ export function PreferencesForm({
         }
       >
         <Field label={t('prefs.language')}>
-          <select
-            aria-label={t('prefs.language')}
-            value={prefs.locale ?? 'auto'}
-            onChange={(event) =>
-              update({
-                locale:
-                  event.target.value === 'auto'
-                    ? null
-                    : LOCALES.find((item) => item.value === event.target.value)!.value,
-              })
-            }
-            className="h-11 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <option value="auto">{t('prefs.languageAuto')}</option>
-            {LOCALES.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+          <LanguagePicker value={prefs.locale} onChange={locale => update({ locale })} />
         </Field>
 
-        <Field label={t('prefs.car')} hint={t('prefs.carHint')}>
+        <Field label={t('prefs.car')}>
           <VehiclePicker key={identityReset} vehicle={prefs.vehicle} onChange={(vehicle) => update({ vehicle })} />
           <p className="text-xs leading-relaxed text-muted">
             {identity ? t('vehicle.sharedReady') : t('vehicle.sharedMissing')}
@@ -204,7 +187,7 @@ export function PreferencesForm({
         title={t('prefs.gallons')}
         description={t('prefs.gallonsHint')}
       >
-        <Field label={t('prefs.gallons')} hint={t('prefs.gallonsHint')}>
+        <Field label={t('prefs.gallons')}>
           <Stepper
             label={t('ui.gallons')}
             value={prefs.gallons}
@@ -320,18 +303,9 @@ export function PreferencesForm({
             />
           </Field>
           <Field label={t('board.radius')}>
-            <select
-              aria-label={t('board.radius')}
-              value={prefs.searchRadiusMiles ?? 5}
-              onChange={(e) => update({ searchRadiusMiles: Number(e.target.value) })}
-              className="h-11 rounded-control border border-line bg-surface px-3 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              {[2, 5, 10, 20].map((m) => (
-                <option key={m} value={m}>
-                  {m} mi
-                </option>
-              ))}
-            </select>
+            <Select label={t('board.radius')} value={String(prefs.searchRadiusMiles ?? 5)}
+              onChange={value => update({ searchRadiusMiles: Number(value) })}
+              options={[2, 5, 10, 20].map(value => ({ value: String(value), label: `${value} mi` }))} />
           </Field>
         </div>
       </SettingsSection>
@@ -340,7 +314,6 @@ export function PreferencesForm({
       <SettingsSection
         id="section-stations"
         title={t('prefs.costco')}
-        description={t('prefs.costcoHint')}
       >
         <div className="flex flex-col gap-5">
           <Toggle

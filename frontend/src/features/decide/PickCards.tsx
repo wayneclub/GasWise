@@ -176,7 +176,7 @@ export function HeroPick({
       </div>
 
       <p className="mt-5 flex items-baseline gap-1 whitespace-nowrap">
-        <span className="num text-[44px] font-semibold leading-none tracking-[-0.03em]">{perGallon(station.price_per_gallon)}</span>
+        <span className="num text-4xl font-semibold leading-none tracking-[-0.03em]">{perGallon(station.price_per_gallon)}</span>
         <span className="text-[16px] text-muted">{t('pick.perGallon')}</span>
       </p>
       {row ? (

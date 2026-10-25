@@ -50,3 +50,18 @@ it('keeps partial empty data in a completing state until all sources settle', ()
   expect(screen.getByText('Filling in live fuel prices')).toBeInTheDocument()
   expect(screen.queryByText('No eligible live fuel prices nearby')).not.toBeInTheDocument()
 })
+
+it('keeps long station identities intact and navigation beside the data, with a secondary touch target', () => {
+  const result = emptyResult()
+  const name = 'Olancha Mobil Mart 1 — Highway Service Station'
+  const address = '601 US-395, Olancha, California 93549'
+  result.snapshot.inventory = [{ place_id: 'olancha', name, address, location: { lat: 36, lng: -118 }, available_fuel_types: [], distance_meters: 0 }]
+  render(<SearchFallback result={result} completing={false} radius={20} navApp="google" onRadius={vi.fn()} onRetry={vi.fn()} />)
+  const article = screen.getByRole('article')
+  expect(screen.getByRole('heading', { name })).toHaveClass('break-words')
+  expect(screen.getByText(address)).toHaveClass('break-words')
+  expect(article).toHaveClass('grid-cols-[minmax(0,1fr)_auto]')
+  expect(screen.getByRole('link', { name: 'Navigate' })).toHaveClass('min-h-11', 'border')
+  expect(screen.getByRole('link', { name: 'Navigate' })).not.toHaveClass('bg-ink')
+  expect(screen.getByText('Price not reported')).toBeInTheDocument()
+})

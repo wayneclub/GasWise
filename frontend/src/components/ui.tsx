@@ -30,17 +30,19 @@ export function LinkButton({
   href,
   children,
   className = '',
+  variant = 'primary',
 }: {
   href: string
   children: ReactNode
   className?: string
+  variant?: 'primary' | 'secondary'
 }) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
-      className={`inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-control bg-ink px-5 text-[15px] font-semibold text-surface hover:opacity-90 ${press} ${focus} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-control py-2.5 text-[15px] font-semibold ${variant === 'primary' ? 'min-h-12 bg-ink px-5 text-surface hover:opacity-90' : 'min-h-11 border border-line px-4 text-ink hover:bg-sunken'} ${press} ${focus} ${className}`}
     >
       {children}
     </a>

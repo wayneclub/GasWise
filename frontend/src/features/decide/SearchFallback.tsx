@@ -38,24 +38,29 @@ export function SearchFallback({ result, completing, radius, navApp, onRadius, o
     : !!station.fetched_at && now - Date.parse(station.fetched_at) >= 21600000
   const onlyStale = records.length > 0 && records.every(([, station]) => !!station.price_per_gallon && isStale(station))
   if (!records.length && !failures.length && hasRanked && !completing) return null
-  return <section aria-label={t('fallback.title')} className="rounded-box border border-line bg-surface p-5">
+  const expansionChoices = [10, 20].filter(miles => miles > radius)
+  return <section aria-label={t('fallback.title')} className="min-w-0 rounded-box border border-line bg-surface p-4 sm:p-5">
     <h2 className="text-lg font-semibold">{completing ? t('decide.searching') : hasRanked ? t('fallback.title') : failures.length ? t('fallback.failed') : onlyStale ? t('fallback.staleOnly') : t('fallback.empty')}</h2>
     <p role="status" className="mt-2 text-sm text-muted">{t('fallback.note')}</p>
     {failures.map(source => <p key={source.source} className="mt-2 text-sm text-caution">{t('cache.sourceUnavailable', { source: sourceLabel(source.source) })}</p>)}
-    {!completing ? <div className="mt-4 flex flex-wrap gap-2">
-      {[10, 20].filter(miles => miles > radius).map(miles => <Button key={miles} variant="secondary" onClick={() => onRadius(miles)}>{t('fallback.expand', { miles })}</Button>)}
-      {failures.length ? <Button variant="ghost" onClick={onRetry}>{t('state.retry')}</Button> : null}
+    {!completing && (expansionChoices.length || failures.length) ? <div className="mt-4 flex flex-wrap gap-2">
+      {expansionChoices.map(miles => <Button key={miles} className="h-auto min-h-11 min-w-0 flex-1 whitespace-normal px-3 py-2 leading-snug" variant="secondary" onClick={() => onRadius(miles)}>{t('fallback.expand', { miles })}</Button>)}
+      {failures.length ? <Button className="h-auto min-h-11 whitespace-normal px-3 py-2" variant="ghost" onClick={onRetry}>{t('state.retry')}</Button> : null}
     </div> : null}
-    {records.length ? <><p className="mt-4 text-xs text-muted">{t('fallback.count', { count: records.length })}</p><div className="mt-3 flex flex-col gap-3">
-      {records.slice(0, visible).map(([key, station]) => <article key={key} className="rounded-control border border-line p-3">
-        <h3 className="font-medium">{station.name}</h3>
-        <p className="mt-1 text-xs text-muted">{station.address}</p>
+    {records.length ? <><p className="mt-4 text-sm text-muted">{t('fallback.count', { count: records.length })}</p><div className="mt-2 divide-y divide-line">
+      {records.slice(0, visible).map(([key, station]) => <article key={key} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 py-4">
+        <div className="col-span-2 min-w-0">
+        <h3 className="break-words text-base font-medium leading-snug">{station.name}</h3>
+        <p className="mt-1 break-words text-sm leading-relaxed text-muted">{station.address}</p>
+        </div>
+        <div className="min-w-0 break-words">
         <p className="mt-2 text-sm">{station.price_per_gallon ? `${perGallon(station.price_per_gallon)} · ${t(isStale(station) ? 'fallback.stale' : 'fallback.unranked')}` : t('fallback.noPrice')}</p>
         {station.price_per_gallon && station.fuel_type ? <p className="mt-1 text-xs text-muted">{t(fuelKey(station.fuel_type))} · {t(station.payment_type === 'cash' ? 'prefs.cash' : station.payment_type === 'credit' ? 'prefs.card' : 'station.unknownPayment')}</p> : null}
         {station.price_per_gallon ? <p className="mt-1 text-xs text-muted">{t('age.updated', { age: age(station.price_updated_at, t) })}</p> : null}
         <p className="mt-1 text-xs text-muted">{sourceLabel(station.source ?? 'google_maps_web')} · {t(station.open_now === true ? 'hours.open' : station.open_now === false ? 'hours.closed' : 'hours.unknown')}</p>
-        <LinkButton href={navigationUrl(navApp, station.location.lat, station.location.lng)} className="mt-2">{t('pick.navigate')}</LinkButton>
+        </div>
+        <LinkButton variant="secondary" href={navigationUrl(navApp, station.location.lat, station.location.lng)} className="mt-2 self-center">{t('pick.navigate')}</LinkButton>
       </article>)}
-    </div>{records.length > visible ? <Button variant="ghost" onClick={() => setVisible(n => n + 10)}>{t('station.more', { count: records.length - visible })}</Button> : null}</> : null}
+    </div>{records.length > visible ? <Button className="mt-2 w-full whitespace-normal" variant="ghost" onClick={() => setVisible(n => n + 10)}>{t('station.more', { count: records.length - visible })}</Button> : null}</> : null}
   </section>
 }

@@ -1,4 +1,5 @@
 import { Field, Segmented, TextInput } from '../../components/ui'
+import { Select } from '../../components/Select'
 import { useI18n } from '../../i18n'
 import type { VehicleIdentity } from '../../lib/vehicleIdentity'
 
@@ -16,10 +17,10 @@ export function IdentityFields({ identity, onChange, showMode = true }: {
         onChange={(e) => onChange({ kind: 'vin', value: { vin: e.target.value.toUpperCase().replace(/\s/g, '') } })} />
     </Field> : <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-3">
       <Field label={t('vehicle.stateLabel')}>
-        <select aria-label={t('vehicle.stateLabel')} className="h-11 rounded-control border border-line bg-surface px-2 text-sm"
-          value={identity.value.state} onChange={(e) => onChange({ kind: 'plate', value: { ...identity.value, state: e.target.value } })}>
-          {US_STATES.map((state) => <option key={state}>{state}</option>)}
-        </select>
+        <Select label={t('vehicle.stateLabel')} value={identity.value.state}
+          triggerClassName="gap-1 px-2" panelWidth={160}
+          options={US_STATES.map(value => ({ value, label: value }))}
+          onChange={state => onChange({ kind: 'plate', value: { ...identity.value, state } })} />
       </Field>
       <Field label={t('vehicle.plateLabel')}>
         <TextInput aria-label={t('vehicle.plateLabel')} autoComplete="off" maxLength={12} value={identity.value.plate}
