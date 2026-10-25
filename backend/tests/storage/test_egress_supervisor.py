@@ -124,6 +124,28 @@ def test_exhausted_generation_waits_then_reopens_candidates():
     assert state['generation'] == 2
 
 
+@pytest.mark.parametrize('modified,now,ready', [(1000, 8200, True), (1000, 8199, False), (9000, 1000, False)])
+def test_legacy_exhausted_state_keeps_elapsed_cooldown(tmp_path, modified, now, ready):
+    import os
+
+    path = tmp_path / 'state.json'
+    supervisor.save_state(path, {'attempts': [{'city': city, 'result': 'vpn_health_timeout'}
+                                            for city in ('Dallas', 'Miami', 'Seattle')]})
+    os.utime(path, (modified, modified))
+    state = supervisor.load_state(path, now)
+    assert state['cooldown_until'] == min(modified, now) + 7200
+    assert supervisor.prepare_generation(state, now) is ready
+    assert state['generation'] == (2 if ready else 1)
+
+
+def test_state_upgrade_preserves_existing_cooldown_and_healthy_exit(tmp_path):
+    path = tmp_path / 'state.json'
+    for state in ({'generation': 2, 'attempts': [], 'cooldown_until': 9000},
+                  {'attempts': [{'city': 'Dallas', 'result': 'healthy'}]}):
+        supervisor.save_state(path, state)
+        assert supervisor.load_state(path, now=10000) == state
+
+
 def test_unverified_primary_is_excluded_while_verified_replacement_stays_available(monkeypatch, tmp_path):
     import json
 

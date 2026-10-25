@@ -59,6 +59,17 @@ def save_state(path, state):
     temporary.replace(path)
 
 
+def load_state(path, now, maximum=3, cooldown=7200):
+    """Migrate exhausted legacy state without restarting its elapsed cooldown."""
+    if not path.exists():
+        return {'attempts': []}
+    state = json.loads(path.read_text())
+    if ('generation' not in state and 'cooldown_until' not in state
+            and len(state.get('attempts', [])) >= maximum):
+        state['cooldown_until'] = min(now, path.stat().st_mtime) + cooldown
+    return state
+
+
 def remove_owned(name):
     try:
         row = json.loads(docker('inspect', name))[0]
@@ -218,7 +229,7 @@ def main():
     if args.source == args.target:
         raise SystemExit('Source and target must be different')
     cities = list(dict.fromkeys(city.strip() for city in args.cities.split(',') if city.strip()))
-    state = json.loads(args.state.read_text()) if args.state.exists() else {'attempts': []}
+    state = load_state(args.state, time.time(), args.max_attempts, args.retry_cooldown_seconds)
     if state['attempts'] and state['attempts'][-1]['result'] in ('starting', 'healthy'):
         try:
             row = json.loads(docker('inspect', args.target))[0]
