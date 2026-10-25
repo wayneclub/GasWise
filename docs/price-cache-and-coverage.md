@@ -20,3 +20,24 @@ The recovered C.T. quotes are discoverable under **Not recommended**, showing bo
 ## Live verification
 
 At 17:02 UTC (10:02 Los Angeles), a bounded local search returned the two C.T. quotes with the closure exclusion. Repeating the same search immediately produced 13 cache hits and **zero** upstream calls, retaining identical source quote and fetch timestamps. This confirms normal source reuse without manufacturing freshness. AWS previously returned GasBuddy's `gasbuddy_http_bootstrap_challenge`; pagination cannot bypass that upstream refusal. The UI now explicitly lists unavailable sources, and deployment verification must distinguish local GasBuddy success from AWS provider access.
+
+## Waze grade reuse and failed Maps waves (2026-10-25)
+
+Smart acquisition now caches Waze's full set of reported grades under
+`waze:all-fuels-v1:` with a canonical Regular query descriptor, then selects the
+requested grade after reading the cache. Concurrent Regular/Premium requests for
+the same viewport coalesce into one acquisition. Fixed-base sampling uses the
+same key when its viewport and query limits match; differing radii remain
+separate. Demand warming understands this versioned namespace and reloads all
+grades after a restart. Existing single-grade keys retain their old behavior
+until expiration. Reuse preserves original observation timestamps and does not
+infer payment terms or pump octane.
+
+Maps discovery stops expanding when an entire wave fails. Previously, session,
+transport or egress failures could expand into all twenty tile attempts. The
+first-failed-wave fixture now invokes the provider once instead of twenty times;
+an unavailable exit can fail before HTTP, so these are provider invocations,
+not necessarily outgoing requests. Earlier successful results and measured
+coverage remain available when a later wave fails. This trades opportunistic
+recovery on another tile for bounded failure latency and source load; a later
+search or background refresh can recover subject to existing cooldowns.

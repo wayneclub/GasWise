@@ -31,11 +31,12 @@ Sources:
 
 ## Sampling cadence and capacity
 
-Each base has five jobs: GasBuddy Regular/Premium, Maps Regular/Premium, and one
-Waze all-reported-fuels acquisition. Waze retains native fuel/payment/octane
+Each base has four jobs: GasBuddy Regular/Premium, one Maps all-reported-fuels
+acquisition with up to three Premium detail lookups, and one Waze all-reported-fuels acquisition. Waze retains native fuel/payment/octane
 labels; unknown payment and unverified octane remain unknown. Its all-fuels cache
 has a separate versioned namespace from single-fuel serving queries. The 85 bases
-produce 425 persisted jobs. They run without visitor searches.
+produce 340 persisted jobs. Maps also uses a versioned all-fuels namespace; the
+previous Regular/Premium Maps jobs are disabled during job configuration. They run without visitor searches.
 
 The target interval is 24 hours after success, but the actual interval is bounded
 by shared source allowance, cooldown and queue size. Exhausted sources are skipped

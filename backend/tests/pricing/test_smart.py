@@ -172,7 +172,7 @@ def test_smart_http_auth_and_input_contract():
 
 def test_progressive_search_job_returns_before_slow_source_and_polls_completed_result():
     class SlowProvider(CountingProvider):
-        async def stations(self, query):
+        async def stations(self, query, *, all_fuels=False):
             await asyncio.sleep(.2)
             return await super().stations(query)
 
@@ -205,7 +205,7 @@ def test_progressive_search_job_returns_before_slow_source_and_polls_completed_r
 
 async def test_progressive_search_publishes_each_live_source_as_a_revision():
     class SlowWaze(WazeQuotes):
-        async def stations(self, query):
+        async def stations(self, query, *, all_fuels=False):
             await asyncio.sleep(.1)
             return await super().stations(query)
 
@@ -262,7 +262,7 @@ async def test_progressive_empty_town_is_complete_not_source_failure():
 
 async def test_progressive_all_failed_sources_preserve_failure_evidence():
     class BrokenWaze(WazeQuotes):
-        async def stations(self, query):
+        async def stations(self, query, *, all_fuels=False):
             raise ProviderError("waze_timeout")
 
     service = SmartService(b"test", "prices_only", waze=BrokenWaze(), router=CountingProvider())
@@ -457,7 +457,7 @@ class NoLane:
     async def prices(self, query):
         raise ProviderError(self.error)
 
-    async def stations(self, query):
+    async def stations(self, query, *, all_fuels=False):
         raise ProviderError(self.error)
 
 
@@ -749,7 +749,7 @@ async def test_unknown_payment_credit_estimate_preserves_raw_quote_and_does_not_
     from decimal import Decimal
 
     class UnknownProvider(CountingProvider):
-        async def stations(self, query):
+        async def stations(self, query, *, all_fuels=False):
             rows = await super().stations(query)
             rows[0].payment_type = 'unknown'
             rows[0].open_now = True
@@ -808,7 +808,7 @@ async def test_gasbuddy_searches_by_coordinates_and_keeps_unmatched_located_quot
 
 async def test_waze_quote_joins_gasbuddy_placed_site_instead_of_a_second_card():
     class SameSiteWaze(WazeQuotes):
-        async def stations(self, query):
+        async def stations(self, query, *, all_fuels=False):
             rows = await super().stations(query)
             return [rows[0].model_copy(update={"location": Point(lat=34.01011, lng=-118), "address": "1600 S Main St Los Angeles CA 90015"})]
 
@@ -840,7 +840,7 @@ async def test_twenty_precise_routes_keep_all_fifty_candidates_and_expand_withou
     from gaswise.domain.pricing.comparison import distance_meters
 
     class ManyStations(CountingProvider):
-        async def stations(self, query):
+        async def stations(self, query, *, all_fuels=False):
             templates = await super().stations(query)
             return [templates[0].model_copy(update={
                 "id": f"station-{i}", "name": f"Station {i}",

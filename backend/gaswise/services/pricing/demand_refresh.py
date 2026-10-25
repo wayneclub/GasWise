@@ -15,6 +15,11 @@ logger = logging.getLogger(__name__)
 QUERY_MODELS = {"gasbuddy": GasBuddySearch, "maps": MapsWebSearch, "waze": GooglePriceSearch}
 
 
+def query_payload(source, raw_key):
+    prefix = "waze:all-fuels-v1:" if source == "waze" and raw_key.startswith("waze:all-fuels-v1:") else source + ":"
+    return raw_key.removeprefix(prefix)
+
+
 class DemandQueryRefresh:
     def __init__(self, service, *, interval=900, limits=None, daily_limit=100, clock=monotonic):
         self.service = service
@@ -32,7 +37,7 @@ class DemandQueryRefresh:
             return
         # Persist only the provider's bounded public query, never the user's Search,
         # route, vehicle, credentials or identity. Refuse unexpected fields.
-        QUERY_MODELS[source].model_validate_json(raw_key.split(":", 1)[1])
+        QUERY_MODELS[source].model_validate_json(query_payload(source, raw_key))
         key = hashlib.sha256(("pricing-v1:" + raw_key).encode()).hexdigest()
         try:
             await self.cache._db("observe_warm_query", key, source, raw_key, self.interval)
@@ -70,13 +75,16 @@ class DemandQueryRefresh:
         delay = self.interval
         token = background_acquisition.set(True)
         try:
-            query = QUERY_MODELS[source].model_validate_json(job["raw_key"].split(":", 1)[1])
+            query = QUERY_MODELS[source].model_validate_json(query_payload(source, job["raw_key"]))
 
             async def load():
                 slot = self.service.background_gasbuddy_slot if source == "gasbuddy" else self.service.source_slots[source]
                 async with slot:
                     provider = self.provider(source)
-                    value = await (provider.stations(query) if source == "waze" else provider.prices(query))
+                    if source == "waze" and job["raw_key"].startswith("waze:all-fuels-v1:"):
+                        value = await provider.stations(query, all_fuels=True)
+                    else:
+                        value = await (provider.stations(query) if source == "waze" else provider.prices(query))
                 pace.loads += 1
                 return value
 

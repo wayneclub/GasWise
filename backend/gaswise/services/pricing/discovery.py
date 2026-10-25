@@ -71,7 +71,10 @@ async def discover_maps(service, search, query):
             coverage.record(tile.origin, tile.radius_meters, value.candidate_count, len(value.inventory),
                             value.candidate_reach_meters, MAPS_WEB_PAGE_SIZE)
         remaining = query.discovery_tiles - len(outcomes)
-        if rate_limited or remaining <= 0:
+        # Expanding the same failed source into more tiles amplifies outages
+        # and expired-session failures. Keep earlier successful observations.
+        failed_wave = all(isinstance(result, ProviderError) for result in results)
+        if rate_limited or failed_wave or remaining <= 0:
             break
         points, radius = coverage.wave(min(MAPS_WAVE, remaining))
         batch = [(point, radius) for point in points]
@@ -112,10 +115,18 @@ async def acquire(service, search, query, timings=None, sources=None):
         requests["maps"] = timed("discovery_maps", discover_maps(service, search, query))
     if service.waze is not None and (sources is None or "waze" in sources):
         centre, radius = shared_viewport(search.origin, search_limit_meters(search))
-        waze = GooglePriceSearch(origin=centre, fuel_type=search.fuel_type, radius_meters=min(50000, radius), max_results=20)
+        # Waze's wire request is independent of grade. Store all grades once,
+        # using the same versioned namespace as fixed-base collection.
+        waze = GooglePriceSearch(origin=centre, fuel_type="regular", radius_meters=min(50000, radius), max_results=20)
+
+        async def waze_prices():
+            rows, hit = await service.cached(
+                "waze:all-fuels-v1:" + waze.model_dump_json(),
+                lambda: service.waze.stations(waze, all_fuels=True), refresh=query.force_refresh)
+            return [row for row in rows if row.fuel_type == search.fuel_type], hit
         requests["waze"] = timed(
             "discovery_waze",
-            service.cached("waze:" + waze.model_dump_json(), lambda: service.waze.stations(waze), refresh=query.force_refresh),
+            waze_prices(),
         )
     # Per-source failures stay isolated; cancellation still propagates to all waiters.
     values = await asyncio.gather(*requests.values(), return_exceptions=True)

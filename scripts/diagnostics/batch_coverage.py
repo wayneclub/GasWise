@@ -25,11 +25,11 @@ def plan(strategy, base_radius, max_radius, cell_km):
     for base, radius in requested.items():
         point = Point(lat=BASES[base][0], lng=BASES[base][1])
         _, effective[base] = shared_viewport(point, radius)
-    reserve_per_base = 9 + 9 + 1 + 4 + 3  # GasBuddy x2 (max_pages=8), Maps regular/premium, Waze all-fuels.
+    reserve_per_base = 9 + 9 + 4 + 3  # GasBuddy x2 (max_pages=8), Maps/Waze all-fuels.
     return {
         "strategy": strategy,
         "base_count": len(BASES),
-        "jobs_per_cycle": len(BASES) * 5,
+        "jobs_per_cycle": len(BASES) * 4,
         "request_reserve_per_cycle": len(BASES) * reserve_per_base,
         "expanded_bases": [
             {"base": base, "requested_radius_meters": round(requested[base]),

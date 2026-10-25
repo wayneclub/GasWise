@@ -44,6 +44,13 @@ class CollectionEvents:
             if row is None:
                 return False
             job = dict(row)
+            # Short recovery only for transient Maps/Waze outages. Persisted
+            # failure counts survive restarts; repeated outages return to hourly.
+            transient = {"maps": "google_maps_web_unavailable", "waze": "waze_upstream_unavailable"}
+            if (error == "collection_failed" and job["source"] in transient
+                    and (info or {}).get("failure_code") == transient[job["source"]]):
+                backoff = (60, 300, 900, 3600)
+                delay = min(delay, backoff[min(max(0, job["failures"]), len(backoff) - 1)])
             retry_at = job['clock'] + timedelta(seconds=delay)
             outcome, reason = await self._append_collection_run(connection, job, owner, error, quotes, stations, info, retry_at)
             if outcome == 'failure':

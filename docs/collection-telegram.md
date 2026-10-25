@@ -44,3 +44,23 @@ To verify delivery, create an explicitly labeled `canary` attempt, let the actua
 outbox worker send it, verify sent_at and telegram_message_id, then remove synthetic
 rows. Do not confuse a notification canary with a real source incident or throughput
 measurement.
+
+## Transient Maps/Waze recovery
+
+Maps `google_maps_web_unavailable` and Waze `waze_upstream_unavailable` failures
+reschedule after 60, 300, 900, then 3600 seconds according to the job's durable
+consecutive-failure count. Success resets that count. The due timestamp and
+attempt journal retry timestamp commit in the same transaction. Source budgets,
+provider cooldowns and background pacing still gate actual execution; a due time
+is not a promise of immediate acquisition. Authentication errors, HTTP rejections,
+rate limits and other providers retain their existing scheduling.
+
+Maps background jobs acquire all reported grades through one Premium query,
+retaining the three-detail limit. Missing detail grades retain the original
+search observations and timestamps; a detail row for the same grade takes
+precedence. This reduces the 85-base plan from 425 to 340 jobs and its reserved
+HTTP budget from 2210 to 2125 (Maps alone: 425 to 340 requests at the maximum
+detail budget). The reserve is not measured live traffic. A mocked HTTP
+integration comparison verifies five versus four requests with identical six
+station/grade/price observations. No production latency improvement is claimed
+from that fixture.

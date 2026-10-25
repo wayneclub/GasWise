@@ -410,3 +410,73 @@ def test_mixed_payment_photo_prices_remain_unknown_per_fuel():
     assert len(result.all_prices) == 4
     assert {r.payment_type for r in result.all_prices} == {'unknown'}
     assert str(result.stations[0].price_per_gallon) == '6.04'
+
+
+async def test_premium_details_preserve_regular_search_observation(tmp_path):
+    search_row = record()
+    detail_row = record()
+    detail_row[86] = [[["$6.96", 5, 1791544992, "gallon", 0, "USD", 6.96, "Premium"]], 3]
+    def handler(request):
+        row = search_row if request.url.path == '/search' else detail_row
+        return httpx.Response(200, text=")]}'\n" + json.dumps([row]))
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await MapsWebProvider(client, session_file(tmp_path)).prices(
+            query(fuel_type='premium', detail_limit=3))
+    assert {r.fuel_type for r in result.all_prices} == {'regular', 'premium'}
+    regular = next(r for r in result.all_prices if r.fuel_type == 'regular')
+    assert str(regular.price_per_gallon) == '6.56'
+    assert regular.price_updated_at is None
+    assert {r.fuel_type for r in result.stations} == {'premium'}
+    assert set(result.inventory[0].available_fuel_types) == {'regular', 'premium'}
+
+
+async def test_combined_collection_reduces_http_calls_without_losing_grades(tmp_path):
+    from types import SimpleNamespace
+
+    from gaswise.services.pricing.base_collection import BaseCollection
+    from tests.pricing.test_base_collection import Cache
+
+    rows = [record() for _ in range(3)]
+    for index, row in enumerate(rows):
+        row[78] = f'station-{index}'
+        row[10] = f'0xabc:0x{index + 1:x}'
+    calls = []
+
+    def handler(request):
+        calls.append(request.url.path)
+        if request.url.path == '/search':
+            result = rows
+        else:
+            # Three independent detail requests, each returning only Premium.
+            identifier = request.url.params['pb'].split('!1s')[1].split('!')[0]
+            row = json.loads(json.dumps(next(r for r in rows if r[10] == identifier)))
+            row[86] = [[["$6.96", 5, 1791544992, "gallon", 0, "USD", 6.96, "Premium"]], 3]
+            result = [row]
+        return httpx.Response(200, text=")]}'\n" + json.dumps(result))
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        provider = MapsWebProvider(client, session_file(tmp_path))
+        cache = Cache()
+        service = SimpleNamespace(shared_cache=cache, maps_web=provider, waze=None, gasbuddy=None,
+                                  source_slots={'maps': asyncio.Semaphore(1)})
+        collector = BaseCollection(service, ['la'])
+        combined_query = next(iter(collector.jobs.values())).query
+        regular = await provider.prices(combined_query.model_copy(update={'fuel_type': 'regular', 'detail_limit': 0}))
+        premium = await provider.prices(combined_query)
+        previous_http = len(calls)
+        expected = {(r.id, r.fuel_type, r.price_per_gallon) for r in regular.all_prices + premium.all_prices}
+        assert previous_http == 5
+        calls.clear()
+        captured = []
+        original_get = cache.get
+        async def get(*args, **kwargs):
+            result, hit = await original_get(*args, **kwargs)
+            captured.extend(result.all_prices)
+            return result, hit
+        cache.get = get
+        await collector.initialize()
+        assert await collector.step()
+        assert len(calls) == 4
+        assert {(r.id, r.fuel_type, r.price_per_gallon) for r in captured} == expected
+        assert cache.saved[0][4:6] == (6, 3)
+        print(f'Google collection HTTP requests: {previous_http} -> {len(calls)}; preserved quotes: {len(captured)}')

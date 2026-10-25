@@ -15,7 +15,7 @@ class CountingProvider(FixtureProvider):
     searches = 0
     routes = 0
 
-    async def stations(self, query):
+    async def stations(self, query, *, all_fuels=False):
         self.searches += 1
         return await super().stations(query)
 
@@ -118,7 +118,7 @@ class MapsInventory:
 class WazeQuotes:
     calls = 0
 
-    async def stations(self, query):
+    async def stations(self, query, *, all_fuels=False):
         self.calls += 1
         now = datetime.now(UTC)
         return [

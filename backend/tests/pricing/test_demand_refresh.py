@@ -184,3 +184,27 @@ async def test_registration_cannot_persist_routes_or_visitor_fields():
     with pytest.raises(ValueError):
         await warmer.observe("waze", 'waze:{"origin":{"lat":34,"lng":-118},"vehicle_id":123}')
     assert not cache.jobs
+
+
+async def test_versioned_waze_query_warms_all_grades_after_restart():
+    from tests.pricing.test_waze_acquisition import AllFuels
+
+    cache = DurableCache()
+    provider = AllFuels()
+    first = DemandQueryRefresh(service(cache, provider))
+    key = 'waze:all-fuels-v1:' + raw_key().split(':', 1)[1]
+    await first.observe('waze', key)
+    assert next(iter(cache.jobs.values()))['raw_key'] == key
+    cache.now += timedelta(minutes=16)
+    captured = []
+    original_get = cache.get
+    async def get(*args, **kwargs):
+        rows, hit = await original_get(*args, **kwargs)
+        captured.extend(rows)
+        return rows, hit
+    cache.get = get
+    restarted = DemandQueryRefresh(service(cache, provider))
+    assert await restarted.step()
+    assert provider.calls == 1
+    assert {r.fuel_type for r in captured} == {'regular', 'premium'}
+    assert next(iter(cache.jobs.values()))['error'] is None

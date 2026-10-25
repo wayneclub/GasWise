@@ -260,6 +260,19 @@ class MapsWebProvider:
                     # A rejected/limited request ends enrichment, avoiding repeated failures.
                     break
         result = self.parse(data, query)
+        # Detail responses can contain only a subset of grades. Preserve search
+        # observations for missing grades, including their original timestamps.
+        observed = {(row.canonical_id, row.fuel_type) for row in result.all_prices}
+        for row in initial.all_prices:
+            if (row.canonical_id, row.fuel_type) not in observed:
+                result.all_prices.append(row)
+                if row.fuel_type == query.fuel_type:
+                    result.stations.append(row)
+        fuels = {}
+        for row in result.all_prices:
+            fuels.setdefault(row.canonical_id, set()).add(row.fuel_type)
+        for station in result.inventory:
+            station.available_fuel_types = sorted(fuels.get("google_places:" + station.place_id, set()))
         result.authentication = "session" if self.session_file is not None else "anonymous"
         result.detail_requests = count
         result.upstream_http_requests = 1 + count

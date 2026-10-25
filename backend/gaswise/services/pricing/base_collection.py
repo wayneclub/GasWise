@@ -40,7 +40,7 @@ class CollectionJob:
 
     @property
     def raw_key(self):
-        namespace = "waze:all-fuels-v1:" if self.source == "waze" else self.source + ":"
+        namespace = self.source + ":all-fuels-v1:" if self.fuel == "all" else self.source + ":"
         return namespace + self.query.model_dump_json()
 
 
@@ -61,8 +61,11 @@ def collection_jobs(service, bases, *, coverage_strategy="legacy", base_radius=1
                 ("waze", service.waze, GooglePriceSearch(
                     origin=centre, radius_meters=radius, fuel_type=fuel)),
             ):
-                if provider is not None and not (source == "waze" and fuel == "premium"):
-                    job_fuel = "all" if source == "waze" else fuel
+                if provider is not None and not (
+                    (source == "waze" and fuel == "premium")
+                    or (source == "maps" and fuel == "regular")
+                ):
+                    job_fuel = "all" if source in {"waze", "maps"} else fuel
                     job_id = f"{base}:{job_fuel}:{source}"
                     jobs[job_id] = CollectionJob(job_id, base, source, job_fuel, query, provider)
     return jobs

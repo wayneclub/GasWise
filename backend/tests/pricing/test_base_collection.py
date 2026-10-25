@@ -203,9 +203,9 @@ def test_isolated_radius_plan_expands_edges_without_adding_jobs_or_request_reser
     legacy = collection_jobs(collector.service, list(BASES), coverage_strategy="legacy")
     adaptive = collection_jobs(collector.service, list(BASES), coverage_strategy="isolated_radius_v1")
 
-    assert len(legacy) == len(adaptive) == 425
-    assert sum(job.request_reserve for job in legacy.values()) == 2210
-    assert sum(job.request_reserve for job in adaptive.values()) == 2210
+    assert len(legacy) == len(adaptive) == 340
+    assert sum(job.request_reserve for job in legacy.values()) == 2125
+    assert sum(job.request_reserve for job in adaptive.values()) == 2125
     assert adaptive["blythe:regular:gasbuddy"].query.radius_meters > 20000
     assert adaptive["la:regular:gasbuddy"].query.radius_meters == legacy["la:regular:gasbuddy"].query.radius_meters
     assert max(job.query.radius_meters for job in adaptive.values()) <= 20600
@@ -281,3 +281,15 @@ async def test_repair_does_not_bypass_shared_budget():
     assert not await collector.step()
     assert not provider.calls
     assert not cache.saved
+
+
+def test_maps_collection_uses_one_all_fuel_job_with_bounded_premium_details():
+    collector, _, _ = setup()
+    collector.service.maps_web = object()
+    jobs = [j for j in collection_jobs(collector.service, ['la']).values() if j.source == 'maps']
+    assert len(jobs) == 1
+    assert jobs[0].fuel == 'all'
+    assert jobs[0].query.fuel_type == 'premium'
+    assert jobs[0].query.detail_limit == 3
+    assert jobs[0].request_reserve == 4
+    assert jobs[0].raw_key.startswith('maps:all-fuels-v1:')
