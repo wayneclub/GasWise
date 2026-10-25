@@ -15,6 +15,7 @@ import httpx
 from gaswise.contracts.common import Point, Station
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.identity import membership_for_name
+from gaswise.providers.http.batch_transport import source_request
 from gaswise.providers.waze.protocol import (
     ENDPOINT,
     decode,
@@ -48,9 +49,10 @@ class WazeProvider:
         if time.monotonic() < self.blocked_until:
             raise ProviderError("waze_rate_limited")
         try:
-            if self.request_budget:
-                await self.request_budget.before("waze")
-            response = await self.client.post(endpoint, content=body, headers=headers, timeout=20)
+            response = await source_request(
+                self.client, 'post', endpoint, source='waze', budget=self.request_budget,
+                read_only=endpoint == ENDPOINT, content=body, headers=headers, timeout=20,
+            )
         except httpx.RequestError:
             raise ProviderError("waze_upstream_unavailable") from None
         if self.request_budget:

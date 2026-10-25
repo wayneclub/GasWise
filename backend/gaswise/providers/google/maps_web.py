@@ -1,7 +1,8 @@
 """Google Maps website HTTP search with optional private session, no Places API.
 
 Observed array protocol, not a documented API. No browser,
-challenge bypass, retries, or automatic paid fallback. Optional authorized
+challenge bypass or automatic paid fallback. Background read-only requests may
+retry one transient transport failure on the same exit. Optional authorized
 Google session cookies are read only from a private local file.
 """
 
@@ -20,6 +21,7 @@ from gaswise.contracts.sources import MAPS_WEB_PAGE_SIZE, MapsWebPrices, MapsWeb
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.identity import membership_for_name
 from gaswise.providers.google.session_renewal import renew_session
+from gaswise.providers.http.batch_transport import source_request
 
 # Verified website numeric values and labels; do not infer pump octane from them.
 WEB_FUEL_TYPES = {1: "diesel", 3: "regular", 4: "midgrade", 5: "premium"}
@@ -150,10 +152,10 @@ class MapsWebProvider:
         if path not in ("/search", "/maps/preview/place"):
             raise ProviderError("google_maps_web_invalid_endpoint")
         try:
-            if self.request_budget:
-                await self.request_budget.before("maps")
-            response = await self.client.get(
+            response = await source_request(
+                self.client, 'get',
                 "https://www.google.com" + path,
+                source='maps', budget=self.request_budget, read_only=True,
                 params=params,
                 headers=headers,
                 follow_redirects=False,

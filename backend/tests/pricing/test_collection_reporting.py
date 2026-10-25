@@ -31,6 +31,17 @@ def test_failure_is_localized_and_has_reason_status_time_and_lane():
     assert 'gasbuddy_http_api_rejected' in text and '#run-123' in text
 
 
+def test_no_http_response_is_not_presented_as_evidence_of_a_block():
+    row = run()
+    row.update(source='waze', reason='waze_upstream_unavailable', http_status=None)
+    text = failure_message(row)
+    assert '未取得來源回應，不能據此判定封鎖' in text
+    assert 'waze_upstream_unavailable' in text
+    row.update(http_status=403)
+    assert 'HTTP：403' in failure_message(row)
+    assert '未取得來源回應' not in failure_message(row)
+
+
 def test_internal_budget_and_interruptions_do_not_inflate_source_failure_statistics():
     assert completion('gasbuddy_background_daily_budget_exhausted') == ('deferred', 'gasbuddy_background_daily_budget_exhausted')
     assert completion('interrupted') == ('interrupted', 'interrupted')

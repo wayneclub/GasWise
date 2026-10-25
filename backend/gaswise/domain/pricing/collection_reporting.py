@@ -11,6 +11,8 @@ DEFERRALS = {'source_budget_deferred', 'configuration_changed', 'service_shutdow
         'mandatory_budget_reserved', 'background_daily_budget_exhausted', 'background_budget_exhausted',
         'request_budget_exhausted', 'background_wait_exhausted')}
 LABELS = {
+    'google_maps_web_unavailable': 'Google Maps 連線或服務暫時不可用',
+    'waze_upstream_unavailable': 'Waze 連線不可用／逾時',
     'gasbuddy_http_api_rejected': 'GasBuddy API 回傳非成功狀態',
     'gasbuddy_http_bootstrap_rejected': 'GasBuddy 首頁回傳非成功狀態',
     'gasbuddy_http_unavailable': 'GasBuddy 連線不可用／逾時',
@@ -74,6 +76,8 @@ def failure_message(run):
     lines.extend([f"原因：{LABELS.get(reason, reason)}", f"錯誤碼：{reason}"])
     if run.get('http_status') is not None:
         lines.append(f"HTTP：{run['http_status']}")
+    elif reason in ('google_maps_web_unavailable', 'waze_upstream_unavailable'):
+        lines.append('HTTP：未取得來源回應，不能據此判定封鎖')
     if run.get('phase'):
         lines.append(f"階段：{run['phase']}")
     if run.get('egress_lane') is not None:
