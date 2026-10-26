@@ -561,23 +561,34 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
 
     async def read(self, key):
         row = await self.pool.fetchrow("""
-            SELECT payload, fetched_at, fresh_until > now() AS fresh, stale_until > now() AS usable
-            FROM gaswise.query_cache WHERE key=$1 AND payload IS NOT NULL
+            SELECT payload, fetched_at, fresh_until > now() AS fresh, stale_until > now() AS usable,
+                CASE WHEN failure_until>now() THEN failure_code END AS failure
+            FROM gaswise.query_cache WHERE key=$1
         """, key)
         if row is None:
             return None
-        return CachedQuery(prune_quotes(json.loads(row["payload"])), bool(row["fresh"]), bool(row["usable"]), row["fetched_at"])
+        return CachedQuery(prune_quotes(json.loads(row["payload"])) if row["payload"] is not None else None,
+                           bool(row["fresh"]) and row["payload"] is not None,
+                           bool(row["usable"]) and row["payload"] is not None, row["fetched_at"], row["failure"])
 
     async def claim(self, key, source, owner):
         # A lease replaces a long-held transaction while network I/O is in progress.
         claimed = await self.pool.fetchval("""
             INSERT INTO gaswise.query_cache (key, source, lease_owner, lease_until)
             VALUES ($1, $2, $3, now() + interval '120 seconds')
-            ON CONFLICT (key) DO UPDATE SET lease_owner=$3, lease_until=now() + interval '120 seconds'
-            WHERE query_cache.lease_until IS NULL OR query_cache.lease_until <= now()
+            ON CONFLICT (key) DO UPDATE SET lease_owner=$3, lease_until=now() + interval '120 seconds',
+                failure_code=NULL,failure_until=NULL
+            WHERE (query_cache.lease_until IS NULL OR query_cache.lease_until <= now())
+                AND (query_cache.failure_until IS NULL OR query_cache.failure_until<=now())
             RETURNING key
         """, key, source, owner)
         return claimed is not None
+
+    async def fail(self, key, owner, reason):
+        await self.pool.execute("""
+            UPDATE gaswise.query_cache SET failure_code=$3,failure_until=now()+interval '30 seconds'
+            WHERE key=$1 AND lease_owner=$2
+        """, key, owner, reason)
 
     async def renew(self, key, owner):
         renewed = await self.pool.fetchval("""
@@ -598,7 +609,8 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
             saved = await connection.fetchval("""
                 UPDATE gaswise.query_cache SET payload=$3::jsonb, fetched_at=now(),
                 fresh_until=now() + $4 * interval '1 second',
-                stale_until=now() + interval '1 hour', lease_owner=NULL, lease_until=NULL
+                stale_until=now() + interval '1 hour', lease_owner=NULL, lease_until=NULL,
+                failure_code=NULL,failure_until=NULL
                 WHERE key=$1 AND lease_owner=$2 AND lease_until > now() RETURNING fetched_at
             """, key, owner, json.dumps(payload), fresh_seconds)
             if saved:

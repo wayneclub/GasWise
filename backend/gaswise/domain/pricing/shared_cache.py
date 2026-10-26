@@ -18,10 +18,11 @@ background_acquisition = ContextVar("background_pricing_acquisition", default=Fa
 
 @dataclass
 class CachedQuery:
-    payload: dict | list
+    payload: dict | list | None
     fresh: bool
     usable: bool
     fetched_at: datetime | None = None
+    failure: str | None = None
 
 
 class PricingCacheStore(Protocol):

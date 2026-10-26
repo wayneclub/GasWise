@@ -281,3 +281,6 @@ UPDATE gaswise.warm_queries SET request_cost=CASE source
     WHEN 'waze' THEN 3 ELSE 1 END;
 
 ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS schedule_inherited_from text[];
+
+ALTER TABLE gaswise.query_cache ADD COLUMN IF NOT EXISTS failure_code text;
+ALTER TABLE gaswise.query_cache ADD COLUMN IF NOT EXISTS failure_until timestamptz;

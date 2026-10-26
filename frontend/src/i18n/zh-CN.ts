@@ -66,6 +66,7 @@ export const zhCN: Record<MessageKey, string> = {
 
   'cache.sharedFresh': '{source}：共享数据于 {age} 查询',
   'cache.sharedStale': '{source}：缓存于 {age} 查询；更新受来源频率限制',
+  "cache.partialSources": "仍可使用 {sources} 的油价；暂时只缺少无法获取的来源。",
   "cache.sourceUnavailable": "{source}：暂时无法获取",
   "cache.failed": "更新失败 · 显示上次获取的报价",
 

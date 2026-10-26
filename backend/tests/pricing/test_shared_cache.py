@@ -22,6 +22,12 @@ class Store:
         assert self.owners[key] == owner
         self.entries[key] = CachedQuery(payload,True,True,datetime.now(UTC))
         return self.entries[key].fetched_at
+    async def fail(self,key,owner,reason):
+        record = self.entries.get(key)
+        if record:
+            record.failure = reason
+        else:
+            self.entries[key] = CachedQuery(None,False,False,None,failure=reason)
     async def renew(self,key,owner):
         return self.owners.get(key) == owner
     async def release(self,key,owner):
@@ -161,4 +167,35 @@ async def test_lost_save_lease_is_not_reported_as_success_or_fresh_data():
     with pytest.raises(ProviderError, match='shared_pricing_refresh_lease_lost'):
         await cache.get('waze', 'lost-save', load, wait_refresh=True)
     assert not store.owners
+    await cache.close()
+
+
+async def test_failed_owner_does_not_make_other_sources_wait_for_a_result_that_will_not_arrive():
+    class FailedStore(Store):
+        cooldown = False
+
+        async def claim(self, *args):
+            if self.cooldown:
+                return False
+            return await super().claim(*args)
+
+        async def release(self, *args):
+            self.cooldown = True
+            await super().release(*args)
+
+        async def fail(self, key, owner, reason):
+            self.entries[key] = CachedQuery([], False, False, None, failure=reason)
+
+    store = FailedStore()
+    cache = SharedPricingCache(store)
+    calls = []
+    async def broken():
+        calls.append(1)
+        raise ProviderError('waze_reauthentication_required')
+    with pytest.raises(ProviderError, match='waze_reauthentication_required'):
+        await cache.get('waze', 'auth-failure', broken)
+    with pytest.raises(ProviderError, match='waze_reauthentication_required') as caught:
+        await asyncio.wait_for(cache.get('waze', 'auth-failure', broken), .2)
+    assert caught.value.cache_hit
+    assert calls == [1]
     await cache.close()

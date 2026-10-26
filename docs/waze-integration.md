@@ -122,3 +122,23 @@ accepts estimates. Rules live in gaswise/domain/pricing/grades.py.
 
 Live response evidence: artifacts/waze/station-details-live.json. Hours are
 source reports; calculated open_now is not an independent real-time check.
+
+## Login header repair (2026-10-26)
+
+Captured functional headers use lowercase names. Login previously filtered them
+into a case-sensitive dictionary and then added title-case defaults with
+`setdefault`. This emitted duplicate User-Agent, Content-Type and network-version
+headers and the native login endpoint returned HTTP 400. Login now builds an
+`httpx.Headers` collection before adding defaults, so existing names match
+case-insensitively. The original account credential and captured request body
+remain unchanged. A bounded production test with the corrected adapter logged
+in over HTTP, returned 15 stations / 51 fuel quotes and installed only the
+verified UID. No account password change or App runtime was needed.
+
+Shared query caching now retains a sanitized failure code for 30 seconds. A
+second process encountering a failed cold-query owner returns that source's
+failure immediately, rather than waiting twenty seconds for a payload that will
+not arrive. Usable stale observations remain separately available with original
+timestamps; failure is never saved as successful price data. Success clears the
+failure, expiry permits another bounded acquisition, and other sources keep
+their own results. The UI explicitly names sources whose prices remain available.

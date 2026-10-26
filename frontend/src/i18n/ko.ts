@@ -64,6 +64,7 @@ export const ko: Record<MessageKey, string> = {
   "board.score": "시간 포함",
   "cache.sharedFresh": "{source}: 공유 데이터 확인 {age}",
   "cache.sharedStale": "{source}: 캐시 확인 {age}; 업데이트는 출처의 제한을 따릅니다",
+  "cache.partialSources": "{sources}의 가격은 계속 이용할 수 있습니다. 이용 불가 출처만 제외됩니다.",
   "cache.sourceUnavailable": "{source}: 일시적으로 이용 불가",
   "cache.failed": "업데이트 실패 · 이전 데이터 표시 중",
   "cache.updating": "가격 확인 중…",

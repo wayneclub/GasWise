@@ -65,3 +65,14 @@ it('keeps long station identities intact and navigation beside the data, with a 
   expect(screen.getByRole('link', { name: 'Navigate' })).not.toHaveClass('bg-ink')
   expect(screen.getByText('Price not reported')).toBeInTheDocument()
 })
+
+it('makes clear that a Waze failure leaves other source prices available', () => {
+  const result = emptyResult()
+  result.snapshot.source_statuses = [
+    { source: 'waze', status: 'unavailable', quote_count: 0, detail: 'waze_reauthentication_required' },
+    { source: 'gasbuddy_web', status: 'ok', quote_count: 3 },
+  ]
+  render(<SearchFallback result={result} completing={false} radius={5} navApp="google" onRadius={vi.fn()} onRetry={vi.fn()} />)
+  expect(screen.getByText('Prices from GasBuddy are still available; unavailable sources are omitted.')).toBeInTheDocument()
+  expect(screen.getByText('Waze: temporarily unavailable')).toBeInTheDocument()
+})

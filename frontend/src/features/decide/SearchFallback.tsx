@@ -31,6 +31,9 @@ export function SearchFallback({ result, completing, radius, navApp, onRadius, o
   const [visible, setVisible] = useState(10)
   const records = fallbackStations(result)
   const failures = result.snapshot.source_statuses.filter(source => source.status === 'unavailable')
+  const available = result.snapshot.source_statuses
+    .filter(source => source.status === 'ok' && source.quote_count > 0)
+    .map(source => sourceLabel(source.source))
   const hasRanked = !!result.ranking?.results.length
   const now = Date.parse(result.ranking?.generated_at ?? result.snapshot.collected_at)
   const isStale = (station: StationSummary) => station.price_updated_at
@@ -42,6 +45,7 @@ export function SearchFallback({ result, completing, radius, navApp, onRadius, o
   return <section aria-label={t('fallback.title')} className="min-w-0 rounded-box border border-line bg-surface p-4 sm:p-5">
     <h2 className="text-lg font-semibold">{completing ? t('decide.searching') : hasRanked ? t('fallback.title') : failures.length ? t('fallback.failed') : onlyStale ? t('fallback.staleOnly') : t('fallback.empty')}</h2>
     <p role="status" className="mt-2 text-sm text-muted">{t('fallback.note')}</p>
+    {failures.length > 0 && available.length > 0 ? <p className="mt-2 text-sm">{t('cache.partialSources', { sources: available.join(', ') })}</p> : null}
     {failures.map(source => <p key={source.source} className="mt-2 text-sm text-caution">{t('cache.sourceUnavailable', { source: sourceLabel(source.source) })}</p>)}
     {!completing && (expansionChoices.length || failures.length) ? <div className="mt-4 flex flex-wrap gap-2">
       {expansionChoices.map(miles => <Button key={miles} className="h-auto min-h-11 min-w-0 flex-1 whitespace-normal px-3 py-2 leading-snug" variant="secondary" onClick={() => onRadius(miles)}>{t('fallback.expand', { miles })}</Button>)}

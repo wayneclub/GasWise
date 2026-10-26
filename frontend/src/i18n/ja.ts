@@ -64,6 +64,7 @@ export const ja: Record<MessageKey, string> = {
   "board.score": "時間を含む",
   "cache.sharedFresh": "{source}：共有データの確認は{age}",
   "cache.sharedStale": "{source}：キャッシュの確認は{age}。更新は情報源の制限に従います",
+  "cache.partialSources": "{sources} の価格は引き続き利用できます。取得できない情報源のみ除外しています。",
   "cache.sourceUnavailable": "{source}：一時的に利用できません",
   "cache.failed": "更新できませんでした · 前回のデータを表示中",
   "cache.updating": "価格を確認中…",

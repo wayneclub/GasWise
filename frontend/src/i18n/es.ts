@@ -66,6 +66,7 @@ export const es: Record<MessageKey, string> = {
 
   'cache.sharedFresh': '{source}: datos compartidos consultados {age}',
   'cache.sharedStale': '{source}: caché consultada {age}; actualización sujeta a límites',
+  "cache.partialSources": "Los precios de {sources} siguen disponibles; se omiten las fuentes no disponibles.",
   "cache.sourceUnavailable": "{source}: no disponible temporalmente",
   "cache.failed": "Falló la actualización · se muestra la instantánea anterior",
 

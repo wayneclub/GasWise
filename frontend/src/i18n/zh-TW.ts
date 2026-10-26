@@ -66,6 +66,7 @@ export const zhTW: Record<MessageKey, string> = {
 
   'cache.sharedFresh': '{source}：共用資料於 {age} 查詢',
   'cache.sharedStale': '{source}：快取於 {age} 查詢；更新受來源頻率限制',
+  "cache.partialSources": "仍可使用 {sources} 的油價；暫時只缺少無法取得的來源。",
   "cache.sourceUnavailable": "{source}：暫時無法取得",
   "cache.failed": "更新失敗 · 顯示上次取得的報價",
 

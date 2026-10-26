@@ -233,3 +233,23 @@ async def test_history_collection_keeps_native_fuel_labels_with_one_request(tmp_
     assert len(rows) == 1 and rows[0].fuel_type == "premium"
     assert rows[0].payment_type == "unknown" and rows[0].octane is None
     assert rows[0].price_updated_at.isoformat() == "2026-10-09T06:24:25+00:00"
+
+
+async def test_captured_lowercase_login_headers_are_not_duplicated(tmp_path):
+    calls = []
+    def handler(request):
+        calls.append(request.url.path)
+        if request.url.path.endswith('/login'):
+            for key in ['user-agent', 'content-type', 'x-waze-network-version', 'x-waze-wait-timeout']:
+                assert len(request.headers.get_list(key)) == 1, f'duplicate {key}'
+            return response(envelope(2745, message(1, number(1, 42) + message(3, b'new-secret'))))
+        return response(fuel_response())
+    source = provider(tmp_path, handler)
+    source.login_file.with_name('waze-http-login-headers.json').write_text(json.dumps({
+        'user-agent': '5.24.90.901', 'content-type': 'binary/octet-stream',
+        'x-waze-network-version': '3', 'x-waze-wait-timeout': '10500', 'sequence-number': '1',
+    }))
+    async with source.client:
+        await source.login()
+        rows = await source.stations(QUERY)
+    assert rows and len(calls) == 2

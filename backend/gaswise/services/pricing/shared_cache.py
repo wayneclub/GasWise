@@ -13,6 +13,7 @@ from gaswise.contracts.common import Station
 from gaswise.contracts.sources import GasBuddyPrices, MapsWebPrices
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.cache_policy import prune_quotes
+from gaswise.domain.pricing.collection_errors import safe_failure_code
 from gaswise.domain.pricing.shared_cache import (
     PricingCacheStore,
     acquisition_purpose,
@@ -76,6 +77,10 @@ class SharedPricingCache:
         if record and record.fresh:
             record_check(source, record.fetched_at, "fresh")
             return self.decode(source, record.payload), True
+        if record and record.failure and (wait_refresh or not record.usable):
+            error = ProviderError(record.failure)
+            error.cache_hit, error.upstream_http_requests = True, 0
+            raise error
         if record and record.usable and not wait_refresh:
             record_check(source, record.fetched_at, "stale")
             owner = uuid.uuid4().hex
@@ -92,6 +97,10 @@ class SharedPricingCache:
         while monotonic() < deadline:
             await asyncio.sleep(.1)
             record = await self._db("read", key)
+            if record and record.failure and not record.usable:
+                error = ProviderError(record.failure)
+                error.cache_hit, error.upstream_http_requests = True, 0
+                raise error
             if record and record.usable:
                 record_check(source, record.fetched_at, "fresh" if record.fresh else "stale")
                 return self.decode(source, record.payload), True
@@ -124,6 +133,10 @@ class SharedPricingCache:
                 raise ProviderError("shared_pricing_refresh_lease_lost")
             record_check(source, checked_at, "fresh")
             return self.decode(source, payload), False
+        except Exception as error:
+            reason = safe_failure_code(error)
+            await self._db("fail", key, owner, reason if reason != "unclassified" else "shared_pricing_refresh_pending")
+            raise
         finally:
             if heartbeat is not None:
                 heartbeat.cancel()

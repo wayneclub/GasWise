@@ -76,7 +76,7 @@ class WazeProvider:
         except (OSError, ValueError):
             raise ProviderError("waze_login_not_configured") from None
         # Use only functional headers from the owner's normal authorized login.
-        headers = {
+        headers = httpx.Headers({
             k: v
             for k, v in headers.items()
             if k.lower()
@@ -88,7 +88,7 @@ class WazeProvider:
                 "x-waze-wait-timeout",
                 "cache-control",
             }
-        }
+        })
         headers.setdefault("User-Agent", "5.24.90.901")
         headers.setdefault("Content-Type", "binary/octet-stream")
         headers.setdefault("X-Waze-Network-Version", "3")

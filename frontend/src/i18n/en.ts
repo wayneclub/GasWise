@@ -65,6 +65,7 @@ export const en = {
 
   'cache.sharedFresh': '{source}: shared data checked {age}',
   'cache.sharedStale': '{source}: cached data checked {age}; refresh subject to source limits',
+  "cache.partialSources": "Prices from {sources} are still available; unavailable sources are omitted.",
   "cache.sourceUnavailable": "{source}: temporarily unavailable",
   "cache.failed": "Update failed · showing the previous snapshot",
 

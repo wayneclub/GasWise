@@ -920,3 +920,29 @@ async def test_price_refresh_renews_routes_only_after_independent_route_expiry()
     assert provider.routes > calls
     assert refreshed.snapshot.routes_checked_at > first.snapshot.routes_checked_at
     assert refreshed.ranking.results
+
+
+@pytest.mark.parametrize('progressive', [False, True])
+async def test_waze_login_failure_keeps_other_sources_and_ranking(progressive):
+    class RejectedWaze:
+        async def stations(self, query, *, all_fuels=False):
+            raise ProviderError('waze_reauthentication_required')
+    service = SmartService(b'test', 'prices_only', maps_web=MapsInventory(), waze=RejectedWaze(), router=CountingProvider())
+    query = SmartSearch(origin=Point(lat=34, lng=-118), fuel_type='premium',
+                        calculate_routes=True, allow_unknown_payment=True)
+    try:
+        if progressive:
+            job = await service.start_progressive_search(query)
+            await asyncio.gather(*service.progressive_tasks)
+            state = await service.poll_progressive_search(job.job_id)
+            assert state.status == 'complete'
+            result = state.result
+        else:
+            result = await service.search(query)
+        assert result is not None
+        assert any(row.source == 'google_maps_web' for row in result.snapshot.stations)
+        assert result.ranking is not None and result.ranking.results
+        statuses = {row.source: row.status for row in result.snapshot.source_statuses}
+        assert statuses['google_maps_web'] == 'ok' and statuses['waze'] == 'unavailable'
+    finally:
+        await service.close()
