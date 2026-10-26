@@ -113,7 +113,7 @@ async def test_existing_postgres_background_caps_are_shared_and_foreground_keeps
     try:
         async def consume(cache):
             try:
-                await cache.consume(source, 10, background=True, background_daily_limit=3)
+                await cache.consume(source, 10, background=True, background_daily_limit=3, purpose="city")
                 return True
             except ProviderError:
                 return False

@@ -265,3 +265,19 @@ ALTER TABLE gaswise.collection_notifications ADD COLUMN IF NOT EXISTS expired_at
 
 CREATE INDEX IF NOT EXISTS collection_notifications_pending
     ON gaswise.collection_notifications(next_try,created_at) WHERE sent_at IS NULL AND expired_at IS NULL;
+
+-- Private runtime signing material; never exposed by pricing/status queries.
+CREATE TABLE IF NOT EXISTS gaswise.runtime_secrets (
+    name text PRIMARY KEY,
+    value bytea NOT NULL
+);
+ALTER TABLE gaswise.source_limits ADD COLUMN IF NOT EXISTS background_usage jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE gaswise.warm_queries ADD COLUMN IF NOT EXISTS request_cost integer NOT NULL DEFAULT 1;
+
+-- Existing validated public descriptors need the same cost model as new ones.
+UPDATE gaswise.warm_queries SET request_cost=CASE source
+    WHEN 'gasbuddy' THEN 1+COALESCE((substring(raw_key FROM position('{' IN raw_key))::jsonb->>'max_pages')::int,1)
+    WHEN 'maps' THEN 1+COALESCE((substring(raw_key FROM position('{' IN raw_key))::jsonb->>'detail_limit')::int,0)
+    WHEN 'waze' THEN 3 ELSE 1 END;
+
+ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS schedule_inherited_from text[];

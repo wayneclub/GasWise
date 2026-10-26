@@ -293,3 +293,32 @@ def test_maps_collection_uses_one_all_fuel_job_with_bounded_premium_details():
     assert jobs[0].query.detail_limit == 3
     assert jobs[0].request_reserve == 4
     assert jobs[0].raw_key.startswith('maps:all-fuels-v1:')
+
+
+async def test_slow_gasbuddy_does_not_block_maps_worker_and_shutdown_releases_attempt():
+    collector, cache, provider = setup()
+    entered, maps_entered = asyncio.Event(), asyncio.Event()
+    original = provider.prices
+    async def slow(query):
+        entered.set()
+        await asyncio.Event().wait()
+        return await original(query)
+    provider.prices = slow
+    class Maps:
+        async def prices(self, query):
+            maps_entered.set()
+            return SimpleNamespace(all_prices=[], stations=[])
+    collector.service.maps_web = Maps()
+    collector.service.source_slots['maps'] = asyncio.Semaphore(1)
+    collector = BaseCollection(collector.service, ['irvine'])
+    await collector.initialize()
+    task = asyncio.create_task(collector.run())
+    try:
+        await asyncio.wait_for(entered.wait(), 1)
+        await asyncio.wait_for(maps_entered.wait(), 1)
+    finally:
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+    assert any(args[3] == 'service_shutdown' for args in cache.saved)
+    assert not background_acquisition.get()

@@ -291,7 +291,7 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
 
                 stack.push_async_callback(stop_smart_alerts)
         smart = SmartService(
-            secrets.token_bytes(32),
+            await store.snapshot_signing_key() if shared_cache is not None else secrets.token_bytes(32),
             settings.mode,
             gasbuddy=web if settings.gasbuddy_web_enabled else None,
             google=google_prices,

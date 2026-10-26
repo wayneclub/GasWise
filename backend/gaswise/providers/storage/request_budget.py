@@ -7,6 +7,7 @@ from time import monotonic
 
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.shared_cache import (
+    acquisition_purpose,
     background_acquisition,
     collection_attempt,
     mandatory_acquisition,
@@ -39,7 +40,9 @@ class RequestBudget:
                 if background_acquisition.get():
                     await self.store.consume(source, self.limits[source], background=True,
                                              background_daily_limit=self.background_daily_limit,
-                                             **({"mandatory": True} if mandatory_acquisition.get() else {}))
+                                             **({"mandatory": True} if mandatory_acquisition.get() else {}),
+                                             **({"purpose": acquisition_purpose.get()}
+                                                if acquisition_purpose.get() != "demand" else {}))
                 else:
                     await self.store.consume(source, self.limits[source])
                 trace = collection_attempt.get()

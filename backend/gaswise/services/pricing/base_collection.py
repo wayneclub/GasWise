@@ -5,6 +5,7 @@ import json
 import logging
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from time import monotonic
 
 from gaswise.contracts.common import Point
@@ -14,6 +15,7 @@ from gaswise.domain.pricing.batch_coverage import requested_radii, run_metrics
 from gaswise.domain.pricing.collection_bases import BASE_CATALOG, BASES
 from gaswise.domain.pricing.collection_errors import safe_failure_code
 from gaswise.domain.pricing.shared_cache import (
+    acquisition_purpose,
     background_acquisition,
     collection_attempt,
     collection_egress_key,
@@ -98,6 +100,7 @@ class BaseCollection:
         self.egress_lanes = egress_lanes
         self.hotspots_enabled = "la" in bases and service.gasbuddy is not None
         self.hotspot_sync_at = 0.0
+        self.worker_progress = {}
 
     async def initialize(self):
         populations = {base["id"]: base["population_2026"] or 0 for base in BASE_CATALOG["bases"]}
@@ -110,14 +113,14 @@ class BaseCollection:
     async def pending(self, source):
         return await self.cache._db("base_jobs_pending", source)
 
-    async def step(self):
-        if self.hotspots_enabled and monotonic() >= self.hotspot_sync_at:
+    async def step(self, source=None):
+        if source in (None, "gasbuddy") and self.hotspots_enabled and monotonic() >= self.hotspot_sync_at:
             await self.cache._db("sync_hotspot_jobs", self.hotspot_request_budget)
             self.hotspot_sync_at = monotonic() + 60
         # Skip exhausted sources without moving their due dates behind newer jobs.
         # Thus older, unvisited bases keep priority across days and restarts.
         available = []
-        for source in {job.source for job in self.jobs.values()}:
+        for source in ({source} if source else {job.source for job in self.jobs.values()}):
             state = await self.cache.budget_state(source)
             if (not state.get("blocked_seconds", 0) and state["background_day_used"] < (state.get("daily_limit") or self.daily_limit)
                     and (state.get("mandatory_due", False) or state["background_day_used"] <
@@ -151,6 +154,7 @@ class BaseCollection:
         attempt = {}
         attempt_token = collection_attempt.set(attempt)
         token = background_acquisition.set(True)
+        purpose_token = acquisition_purpose.set("hotspot" if coverage_station_id else "city")
         egress_token = collection_egress_key.set(job.id)
         mandatory_token = mandatory_acquisition.set(job.base == "la")
         try:
@@ -208,6 +212,7 @@ class BaseCollection:
             return False
         finally:
             collection_attempt.reset(attempt_token)
+            acquisition_purpose.reset(purpose_token)
             background_acquisition.reset(token)
             collection_egress_key.reset(egress_token)
             mandatory_acquisition.reset(mandatory_token)
@@ -222,12 +227,29 @@ class BaseCollection:
             job.base: job.query.radius_meters
             for job in self.jobs.values()
         }
+        capacity = {}
+        for source in sorted({job.source for job in self.jobs.values()}):
+            state = await self.cache.budget_state(source)
+            daily = state.get("daily_limit") or self.daily_limit
+            reserve = sum(job.request_reserve for job in self.jobs.values() if job.source == source)
+            city_share = daily - daily // 5
+            capacity[source] = {
+                "daily_http_limit": daily, "optional_http_ceiling": daily // 5,
+                "city_cycle_request_reserve": reserve,
+                "city_capacity_ratio": round(reserve / max(1, city_share), 3),
+                "reserved_cost_cycle_seconds": max(self.interval, (reserve * 86400 + city_share - 1) // max(1, city_share)),
+                "forecast_excludes_hotspots_and_retries": True,
+                "daily_target_fundable_at_reserved_cost": reserve <= city_share,
+            }
         return {"enabled": True, "interval_seconds": self.interval,
+                "capacity": capacity,
                 "hotspot_request_reserve_budget": self.hotspot_request_budget if self.hotspots_enabled else 0,
                 "hotspot_daily_coverage": await self.cache._db("hotspot_status") if self.hotspots_enabled else None,
                 "radius_meters": self.base_radius, "coverage": "partial",
                 "base_count": len({job.base for job in self.jobs.values()}),
                 "total_jobs": len(self.jobs), "schedule": "weighted_rotation",
+                "workers": "one_per_source", "worker_progress": dict(self.worker_progress),
+                "progress": await self.cache._db("batch_progress"),
                 "coverage_plan": {
                     "strategy": self.coverage_strategy,
                     "rollback_strategy": "legacy",
@@ -246,10 +268,18 @@ class BaseCollection:
                 "jobs": await self.cache._db("base_job_status")}
 
     async def run(self):
+        async with asyncio.TaskGroup() as group:
+            for source in sorted({job.source for job in self.jobs.values()}):
+                group.create_task(self._run_source(source))
+
+    async def _run_source(self, source):
         while True:
+            self.worker_progress[source] = {"checked_at": datetime.now(UTC), "active": True}
             try:
-                progressed = await self.step()
+                progressed = await self.step(source)
             except Exception:
                 logger.warning("Fixed base collection database unavailable")
                 progressed = False
+            finally:
+                self.worker_progress[source].update(active=False, finished_at=datetime.now(UTC))
             await asyncio.sleep(10 if progressed else 60)

@@ -7,8 +7,10 @@ import uuid
 from time import monotonic
 
 from gaswise.contracts.sources import GasBuddySearch, GooglePriceSearch, MapsWebSearch
+from gaswise.domain.ports import ProviderError
+from gaswise.domain.pricing.background_policy import optional_allowance, warming_interval
 from gaswise.domain.pricing.collection_errors import safe_failure_code
-from gaswise.domain.pricing.shared_cache import background_acquisition
+from gaswise.domain.pricing.shared_cache import acquisition_purpose, background_acquisition
 from gaswise.services.pricing.hot_refresh import SourcePace
 
 logger = logging.getLogger(__name__)
@@ -37,10 +39,11 @@ class DemandQueryRefresh:
             return
         # Persist only the provider's bounded public query, never the user's Search,
         # route, vehicle, credentials or identity. Refuse unexpected fields.
-        QUERY_MODELS[source].model_validate_json(query_payload(source, raw_key))
+        query = QUERY_MODELS[source].model_validate_json(query_payload(source, raw_key))
+        cost = (1 + query.max_pages) if source == "gasbuddy" else 1 + query.detail_limit if source == "maps" else 3
         key = hashlib.sha256(("pricing-v1:" + raw_key).encode()).hexdigest()
         try:
-            await self.cache._db("observe_warm_query", key, source, raw_key, self.interval)
+            await self.cache._db("observe_warm_query", key, source, raw_key, self.interval, cost)
         except Exception:
             logger.warning("Public pricing demand registration unavailable for %s", source)
 
@@ -48,14 +51,17 @@ class DemandQueryRefresh:
         return {"gasbuddy": self.service.gasbuddy, "maps": self.service.maps_web,
                 "waze": self.service.waze}.get(source)
 
-    async def step(self):
+    async def step(self, only_source=None):
         available = []
         now = self.clock()
         for source, pace in self.paces.items():
-            if self.provider(source) is None or pace.not_before > now:
+            if (only_source is not None and source != only_source) or self.provider(source) is None or pace.not_before > now:
                 continue
             state = await self.cache.budget_state(source)
-            if (state.get("blocked_seconds", 0)
+            allowance = optional_allowance(state.get("daily_limit") or self.daily_limit)
+            usage = state.get("background_usage", {})
+            if (sum(usage.get(name, 0) for name in ("demand", "revalidation")) >= allowance
+                    or state.get("blocked_seconds", 0)
                     or state["used"] >= max(1, self.limits[source] // 2)
                     or state.get("background_used", 0) >= max(1, self.limits[source] // 5)
                     or state.get("background_day_used", 0) >= max(0,
@@ -72,9 +78,13 @@ class DemandQueryRefresh:
         source = job["source"]
         pace = self.paces[source]
         error = None
-        delay = self.interval
+        daily, cost, delay = self.daily_limit, job.get("request_cost", 1), self.interval
         token = background_acquisition.set(True)
+        purpose_token = acquisition_purpose.set("demand")
         try:
+            plan = await self.cache._db("warming_plan", source)
+            daily = (await self.cache.budget_state(source)).get("daily_limit") or self.daily_limit
+            delay = warming_interval(self.interval, cost, plan["request_cost"], daily)
             query = QUERY_MODELS[source].model_validate_json(query_payload(source, job["raw_key"]))
 
             async def load():
@@ -97,6 +107,10 @@ class DemandQueryRefresh:
             error, delay = "service_shutdown", 60
             raise
         except Exception as caught:
+            if isinstance(caught, ProviderError) and any(str(caught).endswith(suffix) for suffix in (
+                    "budget_exhausted", "budget_reserved", "refresh_pending")):
+                error, delay = "source_budget_deferred", 60
+                return False
             error = safe_failure_code(caught)
             pace.failures = min(5, pace.failures + 1)
             pace.errors += 1
@@ -104,32 +118,47 @@ class DemandQueryRefresh:
             pace.not_before = self.clock() + delay
             logger.warning("Demand pricing refresh deferred for %s", source)
         finally:
+            acquisition_purpose.reset(purpose_token)
             background_acquisition.reset(token)
             # Finishing a background job deliberately does not touch request time
             # or retention. Only a new foreground observation renews those.
             await self.cache._db("finish_warm_query", job["key"], owner, delay, error)
+            if error is None:
+                pace.not_before = self.clock() + max(60, 86400 * cost / max(1, optional_allowance(daily)))
         return True
 
     async def status(self):
         counts = await self.cache._db("warm_query_status")
         sources = {}
         for source, pace in self.paces.items():
+            state = await self.cache.budget_state(source)
+            plan = await self.cache._db("warming_plan", source)
+            daily = state.get("daily_limit") or self.daily_limit
             sources[source] = {
-                **await self.cache.budget_state(source),
+                **state,
+                "optional_http_ceiling": optional_allowance(daily),
+                "planned_interval_seconds": warming_interval(self.interval, 1, plan["request_cost"], daily),
                 "minute_limit": self.limits[source],
+                "warming_plan": plan,
                 "backoff_seconds": max(0, round(pace.not_before - self.clock())),
                 "completed_loads": pace.loads, "errors": pace.errors, "deferred": pace.deferred,
             }
         return {"enabled": True, "mode": "persistent_demand", "retention_days": 14,
-                "minimum_observations": 1, "registered_queries": counts["active"],
-                "hot_queries": counts["active"], "due_queries": counts["due"],
+                "minimum_observations": 1, "warming_demand_window_hours": 24, "registered_queries": counts["active"],
+                "hot_queries": counts["hot"], "due_queries": counts["due"],
                 "expired_queries": counts["expired"], "warmed_queries": counts["warmed"],
                 "minimum_interval_seconds": self.interval, "sources": sources}
 
     async def run(self):
+        async with asyncio.TaskGroup() as group:
+            for source in self.paces:
+                if self.provider(source) is not None:
+                    group.create_task(self._run_source(source))
+
+    async def _run_source(self, source):
         while True:
             await asyncio.sleep(60)
             try:
-                await self.step()
+                await self.step(source)
             except Exception:
                 logger.warning("Demand pricing scheduler unavailable; retrying next minute")

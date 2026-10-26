@@ -13,7 +13,12 @@ from gaswise.contracts.common import Station
 from gaswise.contracts.sources import GasBuddyPrices, MapsWebPrices
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.cache_policy import prune_quotes
-from gaswise.domain.pricing.shared_cache import PricingCacheStore
+from gaswise.domain.pricing.shared_cache import (
+    PricingCacheStore,
+    acquisition_purpose,
+    background_acquisition,
+    mandatory_acquisition,
+)
 
 CODECS = {"gasbuddy": GasBuddyPrices, "maps": MapsWebPrices, "waze": TypeAdapter(list[Station])}
 logger = logging.getLogger(__name__)
@@ -115,6 +120,8 @@ class SharedPricingCache:
             )
             payload = prune_quotes(payload)
             checked_at = await self._db("save", key, source, owner, payload, self.fresh_seconds)
+            if checked_at is None:
+                raise ProviderError("shared_pricing_refresh_lease_lost")
             record_check(source, checked_at, "fresh")
             return self.decode(source, payload), False
         finally:
@@ -135,11 +142,20 @@ class SharedPricingCache:
                 return
 
     async def _background(self, source, key, owner, operation):
+        # Tasks inherit the foreground caller's context. Revalidation is optional
+        # background work and must not consume foreground or reserved allowance.
+        background_token = background_acquisition.set(True)
+        mandatory_token = mandatory_acquisition.set(False)
+        purpose_token = acquisition_purpose.set("revalidation")
         try:
             await self._load(source, key, owner, operation)
         except Exception:
             # Log no URLs, DSNs, cookies, payloads or caller coordinates.
             logger.warning("Shared public pricing refresh deferred for %s", source)
+        finally:
+            acquisition_purpose.reset(purpose_token)
+            mandatory_acquisition.reset(mandatory_token)
+            background_acquisition.reset(background_token)
 
     async def budget_state(self, source):
         return await self._db("budget_state", source)

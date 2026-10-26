@@ -11,6 +11,8 @@ collection_egress_key = ContextVar("collection_egress_key", default="foreground"
 
 mandatory_acquisition = ContextVar("mandatory_pricing_acquisition", default=False)
 
+acquisition_purpose = ContextVar("pricing_acquisition_purpose", default="demand")
+
 background_acquisition = ContextVar("background_pricing_acquisition", default=False)
 
 

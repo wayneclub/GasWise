@@ -88,3 +88,77 @@ async def test_fixed_collection_waits_for_stale_refresh_before_completion():
     assert await task == ([], False)
     assert next(iter(store.entries.values())).fresh
     await cache.close()
+
+
+async def test_stale_foreground_read_refresh_uses_background_budget_and_restores_context():
+    from gaswise.domain.pricing.shared_cache import background_acquisition, mandatory_acquisition
+    from gaswise.providers.storage.request_budget import RequestBudget
+
+    class BudgetStore:
+        calls = []
+
+        async def consume(self, source, limit, **options):
+            self.calls.append((source, options))
+
+    store = Store()
+    budget_store = BudgetStore()
+    budget = RequestBudget(budget_store, {'waze': 20})
+    cache = SharedPricingCache(store)
+    async def load():
+        await budget.before('waze')
+        return []
+    assert not background_acquisition.get()
+    await cache.get('waze', 'stale-context', load)
+    next(iter(store.entries.values())).fresh = False
+    token = mandatory_acquisition.set(True)
+    try:
+        _, hit = await cache.get('waze', 'stale-context', load)
+        assert hit
+        await asyncio.gather(*cache.tasks)
+        assert mandatory_acquisition.get()
+    finally:
+        mandatory_acquisition.reset(token)
+    assert budget_store.calls == [('waze', {}), ('waze', {'background': True, 'background_daily_limit': 100, 'purpose': 'revalidation'})]
+    assert not background_acquisition.get()
+    assert not store.owners
+    await cache.close()
+
+
+async def test_stale_background_budget_exhaustion_keeps_cached_result_and_skips_http():
+    from gaswise.providers.storage.request_budget import RequestBudget
+
+    class ExhaustedBudget:
+        async def consume(self, source, limit, **options):
+            if options.get('background'):
+                raise ProviderError('waze_background_daily_budget_exhausted')
+
+    store = Store()
+    cache = SharedPricingCache(store)
+    budget = RequestBudget(ExhaustedBudget(), {'waze': 20})
+    requests = []
+    async def load():
+        await budget.before('waze')
+        requests.append(1)
+        return []
+    await cache.get('waze', 'exhausted-stale', load)
+    next(iter(store.entries.values())).fresh = False
+    assert await cache.get('waze', 'exhausted-stale', load) == ([], True)
+    await asyncio.gather(*cache.tasks)
+    assert requests == [1]
+    assert not store.owners
+    assert not next(iter(store.entries.values())).fresh
+    await cache.close()
+
+
+async def test_lost_save_lease_is_not_reported_as_success_or_fresh_data():
+    class LostLease(Store):
+        async def save(self, *args):
+            return None
+    store = LostLease()
+    cache = SharedPricingCache(store)
+    async def load():
+        return []
+    with pytest.raises(ProviderError, match='shared_pricing_refresh_lease_lost'):
+        await cache.get('waze', 'lost-save', load, wait_refresh=True)
+    assert not store.owners
+    await cache.close()

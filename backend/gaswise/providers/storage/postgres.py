@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import secrets
 from datetime import UTC, datetime
 from importlib.resources import files
 
@@ -10,6 +11,7 @@ from pydantic import SecretStr
 
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.alerts import purchase_condition_key
+from gaswise.domain.pricing.background_policy import optional_allowance
 from gaswise.domain.pricing.cache_policy import prune_quotes, public_quotes, quote_expiry
 from gaswise.domain.pricing.daily_ramp import reviewed_limit
 from gaswise.domain.pricing.shared_cache import CachedQuery
@@ -120,6 +122,44 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
                     mandatory=EXCLUDED.mandatory,request_reserve=EXCLUDED.request_reserve
                 """, job["id"], job["base"], job["source"], job["fuel"], json.dumps(job["descriptor"]), job["population_priority"], job.get("mandatory", False), job.get("request_reserve", 1))
 
+                if job["source"] == "maps" and job["fuel"] == "all":
+                    # Only inherit compatible full old-grade coverage. Never overwrite
+                    # a running/newly completed job or invent a successful observation.
+                    await connection.execute("""
+                        WITH prior AS (
+                            SELECT min(last_success) AS checked,min(next_due) AS due,array_agg(id ORDER BY fuel) AS parents
+                            FROM gaswise.base_collection_jobs
+                            WHERE base=$2 AND source='maps' AND fuel IN ('regular','premium')
+                              AND descriptor-'fuel_type'-'detail_limit' = $3::jsonb-'fuel_type'-'detail_limit'
+                            HAVING count(*)=2 AND bool_and(last_success IS NOT NULL)
+                        ) UPDATE gaswise.base_collection_jobs j SET last_success=prior.checked,next_due=prior.due,
+                            schedule_inherited_from=prior.parents
+                        FROM prior WHERE j.id=$1 AND j.last_success IS NULL AND j.failures=0
+                            AND (j.lease_until IS NULL OR j.lease_until<=now())
+                    """, job["id"], job["base"], json.dumps(job["descriptor"]))
+
+    async def batch_progress(self):
+        async with self.pool.acquire() as connection, connection.transaction(readonly=True):
+            jobs = await connection.fetch("""
+                SELECT source,count(*) FILTER(WHERE coverage_station_id IS NULL) AS city_jobs,
+                    count(*) FILTER(WHERE next_due<=now()) AS due,
+                    count(*) FILTER(WHERE lease_until>now()) AS leased,
+                    min(last_success) AS oldest_success,max(last_success) AS newest_success,
+                    max(GREATEST(0,extract(epoch FROM now()-next_due))) AS oldest_due_seconds,
+                    COALESCE(sum(request_reserve) FILTER(WHERE coverage_station_id IS NULL),0)::int AS city_request_reserve
+                FROM gaswise.base_collection_jobs WHERE enabled GROUP BY source ORDER BY source
+            """)
+            prices = await connection.fetch("""
+                SELECT source,count(*) AS observations,
+                    count(*) FILTER(WHERE reported_at IS NULL) AS undated,
+                    count(*) FILTER(WHERE reported_at<now()-interval '24 hours') AS old_reports,
+                    count(*) FILTER(WHERE reported_at>=now()-interval '24 hours') AS recent_reports
+                FROM gaswise.quote_daily
+                WHERE observed_day=(now() AT TIME ZONE 'America/Los_Angeles')::date GROUP BY source
+            """)
+        return {"jobs": [dict(row) for row in jobs], "daily_prices": [dict(row) for row in prices],
+                "semantics": "observations_are_not_unique_stations_or_verified_pump_prices"}
+
     async def read_vehicle(self, vehicle_id):
         payload = await self.pool.fetchval(
             """SELECT payload FROM gaswise.vehicle_records
@@ -215,7 +255,7 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
         return await self.finish_collection_attempt(job_id, owner, delay, error, quotes, stations, info)
 
     async def base_job_status(self):
-        rows = await self.pool.fetch("""SELECT id,base,source,fuel,next_due,last_success,failures,last_error,quote_count,station_count,mandatory,request_reserve,last_failure_code,last_failure_at,
+        rows = await self.pool.fetch("""SELECT id,base,source,fuel,next_due,last_success,failures,last_error,quote_count,station_count,mandatory,request_reserve,last_failure_code,last_failure_at,schedule_inherited_from,
             (10*ln(1+population_priority)/ln(10) + 2*GREATEST(0,EXTRACT(EPOCH FROM (now()-next_due))/3600)
              + CASE WHEN last_success IS NULL THEN 30 ELSE 0 END)::float AS priority_score,
             (mandatory AND next_due<=now()) AS mandatory_due FROM gaswise.base_collection_jobs WHERE enabled ORDER BY mandatory DESC,priority_score DESC,base,fuel,source""")
@@ -288,6 +328,12 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
             if len(bucket) < 240:
                 bucket.append(quote)
         return result
+
+    async def snapshot_signing_key(self):
+        return bytes(await self.pool.fetchval("""
+            INSERT INTO gaswise.runtime_secrets(name,value) VALUES('snapshot-signing-v1',$1)
+            ON CONFLICT(name) DO UPDATE SET value=gaswise.runtime_secrets.value RETURNING value
+        """, secrets.token_bytes(32)))
 
     async def close(self):
         await self.pool.close()
@@ -714,6 +760,9 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
                 "background_day_used": row["background_day_count"] if day_age < 86400 else 0,
                 "window_seconds": max(0,60-age),
                 "blocked_seconds": max(0,(row["blocked_until"]-row["clock"]).total_seconds()) if row["blocked_until"] else 0,
+                "background_usage": json.loads(row.get("background_usage", "{}")) if day_age < 86400 else {},
+                "optional_daily_limit": optional_allowance(row["adaptive_daily_limit"])
+                    if row["adaptive_daily_limit"] is not None else None,
                 "daily_limit": row["adaptive_daily_limit"],
                 "daily_ramp_floor": row["adaptive_daily_floor"] if row["adaptive_daily_limit"] is not None else None,
                 "daily_ramp_max": row["adaptive_daily_max"] if row["adaptive_daily_limit"] is not None else None,
@@ -721,7 +770,9 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
                 "daily_review_requests": row["daily_review_requests"],
             }
 
-    async def consume(self, source, limit, *, background=False, background_daily_limit=100, mandatory=False):
+    async def consume(self, source, limit, *, background=False, background_daily_limit=100, mandatory=False, purpose="demand"):
+        if purpose not in {"city", "hotspot", "demand", "revalidation"}:
+            raise ValueError("Unknown acquisition purpose")
         async with self.pool.acquire() as connection, connection.transaction():
             await connection.execute("INSERT INTO gaswise.source_limits(source) VALUES($1) ON CONFLICT DO NOTHING", source)
             row = await connection.fetchrow("""
@@ -740,6 +791,11 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
                 raise ProviderError(f"{source}_request_budget_exhausted")
             if background and day_used >= background_daily_limit:
                 raise ProviderError(f"{source}_background_daily_budget_exhausted")
+            usage = {} if day_reset else json.loads(row.get("background_usage", "{}"))
+            if background and purpose not in {"city", "hotspot"}:
+                optional_used = sum(usage.get(name, 0) for name in ("demand", "revalidation"))
+                if optional_used >= optional_allowance(background_daily_limit):
+                    raise ProviderError(f"{source}_optional_daily_budget_exhausted")
             if background and not mandatory:
                 reserved = await connection.fetchval("""
                     SELECT COALESCE(SUM(request_reserve),0) FROM gaswise.base_collection_jobs
@@ -749,14 +805,16 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
                     raise ProviderError(f"{source}_mandatory_budget_reserved")
             if background and (used >= max(1, limit // 2) or bg_used >= max(1, limit // 5)):
                 raise ProviderError(f"{source}_background_budget_exhausted")
+            if background:
+                usage[purpose] = usage.get(purpose, 0) + 1
             await connection.execute("""
-                UPDATE gaswise.source_limits SET request_count=$2, background_count=$4,
+                UPDATE gaswise.source_limits SET background_usage=$8::jsonb, request_count=$2, background_count=$4,
                 window_start=CASE WHEN $3 THEN now() ELSE window_start END,
                 background_day_count=$5,
                 background_day_start=CASE WHEN $6 THEN now() ELSE background_day_start END,
                 daily_review_requests=CASE WHEN $7 THEN daily_review_requests+1 ELSE daily_review_requests END,
                 background_last_request_at=CASE WHEN $7 THEN now() ELSE background_last_request_at END WHERE source=$1
-            """, source, used + 1, reset, bg_used + int(background), day_used + int(background), day_reset, background)
+            """, source, used + 1, reset, bg_used + int(background), day_used + int(background), day_reset, background, json.dumps(usage))
 
     async def cooldown(self, source, retry_seconds=None):
         await self.pool.execute("""

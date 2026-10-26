@@ -20,14 +20,20 @@ class DurableCache:
     async def _db(self, method, *args):
         return await getattr(self, method)(*args)
 
-    async def observe_warm_query(self, key, source, raw_key, interval):
+    async def observe_warm_query(self, key, source, raw_key, interval, request_cost=1):
         job = self.jobs.setdefault(key, {"key": key, "source": source, "raw_key": raw_key,
                                          "next_due": self.now + timedelta(seconds=interval)})
-        job.update(last_requested_at=self.now, expires_at=self.now + timedelta(days=14))
+        job.update(last_requested_at=self.now, expires_at=self.now + timedelta(days=14), request_cost=request_cost)
+
+    async def warming_plan(self, source):
+        jobs = [j for j in self.jobs.values() if j['source'] == source and j['expires_at'] > self.now
+                and j['last_requested_at'] >= self.now - timedelta(days=1)]
+        return {'active': len(jobs), 'request_cost': sum(j['request_cost'] for j in jobs)}
 
     async def claim_warm_query(self, owner, sources):
         for job in sorted(self.jobs.values(), key=lambda row: row["next_due"]):
-            if job["source"] in sources and job["expires_at"] > self.now and job["next_due"] <= self.now and not job.get("owner"):
+            if (job["source"] in sources and job["expires_at"] > self.now and job["next_due"] <= self.now
+                    and job['last_requested_at'] >= self.now - timedelta(days=1) and not job.get("owner")):
                 job["owner"] = owner
                 return dict(job)
 
@@ -208,3 +214,53 @@ async def test_versioned_waze_query_warms_all_grades_after_restart():
     assert provider.calls == 1
     assert {r.fuel_type for r in captured} == {'regular', 'premium'}
     assert next(iter(cache.jobs.values()))['error'] is None
+
+
+async def test_warming_cost_sets_durable_interval_without_renewing_demand():
+    cache = DurableCache()
+    warmer = DemandQueryRefresh(service(cache))
+    for index in range(8):
+        await warmer.observe('waze', raw_key(index))
+    cache.now += timedelta(minutes=16)
+    assert await warmer.step()
+    completed = next(j for j in cache.jobs.values() if j.get('error') is None and j.get('owner') is None
+                     and j['next_due'] > cache.now)
+    assert completed['next_due'] - cache.now == timedelta(seconds=103680)
+    assert completed['last_requested_at'] < cache.now
+
+
+async def test_optional_daily_share_defers_before_claiming():
+    cache = DurableCache()
+    warmer = DemandQueryRefresh(service(cache))
+    await warmer.observe('waze', raw_key())
+    cache.now += timedelta(minutes=16)
+    cache.budget['background_usage'] = {'demand': 19, 'revalidation': 1}
+    assert not await warmer.step()
+    assert cache.calls == []
+
+
+async def test_budget_deferral_is_not_source_failure_and_releases_warm_lease():
+    from gaswise.domain.ports import ProviderError
+    cache = DurableCache()
+    class Deferred:
+        async def stations(self, query):
+            raise ProviderError('waze_optional_daily_budget_exhausted')
+    warmer = DemandQueryRefresh(service(cache, Deferred()))
+    await warmer.observe('waze', raw_key())
+    cache.now += timedelta(minutes=16)
+    assert not await warmer.step()
+    job = next(iter(cache.jobs.values()))
+    assert job['owner'] is None and job['error'] == 'source_budget_deferred'
+    assert warmer.paces['waze'].errors == 0
+
+
+async def test_retained_old_demand_is_dormant_until_a_new_foreground_request():
+    cache = DurableCache()
+    warmer = DemandQueryRefresh(service(cache))
+    await warmer.observe('waze', raw_key())
+    cache.now += timedelta(days=2)
+    assert not await warmer.step()
+    assert len(cache.jobs) == 1
+    assert (await cache.warming_plan('waze'))['active'] == 0
+    await warmer.observe('waze', raw_key())
+    assert await warmer.step()
