@@ -12,7 +12,7 @@ import { navigationUrl } from '../../lib/navigation'
 import type { NavApp } from '../../lib/prefs'
 import { WatchStation } from './WatchStation'
 
-export type StationSummary = Pick<Station, 'name' | 'location'> & Partial<Station>
+export type StationSummary = Pick<Station, 'name' | 'location'> & Partial<Station> & { discovery_state?: 'observed' | 'known'; last_seen_at?: string | null }
 import { reasonKey } from '../../lib/stationStatus'
 export const TOP_TIER_LIST_URL = 'https://www.toptiergas.com/gasoline-brands/'
 

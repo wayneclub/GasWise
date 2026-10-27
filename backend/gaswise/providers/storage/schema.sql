@@ -284,3 +284,19 @@ ALTER TABLE gaswise.base_collection_jobs ADD COLUMN IF NOT EXISTS schedule_inher
 
 ALTER TABLE gaswise.query_cache ADD COLUMN IF NOT EXISTS failure_code text;
 ALTER TABLE gaswise.query_cache ADD COLUMN IF NOT EXISTS failure_until timestamptz;
+
+CREATE TABLE IF NOT EXISTS gaswise.discovery_cells (
+    source text NOT NULL, cell_id text NOT NULL, radius_meters double precision NOT NULL,
+    checked_at timestamptz NOT NULL, station_ids jsonb NOT NULL,
+    capped boolean NOT NULL DEFAULT false, observations integer NOT NULL DEFAULT 1,
+    PRIMARY KEY(source,cell_id,radius_meters)
+);
+
+CREATE TABLE IF NOT EXISTS gaswise.discovery_patrol (
+    source text NOT NULL, cell_id text NOT NULL, radius_meters double precision NOT NULL,
+    descriptor jsonb NOT NULL, next_due timestamptz NOT NULL DEFAULT now(),
+    last_relevant_at timestamptz NOT NULL DEFAULT now(),
+    lease_owner text, lease_until timestamptz, last_success timestamptz,
+    PRIMARY KEY(source,cell_id,radius_meters)
+);
+CREATE INDEX IF NOT EXISTS discovery_patrol_due ON gaswise.discovery_patrol(next_due);

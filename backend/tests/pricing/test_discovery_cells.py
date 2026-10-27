@@ -94,7 +94,7 @@ async def test_dense_area_expands_in_waves_and_reports_unproven_area():
     assert len(found & inner) / len(inner) >= 0.7
     covered = result.snapshot.discovery_area_covered
     assert 0 < covered < 1
-    assert any("Maps discovery proved" in warning for warning in result.snapshot.warnings)
+    assert any("Maps discovery surveyed an estimated" in warning for warning in result.snapshot.warnings)
 
 
 async def test_nearby_searches_share_cached_cell_requests():

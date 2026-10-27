@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 from gaswise.contracts.common import Point, Station
 from gaswise.contracts.search import Search
 from gaswise.contracts.smart import SmartSnapshot
-from gaswise.contracts.sources import MapsWebSearch
+from gaswise.contracts.sources import MapsWebPrices, MapsWebSearch, MapsWebStation
 from gaswise.domain.ports import ProviderError
 from gaswise.providers.storage.postgres import PostgresPricingCache
 from gaswise.services.pricing.shared_cache import SharedPricingCache
@@ -127,9 +127,32 @@ async def main():
         assert (await first.read(failure_key)).failure is None
         await cache_one.close()
         await cache_two.close()
+        import h3
+        # Unpriced stations are inventory facts, not synthetic price observations.
+        checked = datetime.now(UTC)-timedelta(days=2)
+        inventory = MapsWebPrices(stations=[], warnings=[], candidate_count=20,
+            inventory=[MapsWebStation(place_id='unpriced-fixture',name='No price fixture', location=Point(lat=34,lng=-118),
+                                      distance_meters=0,available_fuel_types=[],last_seen_at=checked)],
+            survey_cell=h3.latlng_to_cell(34,-118,8),survey_radius_meters=6400)
+        async def inventory_load():
+            return inventory
+        cache = SharedPricingCache(first)
+        await cache.get('maps','inventory-fixture',inventory_load)
+        nearby = await first.nearby_inventory(Point(lat=34,lng=-118),5000)
+        unpriced = next(row for row in nearby if row['station_id']=='google_maps_web:unpriced-fixture')
+        assert datetime.fromisoformat(unpriced['last_seen_at'])==checked
+        assert await first.pool.fetchval("SELECT count(*) FROM gaswise.quote_history WHERE station_id='google_maps_web:unpriced-fixture'") == 0
+        before = await first.pool.fetchval('SELECT sum(observations) FROM gaswise.discovery_cells')
+        await first.seed_station_inventory()
+        assert await first.pool.fetchval('SELECT sum(observations) FROM gaswise.discovery_cells') == before
+        assert (await first.inventory_patrol_status())['cells'] > 0
+        patrol = await first.claim_inventory_patrol('patrol-test')
+        assert patrol and await second.claim_inventory_patrol('patrol-other') is not None
+        await first.finish_inventory_patrol(patrol,'patrol-test',True)
+        await cache.close()
         print(json.dumps({'signing_key': 'shared', 'migration': 'compatible_only',
                           'optional_cap': '20/100', 'city_capacity': '80/100',
-                          'failure_isolation': 'passed', 'window_reset': 'passed', 'warm_cost_and_lease': 'passed', 'freshness': 'passed'}))
+                          'inventory_and_patrol': 'passed', 'failure_isolation': 'passed', 'window_reset': 'passed', 'warm_cost_and_lease': 'passed', 'freshness': 'passed'}))
     finally:
         await second.close()
         await first.close()

@@ -43,6 +43,9 @@ class SharedPricingCache:
         self.tasks = set()
         self.closed = False
 
+    async def nearby_inventory(self, origin, radius):
+        return await self._db("nearby_inventory", origin, radius)
+
     async def price_history(self, canonical_id, source, station_id, fuel_type, days):
         if not hasattr(self.store, "price_history"):
             raise ProviderError("price_history_unavailable")
@@ -127,7 +130,6 @@ class SharedPricingCache:
                 [station.model_dump(mode="json") for station in value]
                 if source == "waze" else value.model_dump(mode="json")
             )
-            payload = prune_quotes(payload)
             checked_at = await self._db("save", key, source, owner, payload, self.fresh_seconds)
             if checked_at is None:
                 raise ProviderError("shared_pricing_refresh_lease_lost")

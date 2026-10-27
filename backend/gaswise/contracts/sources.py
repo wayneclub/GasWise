@@ -36,6 +36,8 @@ class MapsWebSearch(GooglePriceSearch):
 
 
 class MapsWebStation(Model):
+    discovery_state: Literal['observed', 'known'] = 'observed'
+    last_seen_at: AwareDatetime | None = None
     place_id: str
     name: str
     location: Point
@@ -62,6 +64,9 @@ class MapsWebPrices(Model):
     official_api_requests: int = 0
     # Coverage evidence: places the response listed (any category, before the radius filter)
     # and the farthest of them. A full page proves only the disk out to that reach.
+    survey_cell: str | None = None
+    survey_radius_meters: float | None = None
+    discovery_metrics: dict[str, int] = Field(default_factory=dict)
     candidate_count: int = 0
     candidate_reach_meters: float | None = None
 

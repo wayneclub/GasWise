@@ -39,6 +39,7 @@ from gaswise.services.pricing.alerts import SmartAlerts
 from gaswise.services.pricing.base_collection import BaseCollection
 from gaswise.services.pricing.collection_notifications import CollectionNotifications
 from gaswise.services.pricing.demand_refresh import DemandQueryRefresh
+from gaswise.services.pricing.inventory_patrol import InventoryPatrol
 from gaswise.services.pricing.search import SearchService
 from gaswise.services.pricing.shared_cache import SharedPricingCache
 from gaswise.services.pricing.smart import SmartService
@@ -236,6 +237,7 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
         if settings.database_url.get_secret_value():
             store = await PostgresPricingCache.connect(settings.database_url.get_secret_value())
             stack.push_async_callback(store.close)
+            await store.seed_station_inventory()
             if isinstance(vehicles, VehicleProvider):
                 vehicles.persistent_cache = store
                 vehicle_warm_task = asyncio.create_task(warm_popular_vehicle_records(vehicles))
@@ -325,6 +327,14 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
                     await base_task
 
             stack.push_async_callback(stop_base_collection)
+        if settings.base_collection_enabled and smart.maps_web is not None:
+            patrol = InventoryPatrol(smart, settings.hot_pricing_refresh_daily_requests)
+            patrol_task = asyncio.create_task(patrol.run())
+            async def stop_inventory_patrol():
+                patrol_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await patrol_task
+            stack.push_async_callback(stop_inventory_patrol)
         if settings.collection_telegram_enabled:
             sender = TelegramSender(settings.collection_telegram_bot_token, settings.collection_telegram_chat_id,
                                     settings.collection_telegram_thread_id)

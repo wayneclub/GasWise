@@ -15,6 +15,7 @@ export const es: Record<MessageKey, string> = {
   'comparison.timeDelta': '+{time} frente al más rápido',
   "fallback.title": "Estaciones cercanas y datos",
   "fallback.note": "Solo datos reportados. Los precios vencidos o no aptos no se recomiendan.",
+  "fallback.knownStation": "Encontrada anteriormente {age}; no confirmada de nuevo en esta búsqueda.",
   "fallback.failed": "Algunas fuentes no están disponibles",
   "fallback.staleOnly": "Solo hay precios vencidos",
   "fallback.empty": "No hay precios actuales aptos cerca",

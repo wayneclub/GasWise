@@ -25,7 +25,7 @@ it('distinguishes a completed empty search and offers explicit radius choices', 
 
 it('shows real unpriced inventory with navigation without inventing a price', () => {
   const result = emptyResult()
-  result.snapshot.inventory = [{ place_id: 'rural-1', name: 'Small Town Fuel', address: '1 Main St', location: { lat: 34, lng: -118 }, available_fuel_types: [], distance_meters: 0 }]
+  result.snapshot.inventory = [{ discovery_state: 'observed', place_id: 'rural-1', name: 'Small Town Fuel', address: '1 Main St', location: { lat: 34, lng: -118 }, available_fuel_types: [], distance_meters: 0 }]
   render(<SearchFallback result={result} completing={false} radius={10} navApp="google" onRadius={vi.fn()} onRetry={vi.fn()} />)
   expect(screen.getByText('Small Town Fuel')).toBeInTheDocument()
   expect(screen.getByText('Price not reported')).toBeInTheDocument()
@@ -55,7 +55,7 @@ it('keeps long station identities intact and navigation beside the data, with a 
   const result = emptyResult()
   const name = 'Olancha Mobil Mart 1 — Highway Service Station'
   const address = '601 US-395, Olancha, California 93549'
-  result.snapshot.inventory = [{ place_id: 'olancha', name, address, location: { lat: 36, lng: -118 }, available_fuel_types: [], distance_meters: 0 }]
+  result.snapshot.inventory = [{ discovery_state: 'observed', place_id: 'olancha', name, address, location: { lat: 36, lng: -118 }, available_fuel_types: [], distance_meters: 0 }]
   render(<SearchFallback result={result} completing={false} radius={20} navApp="google" onRadius={vi.fn()} onRetry={vi.fn()} />)
   const article = screen.getByRole('article')
   expect(screen.getByRole('heading', { name })).toHaveClass('break-words')
@@ -75,4 +75,14 @@ it('makes clear that a Waze failure leaves other source prices available', () =>
   render(<SearchFallback result={result} completing={false} radius={5} navApp="google" onRadius={vi.fn()} onRetry={vi.fn()} />)
   expect(screen.getByText('Prices from GasBuddy are still available; unavailable sources are omitted.')).toBeInTheDocument()
   expect(screen.getByText('Waze: temporarily unavailable')).toBeInTheDocument()
+})
+
+it('labels retained catalog stations without claiming a current price or observation', () => {
+  const result = emptyResult()
+  result.snapshot.inventory = [{ place_id: 'known', name: 'Previously Found Station',
+    location: { lat: 34, lng: -118 }, distance_meters: 0, available_fuel_types: [],
+    discovery_state: 'known', last_seen_at: '2026-10-20T12:00:00Z' }]
+  render(<SearchFallback result={result} completing={false} radius={5} navApp="google" onRadius={vi.fn()} onRetry={vi.fn()} />)
+  expect(screen.getByText(/not rediscovered in this search/)).toBeInTheDocument()
+  expect(screen.getByText('Price not reported')).toBeInTheDocument()
 })

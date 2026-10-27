@@ -15,6 +15,7 @@ export const ko: Record<MessageKey, string> = {
   'comparison.timeDelta': '최단 대비 +{time}',
   "fallback.title": "주변 주유소 및 데이터 상태",
   "fallback.note": "보고된 정보만 표시합니다. 오래되거나 조건에 맞지 않는 가격은 추천에서 제외됩니다.",
+  "fallback.knownStation": "이전 확인: {age}. 이번 검색에서는 다시 확인되지 않았습니다.",
   "fallback.failed": "일부 가격 출처에 연결할 수 없습니다",
   "fallback.staleOnly": "오래된 가격 정보만 있습니다",
   "fallback.empty": "주변에 조건에 맞는 최신 가격이 없습니다",

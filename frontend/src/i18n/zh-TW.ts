@@ -15,6 +15,7 @@ export const zhTW: Record<MessageKey, string> = {
   'comparison.timeDelta': '比最快多 {time}',
   "fallback.title": "附近站點與資料狀態",
   "fallback.note": "僅列來源實報資料；過期或條件不符的油價不列入推薦。",
+  "fallback.knownStation": "上次發現：{age}；本次尚未重新確認。",
   "fallback.failed": "部分油價來源暫時無法取得",
   "fallback.staleOnly": "目前只有過期油價回報",
   "fallback.empty": "附近暫無符合條件的即時油價",

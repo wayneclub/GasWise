@@ -12,7 +12,13 @@ from time import monotonic, perf_counter
 
 from gaswise.contracts.common import Point, Route, SourceStatus, Station
 from gaswise.contracts.search import Search
-from gaswise.contracts.smart import ProgressiveSearchState, SmartResult, SmartSearch, SmartSnapshot, SnapshotRoute
+from gaswise.contracts.smart import (
+    ProgressiveSearchState,
+    SmartResult,
+    SmartSearch,
+    SmartSnapshot,
+    SnapshotRoute,
+)
 from gaswise.contracts.sources import GooglePriceSearch, MapsWebSearch
 from gaswise.domain.ports import PriceSnapshot, ProviderError
 from gaswise.domain.pricing.comparison import (
@@ -259,6 +265,8 @@ class SmartService:
     async def _merge_progressive_results(self, results):
         newest = results[-1]
         snapshot = newest.snapshot.model_copy(deep=True)
+        snapshot.discovery_metrics = {key: value for result in results
+                                      for key, value in result.snapshot.discovery_metrics.items()}
         stations = {}
         statuses = {}
         inventory = {}
@@ -438,6 +446,7 @@ class SmartService:
         # Crosswalks use every discovered place; the snapshot keeps only the nearest ones.
         matching_inventory = []
         discovery_area_covered = None
+        discovery_metrics = {}
         if self.demo is not None:
             stations = await self.demo.stations(search.model_copy(update={"max_results": 10}))
             statuses.append(SourceStatus(source="synthetic", status="ok", quote_count=len(stations)))
@@ -476,6 +485,7 @@ class SmartService:
                             warnings.append(f"Discovery stopped for viewport {index + 1}: {error}")
                             continue
                         tile, hit = outcome
+                        discovery_metrics.update(tile.discovery_metrics)
                         calls["google_maps_web_search"] += int(not hit)
                         calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
                         detail_requests += tile.detail_requests if not hit else 0
@@ -492,7 +502,7 @@ class SmartService:
                         raise ProviderError("google_maps_web_discovery_unavailable")
                     if discovery_area_covered < 0.995:
                         warnings.append(
-                            f"Maps discovery proved {discovery_area_covered:.0%} of the search area within its "
+                            f"Maps discovery surveyed an estimated {discovery_area_covered:.0%} of the search area within its "
                             "request budget; stations farther out may be missing."
                         )
                     # A small, explicit address lookup budget recovers stations omitted
@@ -524,13 +534,16 @@ class SmartService:
                                 calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(getattr(error, "cache_hit", False))
                                 warnings.append("Station address lookup stopped: " + str(error))
                                 break
+                    discovery_metrics['maps_inventory_truncated'] = max(0, len(inventory_by_id) - 250)
+                    if discovery_metrics.get('maps_known_missing', 0):
+                        warnings.append(f"{discovery_metrics['maps_known_missing']} previously known Maps stations were not rediscovered; retained inventory is labeled separately without current prices or opening claims.")
                     data = tile.model_copy(update={
-                        "inventory": sorted(inventory_by_id.values(), key=lambda item: distance_meters(search.origin, item.location))[:250],
+                        "inventory": sorted(inventory_by_id.values(), key=lambda item: (item.discovery_state == 'known', distance_meters(search.origin, item.location)))[:250],
                         "stations": list(quotes_by_id.values()),
                         "detail_requests": detail_requests,
                     })
                     maps_inventory = data.inventory
-                    matching_inventory = list(inventory_by_id.values())
+                    matching_inventory = [item for item in inventory_by_id.values() if item.discovery_state == 'observed']
                     stations.extend(data.stations)
                     warnings.extend(data.warnings)
                     calls["google_maps_web_details"] = data.detail_requests
@@ -655,8 +668,10 @@ class SmartService:
                 calls["waze_search"] = 0
                 try:
                     quotes, hit = acquired(acquisitions, "waze")
-                    calls["waze_search"] += int(not hit)
-                    calls["_cache_hits"] = calls.get("_cache_hits", 0) + int(hit)
+                    metrics = acquisitions.get('_waze_metrics', {})
+                    discovery_metrics.update(metrics)
+                    calls["waze_search"] += metrics.get('waze_searches', int(not hit))
+                    calls["_cache_hits"] = calls.get("_cache_hits", 0) + metrics.get('waze_cache_hits', int(hit))
                     gasbuddy_sites = [s for s in stations if (s.canonical_id or "").startswith("gasbuddy:")]
                     for quote in quotes:
                         quote = quote.model_copy(update={"details": {**quote.details, "location_source": "waze"}})
@@ -722,6 +737,7 @@ class SmartService:
             warnings=warnings,
             unlocated_gasbuddy=unlocated[:100],
             discovery_area_covered=discovery_area_covered,
+            discovery_metrics=discovery_metrics,
             inventory=maps_inventory,
             vehicle=vehicle,
         )

@@ -1,12 +1,7 @@
-"""Proven-disk coverage for capped, relevance-ranked station searches.
+"""Stable H3 sampling for relevance-ranked, capped searches.
 
-One website search lists one page of places for a viewport sized by its query
-radius. Ranking favours nearby places but is not strictly nearest-first, and a
-wide viewport skips near stations. So only a page that spills past its radius
-(a short page, or one reaching beyond it) proves its query disk complete. A page
-that fills up inside its radius proves nothing; its reach sets a smaller radius
-for the next wave. Query points are H3 cell centres and radii come from a fixed
-ladder, so nearby searches reuse the same cache entries.
+Geometric coverage is a survey estimate, never proof of an exhaustive inventory.
+Known stations missing from a response keep their cells eligible for resampling.
 """
 
 import math
@@ -47,26 +42,38 @@ class Coverage:
     def __init__(self, origin, radius):
         self.origin, self.radius = origin, radius
         self.points = grid_points(origin, radius)
-        self.proven = []  # (centre, metres proven complete)
+        self.known = {}
+        self.found = set()
+        self.surveyed = []  # (centre, estimated sampled radius)
         self.tried = set()  # (lat, lng, query radius)
         self.query_radius = step_at_most(radius)
         self.last_wave = []  # (share of a page inside the radius, spilled) since the previous wave
 
+    def remember(self, stations):
+        self.known = {row['place_id']: Point.model_validate(row['location']) for row in stations}
+
+    def observed(self, identifiers):
+        self.found.update(identifiers)
+
+    def missing_near(self, point, radius):
+        return sum(identifier not in self.found and distance_meters(point, location) < radius
+                   for identifier, location in self.known.items())
+
     def covered(self, point):
-        return any(distance_meters(point, centre) <= reach for centre, reach in self.proven)
+        return any(distance_meters(point, centre) <= reach for centre, reach in self.surveyed)
 
     def record(self, centre, query_radius, count, within, reach, page_size):
-        """Apply one response (`within`: places inside the query disk); returns whether it proved the disk."""
+        """Apply one response (`within`: places inside the query disk); returns whether it broadly sampled the disk."""
         spilled = count <= page_size * SHORT_PAGE or (
             query_radius <= LOCAL_VIEWPORT and reach is not None and reach > query_radius
         )
         self.last_wave.append((within / page_size, spilled))
         if spilled:
-            self.proven.append((centre, query_radius))
+            self.surveyed.append((centre, query_radius))
             return True
         if query_radius <= RADIUS_STEPS[0]:
             # Densest blocks: the finest query cannot spill, keep what the page reached.
-            self.proven.append((centre, min(query_radius, reach or 0)))
+            self.surveyed.append((centre, min(query_radius, reach or 0)))
             return False
         # One step per wave: a single wide page's reach is not a reliable density estimate.
         narrower = [step for step in RADIUS_STEPS if step < min(self.query_radius, query_radius)]
@@ -75,7 +82,7 @@ class Coverage:
         return False
 
     def wave(self, width):
-        """Nearest unproven points at the current radius, spaced so their disks just overlap.
+        """Nearest unvisited or known-missing points at the current radius, spaced so their disks just overlap.
 
         A wave whose pages all spilled at most half full was sparse: widen one step.
         """
@@ -84,10 +91,12 @@ class Coverage:
             self.query_radius = wider[0] if wider else self.query_radius
         self.last_wave = []
         radius, batch = self.query_radius, []
-        for point in self.points:
+        points = sorted(self.points, key=lambda point: (
+            -self.missing_near(point, min(radius, 1600)), distance_meters(self.origin, point))) if self.known else self.points
+        for point in points:
             if len(batch) >= width:
                 break
-            if (point.lat, point.lng, radius) in self.tried or self.covered(point):
+            if (point.lat, point.lng, radius) in self.tried or (self.covered(point) and not self.missing_near(point, min(radius, 1600))):
                 continue
             if all(distance_meters(point, other) > radius * 1.5 for other in batch):
                 batch.append(point)

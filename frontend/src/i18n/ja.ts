@@ -15,6 +15,7 @@ export const ja: Record<MessageKey, string> = {
   'comparison.timeDelta': '最短より +{time}',
   "fallback.title": "周辺のスタンドとデータ状況",
   "fallback.note": "報告された情報のみ表示。期限切れや条件外の価格はおすすめ対象外です。",
+  "fallback.knownStation": "前回確認：{age}。今回の検索では再確認されていません。",
   "fallback.failed": "一部の価格情報源に接続できません",
   "fallback.staleOnly": "期限切れの価格情報のみあります",
   "fallback.empty": "周辺に条件を満たす最新価格がありません",

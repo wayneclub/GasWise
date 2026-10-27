@@ -17,6 +17,7 @@ from gaswise.domain.pricing.daily_ramp import reviewed_limit
 from gaswise.domain.pricing.shared_cache import CachedQuery
 from gaswise.providers.storage.collection_events import CollectionEvents
 from gaswise.providers.storage.hotspot_coverage import HotspotCoverage
+from gaswise.providers.storage.inventory import StationInventory
 from gaswise.providers.storage.warm_queries import WarmQueries
 
 GOOGLE_LOCATION_SOURCES = {"google_maps_web", "google_places"}
@@ -89,7 +90,7 @@ def station_checked_at(metadata, fallback):
     return checked.replace(tzinfo=UTC) if checked.tzinfo is None else checked
 
 
-class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
+class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage, StationInventory):
     def __init__(self, pool):
         self.pool = pool
 
@@ -158,6 +159,7 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
                 WHERE observed_day=(now() AT TIME ZONE 'America/Los_Angeles')::date GROUP BY source
             """)
         return {"jobs": [dict(row) for row in jobs], "daily_prices": [dict(row) for row in prices],
+                "inventory_patrol": await self.inventory_patrol_status(),
                 "semantics": "observations_are_not_unique_stations_or_verified_pump_prices"}
 
     async def read_vehicle(self, vehicle_id):
@@ -604,6 +606,7 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
         """, key, owner)
 
     async def save(self, key, source, owner, payload, fresh_seconds):
+        original = payload
         payload = prune_quotes(payload)
         async with self.pool.acquire() as connection, connection.transaction():
             saved = await connection.fetchval("""
@@ -614,6 +617,7 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
                 WHERE key=$1 AND lease_owner=$2 AND lease_until > now() RETURNING fetched_at
             """, key, owner, json.dumps(payload), fresh_seconds)
             if saved:
+                await self._remember_inventory(connection, source, original, saved)
                 await self._observe(connection, public_quotes(payload))
             return saved
 
@@ -653,33 +657,7 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
             prices.append((source, station_id, quote["fuel_type"], quote["payment_type"], condition,
                            json.dumps(quote), reported, fetched, expires))
         # Pipeline batches instead of making two network round-trips per quote.
-        if stations:
-            await connection.executemany("""
-                INSERT INTO gaswise.stations (source, station_id, canonical_id, metadata, seen_at)
-                VALUES ($1,$2,$3,$4::jsonb,$5) ON CONFLICT (source,station_id) DO UPDATE
-                SET canonical_id=CASE
-                        WHEN (
-                            COALESCE(stations.metadata->>'location_source', stations.source) IN ('google_maps_web','google_places')
-                            OR (stations.metadata->>'location_source' IS NULL AND stations.canonical_id LIKE 'google_places:%')
-                        )
-                             AND COALESCE(EXCLUDED.metadata->>'location_source', '') NOT IN ('google_maps_web','google_places')
-                        THEN stations.canonical_id
-                        ELSE COALESCE(EXCLUDED.canonical_id, stations.canonical_id)
-                    END,
-                    metadata=CASE
-                        WHEN (
-                            COALESCE(stations.metadata->>'location_source', stations.source) IN ('google_maps_web','google_places')
-                            OR (stations.metadata->>'location_source' IS NULL AND stations.canonical_id LIKE 'google_places:%')
-                        )
-                             AND COALESCE(EXCLUDED.metadata->>'location_source', '') NOT IN ('google_maps_web','google_places')
-                        THEN EXCLUDED.metadata || stations.metadata
-                        ELSE stations.metadata || EXCLUDED.metadata
-                    END,
-                    seen_at=GREATEST(stations.seen_at, EXCLUDED.seen_at)
-                WHERE stations.metadata IS DISTINCT FROM EXCLUDED.metadata
-                   OR EXCLUDED.canonical_id IS NOT NULL AND stations.canonical_id IS DISTINCT FROM EXCLUDED.canonical_id
-                   OR EXCLUDED.seen_at > stations.seen_at
-            """, stations)
+        await self._upsert_stations(connection, stations)
         if prices:
             await connection.executemany("""
                 INSERT INTO gaswise.quotes VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,$8,$9)
@@ -712,6 +690,37 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
                     canonical_id=COALESCE(EXCLUDED.canonical_id,quote_daily.canonical_id),
                     attributes=quote_daily.attributes || jsonb_strip_nulls(EXCLUDED.attributes)
             """, history)
+
+    async def _upsert_stations(self, connection, stations):
+        if not stations:
+            return
+        await connection.executemany("""
+                INSERT INTO gaswise.stations (source, station_id, canonical_id, metadata, seen_at)
+                VALUES ($1,$2,$3,$4::jsonb,$5) ON CONFLICT (source,station_id) DO UPDATE
+                SET canonical_id=CASE
+                        WHEN (
+                            COALESCE(stations.metadata->>'location_source', stations.source) IN ('google_maps_web','google_places')
+                            OR (stations.metadata->>'location_source' IS NULL AND stations.canonical_id LIKE 'google_places:%')
+                        )
+                             AND COALESCE(EXCLUDED.metadata->>'location_source', '') NOT IN ('google_maps_web','google_places')
+                        THEN stations.canonical_id
+                        ELSE COALESCE(EXCLUDED.canonical_id, stations.canonical_id)
+                    END,
+                    metadata=CASE
+                        WHEN EXCLUDED.seen_at < stations.seen_at THEN stations.metadata
+                        WHEN (
+                            COALESCE(stations.metadata->>'location_source', stations.source) IN ('google_maps_web','google_places')
+                            OR (stations.metadata->>'location_source' IS NULL AND stations.canonical_id LIKE 'google_places:%')
+                        )
+                             AND COALESCE(EXCLUDED.metadata->>'location_source', '') NOT IN ('google_maps_web','google_places')
+                        THEN EXCLUDED.metadata || stations.metadata
+                        ELSE stations.metadata || EXCLUDED.metadata
+                    END,
+                    seen_at=GREATEST(stations.seen_at, EXCLUDED.seen_at)
+                WHERE stations.metadata IS DISTINCT FROM EXCLUDED.metadata
+                   OR EXCLUDED.canonical_id IS NOT NULL AND stations.canonical_id IS DISTINCT FROM EXCLUDED.canonical_id
+                   OR EXCLUDED.seen_at > stations.seen_at
+            """, stations)
 
     async def mappings(self, source, ids):
         rows = await self.pool.fetch("""
@@ -854,6 +863,8 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage):
         await self.pool.execute("DELETE FROM gaswise.quote_daily WHERE last_seen_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.quote_history WHERE last_seen_at < now() - interval '90 days'")
         await self.pool.execute("DELETE FROM gaswise.quotes WHERE expires_at <= now()")
+        await self.pool.execute("DELETE FROM gaswise.discovery_cells WHERE checked_at<now()-interval '90 days'")
+        await self.pool.execute("DELETE FROM gaswise.discovery_patrol WHERE last_relevant_at<now()-interval '90 days' AND (lease_until IS NULL OR lease_until<=now())")
         await self.pool.execute("""
             DELETE FROM gaswise.query_cache WHERE
             (stale_until <= now() OR payload IS NULL) AND (lease_until IS NULL OR lease_until <= now())

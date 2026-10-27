@@ -32,8 +32,6 @@ async def test_failed_first_maps_wave_does_not_expand_into_more_failing_requests
 
 
 async def test_later_failed_wave_retains_earlier_success_and_coverage(monkeypatch):
-    from types import SimpleNamespace
-
     from gaswise.services.pricing import discovery
 
     class Coverage:
@@ -50,7 +48,10 @@ async def test_later_failed_wave_retains_earlier_success_and_coverage(monkeypatc
             return 0.4
 
     monkeypatch.setattr(discovery, 'Coverage', Coverage)
-    successful = SimpleNamespace(candidate_count=20, inventory=['observed-station'], candidate_reach_meters=100)
+    from gaswise.contracts.sources import MapsWebPrices, MapsWebStation
+    successful = MapsWebPrices(candidate_count=20, inventory=[MapsWebStation(
+        place_id='observed-station', name='Fixture', location=Point(lat=34,lng=-118),
+        distance_meters=0, available_fuel_types=[])], stations=[], warnings=[], candidate_reach_meters=100)
 
     class Maps:
         calls = 0
@@ -66,7 +67,7 @@ async def test_later_failed_wave_retains_earlier_success_and_coverage(monkeypatc
     query = SmartSearch(origin=Point(lat=34, lng=-118), discovery_tiles=20)
     outcomes, covered = await discover_maps(service, query, query)
     assert len(outcomes) == provider.calls == 3
-    assert outcomes[0][0].inventory == ['observed-station']
+    assert outcomes[0][0].inventory[0].place_id == 'observed-station'
     assert covered == 0.4
     assert all(isinstance(row, ProviderError) for row in outcomes[1:])
     await service.close()

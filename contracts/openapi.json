@@ -3212,6 +3212,35 @@
             "title": "Official Api Requests",
             "default": 0
           },
+          "survey_cell": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Survey Cell"
+          },
+          "survey_radius_meters": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Survey Radius Meters"
+          },
+          "discovery_metrics": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Discovery Metrics"
+          },
           "candidate_count": {
             "type": "integer",
             "title": "Candidate Count",
@@ -3292,6 +3321,27 @@
       },
       "MapsWebStation": {
         "properties": {
+          "discovery_state": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "known"
+            ],
+            "title": "Discovery State",
+            "default": "observed"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
           "place_id": {
             "type": "string",
             "title": "Place Id"
@@ -6546,6 +6596,13 @@
             "maxItems": 100,
             "title": "Unlocated Gasbuddy"
           },
+          "discovery_metrics": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Discovery Metrics"
+          },
           "discovery_area_covered": {
             "anyOf": [
               {
@@ -6693,6 +6750,13 @@
             "type": "array",
             "maxItems": 100,
             "title": "Unlocated Gasbuddy"
+          },
+          "discovery_metrics": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Discovery Metrics"
           },
           "discovery_area_covered": {
             "anyOf": [

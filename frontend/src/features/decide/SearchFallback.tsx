@@ -56,6 +56,7 @@ export function SearchFallback({ result, completing, radius, navApp, onRadius, o
         <div className="col-span-2 min-w-0">
         <h3 className="break-words text-base font-medium leading-snug">{station.name}</h3>
         <p className="mt-1 break-words text-sm leading-relaxed text-muted">{station.address}</p>
+        {station.discovery_state === 'known' && !station.price_per_gallon ? <p className="mt-1 text-xs text-caution">{t('fallback.knownStation', { age: age(station.last_seen_at, t) })}</p> : null}
         </div>
         <div className="min-w-0 break-words">
         <p className="mt-2 text-sm">{station.price_per_gallon ? `${perGallon(station.price_per_gallon)} · ${t(isStale(station) ? 'fallback.stale' : 'fallback.unranked')}` : t('fallback.noPrice')}</p>

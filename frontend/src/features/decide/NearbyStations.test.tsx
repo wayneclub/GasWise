@@ -10,7 +10,7 @@ it('hides unpriced discoveries after merging sources and retains a real quote fr
   const quote = {...result.snapshot.stations[0], canonical_id:'google_places:shared', name:'Priced via Waze', source:'waze', open_now:true as const}
   result.snapshot.stations = [quote]
   result.snapshot.inventory = ['missing','shared'].map(place_id => ({
-    place_id, name:place_id === 'missing' ? 'No source has a price' : 'Maps discovery',
+    discovery_state: 'observed', place_id, name:place_id === 'missing' ? 'No source has a price' : 'Maps discovery',
     location:quote.location, address:quote.address, distance_meters:100,
     available_fuel_types:[], open_now:true,
   }))

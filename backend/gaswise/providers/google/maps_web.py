@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
+import h3
 import httpx
 
 from gaswise.contracts.common import Point, Station
@@ -273,6 +274,9 @@ class MapsWebProvider:
             fuels.setdefault(row.canonical_id, set()).add(row.fuel_type)
         for station in result.inventory:
             station.available_fuel_types = sorted(fuels.get("google_places:" + station.place_id, set()))
+        if query.search_text == "gas stations":
+            result.survey_cell = h3.latlng_to_cell(query.origin.lat, query.origin.lng, 8)
+            result.survey_radius_meters = query.radius_meters
         result.authentication = "session" if self.session_file is not None else "anonymous"
         result.detail_requests = count
         result.upstream_http_requests = 1 + count
@@ -356,6 +360,7 @@ class MapsWebProvider:
                 rating_fields = {"rating": rating, "review_count": reviews, "rating_source": "Google Maps" if rating is not None else None}
                 inventory.append(
                     MapsWebStation(
+                        last_seen_at=now,
                         place_id=place_id,
                         name=row[11],
                         location=point,

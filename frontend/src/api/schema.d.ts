@@ -548,6 +548,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/smart/search-jobs/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Smart Search Job Start */
+        post: operations["smart_search_job_start_v1_smart_search_jobs_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/smart/search-jobs/poll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Smart Search Job Poll */
+        post: operations["smart_search_job_poll_v1_smart_search_jobs_poll_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/smart/search": {
         parameters: {
             query?: never;
@@ -1308,6 +1342,14 @@ export interface components {
              * @default 0
              */
             official_api_requests: number;
+            /** Survey Cell */
+            survey_cell?: string | null;
+            /** Survey Radius Meters */
+            survey_radius_meters?: number | null;
+            /** Discovery Metrics */
+            discovery_metrics?: {
+                [key: string]: number;
+            };
             /**
              * Candidate Count
              * @default 0
@@ -1348,6 +1390,14 @@ export interface components {
         };
         /** MapsWebStation */
         MapsWebStation: {
+            /**
+             * Discovery State
+             * @default observed
+             * @enum {string}
+             */
+            discovery_state: "observed" | "known";
+            /** Last Seen At */
+            last_seen_at?: string | null;
             /** Place Id */
             place_id: string;
             /** Name */
@@ -1733,6 +1783,33 @@ export interface components {
             membership: string | null;
             /** Octane */
             octane: number | null;
+        };
+        /** ProgressiveSearchPoll */
+        ProgressiveSearchPoll: {
+            /** Job Id */
+            job_id: string;
+            /**
+             * After Revision
+             * @default 0
+             */
+            after_revision: number;
+        };
+        /** ProgressiveSearchState */
+        ProgressiveSearchState: {
+            /** Job Id */
+            job_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "partial" | "complete" | "failed";
+            /** Revision */
+            revision: number;
+            /** Completed Sources */
+            completed_sources?: string[];
+            result?: components["schemas"]["SmartResult"] | null;
+            /** Error */
+            error?: string | null;
         };
         /** PushKeys */
         PushKeys: {
@@ -2578,6 +2655,10 @@ export interface components {
             warnings?: string[];
             /** Unlocated Gasbuddy */
             unlocated_gasbuddy?: components["schemas"]["GasBuddyQuote-Input"][];
+            /** Discovery Metrics */
+            discovery_metrics?: {
+                [key: string]: number;
+            };
             /** Discovery Area Covered */
             discovery_area_covered?: number | null;
             /** Inventory */
@@ -2625,6 +2706,10 @@ export interface components {
             warnings?: string[];
             /** Unlocated Gasbuddy */
             unlocated_gasbuddy?: components["schemas"]["GasBuddyQuote-Output"][];
+            /** Discovery Metrics */
+            discovery_metrics?: {
+                [key: string]: number;
+            };
             /** Discovery Area Covered */
             discovery_area_covered?: number | null;
             /** Inventory */
@@ -4286,6 +4371,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    smart_search_job_start_v1_smart_search_jobs_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SmartSearch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgressiveSearchState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    smart_search_job_poll_v1_smart_search_jobs_poll_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProgressiveSearchPoll"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgressiveSearchState"];
                 };
             };
             /** @description Validation Error */

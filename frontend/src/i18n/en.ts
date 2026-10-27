@@ -14,6 +14,7 @@ export const en = {
   'comparison.timeDelta': '+{time} vs quickest',
   "fallback.title": "Nearby stations and data status",
   "fallback.note": "Source-reported data only. Expired or ineligible prices are not live recommendations.",
+  "fallback.knownStation": "Previously found {age}; not rediscovered in this search.",
   "fallback.failed": "Some price sources could not be reached",
   "fallback.staleOnly": "Only expired price reports are available",
   "fallback.empty": "No eligible live fuel prices nearby",

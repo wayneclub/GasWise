@@ -50,7 +50,8 @@ class SmartSnapshot(Model):
     expires_at: AwareDatetime
     warnings: list[str] = Field(default_factory=list, max_length=100)
     unlocated_gasbuddy: list[GasBuddyQuote] = Field(default_factory=list, max_length=100)
-    # Share of the search area that Maps discovery proved complete; null when Maps was not used.
+    # Estimated share of the search area surveyed; not exhaustive inventory coverage; null when Maps was not used.
+    discovery_metrics: dict[str, int] = Field(default_factory=dict)
     discovery_area_covered: float | None = Field(default=None, ge=0, le=1)
     inventory: list[MapsWebStation] = Field(default_factory=list, max_length=250)
     vehicle: VehicleProfile | None = None
