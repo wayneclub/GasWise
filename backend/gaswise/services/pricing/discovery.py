@@ -1,5 +1,6 @@
 """Independent price acquisition, bounded globally by SmartService cache loaders."""
 import asyncio
+import hashlib
 import math
 from time import perf_counter
 
@@ -61,9 +62,16 @@ async def discover_maps(service, search, query):
         coverage.remember([dict(place_id=identifier, location=row['location']) for identifier, row in catalog.items()])
     seen = set()
     returned = 0
-    # The snapped whole-area request is shared by nearby users and ends sparse searches.
-    batch = [shared_viewport(search.origin, limit)]
+    # Freeze only query geometry for five minutes. New catalog entries must not
+    # reshuffle hot callers into extra reads on every refresh.
+    primary = shared_viewport(search.origin, limit)
+    plan_key = 'discovery-plan:' + hashlib.sha256(repr((primary[0].lat, primary[0].lng, primary[1],
+                                                       query.discovery_tiles, query.maps_detail_limit)).encode()).hexdigest()
+    saved_plan = service.cache.get(plan_key)
+    plan, cursor = [], 1
+    batch = [(Point(lat=saved_plan[0][0],lng=saved_plan[0][1]),saved_plan[0][2])] if saved_plan else [primary]
     while batch:
+        plan.extend((point.lat,point.lng,radius) for point,radius in batch)
         tiles = [
             MapsWebSearch(origin=point, fuel_type=search.fuel_type if not outcomes and query.maps_detail_limit else 'regular', radius_meters=radius, max_results=MAPS_WEB_PAGE_SIZE,
                           detail_limit=query.maps_detail_limit if not outcomes and index == 0 else 0)
@@ -100,8 +108,13 @@ async def discover_maps(service, search, query):
         failed_wave = all(isinstance(result, ProviderError) for result in results)
         if rate_limited or failed_wave or remaining <= 0:
             break
-        points, radius = coverage.wave(min(MAPS_WAVE, remaining))
-        batch = [(point, radius) for point in points]
+        if saved_plan:
+            chunk = saved_plan[cursor:cursor+min(MAPS_WAVE, remaining)]
+            cursor += len(chunk)
+            batch = [(Point(lat=lat,lng=lng),radius) for lat,lng,radius in chunk]
+        else:
+            points, radius = coverage.wave(min(MAPS_WAVE, remaining))
+            batch = [(point, radius) for point in points]
     if outcomes and all(
         isinstance(item, ProviderError) and str(item) == "pricing_egress_unavailable"
         for item in outcomes
@@ -114,6 +127,8 @@ async def discover_maps(service, search, query):
                'maps_known_missing': len(catalog.keys() - seen),
                'maps_duplicate_returns': returned - len(seen)}
     successes = [item for item in outcomes if not isinstance(item, BaseException)]
+    if successes and len(successes) == len(outcomes) and not saved_plan:
+        service.cache.put(plan_key,plan,MAPS_CACHE_SECONDS)
     if successes:
         target = successes[-1][0]
         target.discovery_metrics = metrics

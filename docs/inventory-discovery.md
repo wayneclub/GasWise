@@ -12,7 +12,11 @@ remains authoritative. Known stations omitted from a response keep nearby cells
 eligible even if geometric sampling considered the cell covered. Detail-free
 cards share a canonical Regular / 20-result query across requested grades;
 responses retain all reported grades and project the requested grade afterward.
-Station detail enrichment remains separately bounded and grade-aware.
+Station detail enrichment remains separately bounded and grade-aware. A region's
+cell geometry is held in bounded process memory for five minutes, so a growing
+catalog does not turn repeated hot searches into a new batch of cell reads.
+It then replans from the latest known gaps; individual source data timestamps
+and source cache expiry remain independent.
 
 The snapshot reports newly observed IDs, historical known IDs recovered/missing
 and duplicate returns separately. Missing known Maps stations can be retained

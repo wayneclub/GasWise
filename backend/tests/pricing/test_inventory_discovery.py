@@ -115,3 +115,17 @@ async def test_observed_metrics_exclude_stations_outside_original_search_boundar
     assert {row.place_id for row in result.snapshot.inventory} == {'inside'}
     assert result.snapshot.discovery_metrics['maps_observed_stations']==1
     await service.close()
+
+
+async def test_repeated_search_keeps_a_stable_cell_plan_while_catalog_grows():
+    maps = SimpleNamespace(prices=AsyncMock(side_effect=lambda query: MapsWebPrices(
+        stations=[],inventory=[inventory('a')],warnings=[],candidate_count=20,candidate_reach_meters=1000)))
+    catalog=Catalog([])
+    service=SmartService(b'test','prices_only',maps_web=maps,shared_cache=catalog)
+    query=SmartSearch(origin=ORIGIN,radius_meters=5000,discovery_tiles=4)
+    await discover_maps(service,query,query)
+    first=maps.prices.call_count
+    catalog.rows.extend([known(str(index),lat=34.025+index*.0001) for index in range(10)])
+    await discover_maps(service,query,query)
+    assert maps.prices.call_count==first
+    await service.close()
