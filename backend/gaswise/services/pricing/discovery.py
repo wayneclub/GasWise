@@ -87,7 +87,7 @@ async def discover_maps(service, search, query):
             if value.all_prices:
                 value = value.model_copy(update={'stations': [row for row in value.all_prices if row.fuel_type == search.fuel_type]})
                 outcomes[-1] = (value, hit)
-            ids = {row.place_id for row in value.inventory}
+            ids = {row.place_id for row in value.inventory if distance_meters(search.origin, row.location) <= limit}
             seen.update(ids)
             returned += len(ids)
             if hasattr(coverage, 'observed'):

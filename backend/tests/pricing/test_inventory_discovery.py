@@ -104,3 +104,14 @@ async def test_waze_missing_catalog_stations_use_one_shared_area_query_per_cell(
     assert provider.calls == 2
     assert result['_waze_metrics']['waze_searches'] == 0
     await service.close()
+
+
+async def test_observed_metrics_exclude_stations_outside_original_search_boundary():
+    outside = inventory('outside').model_copy(update={'location': Point(lat=34.025,lng=-118)})
+    maps = SimpleNamespace(prices=AsyncMock(return_value=MapsWebPrices(
+        stations=[],inventory=[inventory('inside'),outside],warnings=[],candidate_count=2)))
+    service = SmartService(b'test','prices_only',maps_web=maps)
+    result = await service.search(SmartSearch(origin=ORIGIN,radius_meters=1500,discovery_tiles=1))
+    assert {row.place_id for row in result.snapshot.inventory} == {'inside'}
+    assert result.snapshot.discovery_metrics['maps_observed_stations']==1
+    await service.close()
