@@ -137,6 +137,7 @@ export const en = {
   'location.hint': 'US ZIP codes use the area center, not your exact location.',
   'location.error': 'Location search is unavailable. Retry or use device location.',
   'location.empty': 'No matching location. Add the city or state.',
+  'location.unsupported': 'Only US locations are supported. Search a US city, address or ZIP code.',
   'location.change': 'Search location',
   'error.locationTimeout.title': 'Location request timed out',
   'error.locationTimeout.body': 'Permission may be allowed, but the device did not respond in time. Retry or enter an address or ZIP code.',

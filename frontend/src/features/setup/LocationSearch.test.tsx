@@ -34,3 +34,18 @@ it('requires an explicit choice when the provider returns multiple locations', a
   fireEvent.click(option)
   expect(choose).toHaveBeenCalledExactlyOnceWith(candidates[1].location, candidates[1].label)
 })
+
+it('says the area is unsupported when only places outside the US match', async () => {
+  vi.spyOn(api, 'resolveLocation').mockResolvedValue({ candidates: [], reason: 'unsupported_area', source: 'google_maps_web' })
+  search(vi.fn(), 'Taipei')
+  expect(await screen.findByRole('status')).toHaveTextContent('Only US locations are supported')
+})
+
+it('accepts two-letter city and state abbreviations', async () => {
+  const candidate = { id: 'ny', label: 'New York', location: { lat: 40.71, lng: -74.01 } }
+  const resolve = vi.spyOn(api, 'resolveLocation').mockResolvedValue({ candidates: [candidate], source: 'google_maps_web' })
+  const choose = vi.fn()
+  search(choose, 'NY')
+  await waitFor(() => expect(choose).toHaveBeenCalledExactlyOnceWith(candidate.location, candidate.label))
+  expect(resolve).toHaveBeenCalledWith('NY', expect.any(AbortSignal))
+})

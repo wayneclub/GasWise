@@ -131,6 +131,7 @@ export const ja: Record<MessageKey, string> = {
   "location.hint": "米国の郵便番号は正確な現在地ではなく、地域の中心を使います。",
   "location.error": "場所を検索できません。再試行するか現在地を使ってください。",
   "location.empty": "一致する場所がありません。市や州を追加してください。",
+  "location.unsupported": "米国内の場所のみ対応しています。米国の都市、住所、ZIP コードで検索してください。",
   "location.change": "場所を検索",
   "error.locationTimeout.title": "位置情報の取得がタイムアウトしました",
   "error.locationTimeout.body": "許可済みでも端末から時間内に応答がありませんでした。再試行するか住所・郵便番号を入力してください。",

@@ -1299,6 +1299,8 @@ export interface components {
         LocationResult: {
             /** Candidates */
             candidates: components["schemas"]["LocationCandidate"][];
+            /** Reason */
+            reason?: "unsupported_area" | null;
             /**
              * Source
              * @default google_maps_web

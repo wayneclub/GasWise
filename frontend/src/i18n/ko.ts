@@ -131,6 +131,7 @@ export const ko: Record<MessageKey, string> = {
   "location.hint": "미국 우편번호는 정확한 현재 위치가 아닌 지역 중심을 사용합니다.",
   "location.error": "위치 검색을 사용할 수 없습니다. 다시 시도하거나 현재 위치를 사용하세요.",
   "location.empty": "일치하는 위치가 없습니다. 도시나 주를 추가하세요.",
+  "location.unsupported": "미국 내 위치만 지원합니다. 미국 도시, 주소 또는 ZIP 코드로 검색하세요.",
   "location.change": "위치 검색",
   "error.locationTimeout.title": "위치 요청 시간 초과",
   "error.locationTimeout.body": "권한이 허용되어 있어도 기기가 제시간에 응답하지 않았습니다. 다시 시도하거나 주소 또는 우편번호를 입력하세요.",

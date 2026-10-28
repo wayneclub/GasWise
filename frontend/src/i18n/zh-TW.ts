@@ -137,6 +137,7 @@ export const zhTW: Record<MessageKey, string> = {
   'location.hint': '美國郵遞區號以區域中心定位，非精確位置。',
   'location.error': '目前無法查找位置，請重試或使用裝置定位。',
   'location.empty': '沒有找到位置，請補上城市或州名。',
+  'location.unsupported': '目前只支援美國地點，請輸入美國城市、地址或郵遞區號。',
   'location.change': '搜尋位置',
   'error.locationTimeout.title': '定位等待逾時',
   'error.locationTimeout.body': '重試定位，或輸入地址／郵遞區號。',

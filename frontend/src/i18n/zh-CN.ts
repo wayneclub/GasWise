@@ -137,6 +137,7 @@ export const zhCN: Record<MessageKey, string> = {
   'location.hint': '美国邮递区号以区域中心定位，非精确位置。',
   'location.error': '目前无法查找位置，请重试或使用装置定位。',
   'location.empty': '没有找到位置，请补上城市或州名。',
+  'location.unsupported': '目前只支持美国地点，请输入美国城市、地址或邮递区号。',
   'location.change': '搜索位置',
   'error.locationTimeout.title': '定位等待逾时',
   'error.locationTimeout.body': '重试定位，或输入地址／邮递区号。',

@@ -1,4 +1,6 @@
-"""Bounded address and US ZIP lookup. No automatic acquisition or persistence."""
+"""Bounded address, place-name and US ZIP lookup. No automatic acquisition or persistence."""
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import Field
 
@@ -10,7 +12,8 @@ from gaswise.domain.ports import ProviderError
 
 
 class LocationQuery(Model):
-    text: str = Field(min_length=3, max_length=200)
+    # Two characters admit state and city abbreviations such as NY, LA and SF.
+    text: str = Field(min_length=2, max_length=200)
 
 class LocationCandidate(Model):
     id: str
@@ -19,6 +22,8 @@ class LocationCandidate(Model):
 
 class LocationResult(Model):
     candidates: list[LocationCandidate]
+    # Set when Google found only places outside the US, which no price source covers.
+    reason: Literal['unsupported_area'] | None = None
     source: str = "google_maps_web"
 
 router = APIRouter()
@@ -29,8 +34,7 @@ async def resolve_location(query: LocationQuery, services: Services = Depends(ge
         raise HTTPException(503, 'location_not_configured')
     async def run():
         try:
-            data = await services.locations.search(query.text.strip())
-            return LocationResult(candidates=data)
+            return LocationResult(**await services.locations.search(query.text))
         except ProviderError as error:
             raise HTTPException(503, str(error)) from None
         except (KeyError, TypeError, ValueError):

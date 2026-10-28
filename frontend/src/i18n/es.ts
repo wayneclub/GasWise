@@ -137,6 +137,7 @@ export const es: Record<MessageKey, string> = {
   'location.hint': 'Los códigos postales de EE. UU. usan el centro de la zona, no tu ubicación exacta.',
   'location.error': 'La búsqueda no está disponible. Reintenta o usa la ubicación del dispositivo.',
   'location.empty': 'No se encontró la ubicación. Añade ciudad o estado.',
+  'location.unsupported': 'Solo se admiten ubicaciones de EE. UU. Busca una ciudad, dirección o código postal de EE. UU.',
   'location.change': 'Buscar ubicación',
   'error.locationTimeout.title': 'La ubicación tardó demasiado',
   'error.locationTimeout.body': 'El dispositivo no respondió a tiempo. Reintenta o escribe una dirección.',
