@@ -1,8 +1,13 @@
 """Transactional attempt journal and durable Telegram outbox, shared across workers."""
 import json
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 
-from gaswise.domain.pricing.collection_reporting import completion, safe_metrics
+from gaswise.domain.pricing.collection_reporting import LOCAL_ZONE, completion, safe_metrics
+
+
+def next_local_midnight(clock):
+    tomorrow = clock.astimezone(LOCAL_ZONE).date() + timedelta(days=1)
+    return datetime.combine(tomorrow, time(), LOCAL_ZONE)
 
 
 class CollectionEvents:
@@ -13,6 +18,8 @@ class CollectionEvents:
             diagnostic = job.get('last_failure_code')
         outcome, reason = completion(error, diagnostic)
         metrics = safe_metrics(info)
+        # A missing coverage target still fetched quotes; keep them visible in the journal.
+        fetched = outcome == 'success' or reason == 'coverage_missing'
         run_id = await connection.fetchval("""
             INSERT INTO gaswise.collection_runs(job_id,owner,base,source,fuel,started_at,outcome,reason,
                 http_status,phase,egress_lane,http_requests,quote_count,station_count,retry_at,
@@ -21,8 +28,8 @@ class CollectionEvents:
             ON CONFLICT(job_id,owner) DO NOTHING RETURNING id
         """, job['id'], owner, job['base'], job['source'], job['fuel'], job.get('last_started_at'), outcome, reason,
             metrics['http_status'] if outcome != 'deferred' else None, metrics['phase'], metrics['egress_lane'],
-            metrics['http_requests'], quotes if outcome == 'success' else 0,
-            stations if outcome == 'success' else 0, retry_at,
+            metrics['http_requests'], quotes if fetched else 0,
+            stations if fetched else 0, retry_at,
             metrics['canonical_count'] if outcome == 'success' else 0,
             metrics['new_canonical_count'] if outcome == 'success' else 0,
             metrics['located_count'] if outcome == 'success' else 0,
@@ -52,6 +59,10 @@ class CollectionEvents:
                 backoff = (60, 300, 900, 3600)
                 delay = min(delay, backoff[min(max(0, job["failures"]), len(backoff) - 1)])
             retry_at = job['clock'] + timedelta(seconds=delay)
+            if error == 'coverage_missing':
+                # The station-centred page already listed the target: only a new source
+                # report can fill the gap, and later shared fetches will record it if it appears.
+                retry_at = next_local_midnight(job['clock'])
             outcome, reason = await self._append_collection_run(connection, job, owner, error, quotes, stations, info, retry_at)
             if outcome == 'failure':
                 await connection.execute("""UPDATE gaswise.source_limits SET last_collection_failure_at=now(),

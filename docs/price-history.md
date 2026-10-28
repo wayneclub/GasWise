@@ -94,7 +94,12 @@ Missing station/grade targets get durable mandatory jobs using one-page searches
 centred on the station (1.5 km). Any nearby acquisition can satisfy a target, so
 one search can remove several pending jobs. Every minute the collector recomputes
 missing work. Each target gets at most three completed price/missing-result/source
-failure attempts per Los Angeles calendar day, with hourly missing-result retries.
+failure attempts per Los Angeles calendar day. A missing result waits for the next
+Los Angeles day: GasBuddy coordinate pages are nearest-first, so the station-centred
+page has already listed the target, and the gap means GasBuddy has no report under
+72 hours old for that grade or for a payment type seen in the last 30 days. Refetching
+the same day cannot fill it; shared city and visitor fetches still record a new report
+if one appears. The run journal keeps that attempt's quote and station counts.
 Budget deferrals and shutdown do not consume that allowance. Leases coordinate
 workers, and missing target prices are deferred rather than marked successful.
 All requests retain shared source budgets, cooldowns and foreground reservations.

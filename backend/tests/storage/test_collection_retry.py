@@ -44,3 +44,43 @@ async def test_durable_failure_backoff_updates_schedule_and_journal_together(sou
     update = connection.execute.call_args.args
     assert update[3] == retry_at
     assert update[5] == 'failure'
+
+
+@pytest.mark.parametrize('clock,expected', [
+    # 10:00 PDT -> next Los Angeles midnight, not an hourly retry.
+    (datetime(2026, 10, 25, 17, tzinfo=UTC), datetime(2026, 10, 26, 7, tzinfo=UTC)),
+    # 23:30 PDT on the night clocks fall back; midnight is still PDT.
+    (datetime(2026, 11, 1, 6, 30, tzinfo=UTC), datetime(2026, 11, 1, 7, tzinfo=UTC)),
+    # 00:30 PST after the change -> following midnight is 08:00 UTC.
+    (datetime(2026, 11, 2, 8, 30, tzinfo=UTC), datetime(2026, 11, 3, 8, tzinfo=UTC)),
+])
+async def test_checked_hotspot_target_without_new_daily_price_waits_for_next_la_day(clock, expected):
+    # The station-centred fetch already lists the target nearest-first; refetching the same
+    # day cannot create a fresh report, so it must not spend more source requests today.
+    job = dict(id='hotspot:dtla:premium:10929', source='gasbuddy', clock=clock, failures=0)
+    connection = AsyncMock()
+    connection.transaction = lambda: Scope(None)
+    connection.fetchrow.side_effect = [job]
+    events = CollectionEvents()
+    events.pool = type('Pool', (), {'acquire': lambda self: Scope(connection)})()
+    events._append_collection_run = AsyncMock(return_value=('deferred', 'coverage_missing'))
+    assert await events.finish_collection_attempt(job['id'], 'owner', 3600, 'coverage_missing', 7, 5)
+    assert events._append_collection_run.call_args.args[7] == expected
+    assert connection.execute.call_args.args[3] == expected
+
+
+async def test_coverage_missing_journal_keeps_fetched_quote_counts():
+    # A missing target is not an empty fetch: the run journal must show what came back.
+    job = dict(id='hotspot:dtla:regular:336', owner='owner', base='la', source='gasbuddy', fuel='regular',
+               clock=datetime(2026, 10, 25, 17, tzinfo=UTC), failures=0)
+    connection = AsyncMock()
+    connection.transaction = lambda: Scope(None)
+    connection.fetchrow.side_effect = [job]
+    connection.fetchval.return_value = 42
+    events = CollectionEvents()
+    events.pool = type('Pool', (), {'acquire': lambda self: Scope(connection)})()
+    assert await events.finish_collection_attempt(job['id'], 'owner', 3600, 'coverage_missing', 7, 5,
+                                                {'http_requests': 1, 'priced_count': 5})
+    insert = connection.fetchval.call_args.args
+    assert insert[7:9] == ('deferred', 'coverage_missing')
+    assert insert[13:15] == (7, 5)
