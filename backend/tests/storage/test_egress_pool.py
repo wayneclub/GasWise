@@ -216,3 +216,41 @@ async def test_lane_quarantine_expires_and_only_follows_transport_failures(monke
     finally:
         collection_egress_key.reset(token)
     await pool.close()
+
+
+async def test_http_transport_failure_quarantines_lane_for_later_queries_only():
+    import asyncio
+    class Client:
+        def __init__(self, proxy):
+            self.proxy, self.error, self.calls = proxy, None, 0
+        async def get(self, url, **kwargs):
+            self.calls += 1
+            if self.error:
+                raise self.error
+            return SimpleNamespace(status_code=429, proxy=self.proxy)
+        post = get
+        async def aclose(self):
+            pass
+    pool = PooledHTTPClient(['http://node-a:8888', 'http://node-b:8888'], client_factory=Client)
+
+    async def query(*methods):
+        # Each query runs in its own task, as shared-cache loads and API requests do.
+        results = []
+        for method in methods:
+            try:
+                results.append((await getattr(pool, method)('https://example.com')).proxy)
+            except httpx.ConnectError:
+                results.append('ConnectError')
+        return results
+
+    token = collection_egress_key.set(keys_for_lanes()[1])
+    try:
+        # An HTTP status is delivered from the pinned exit and never quarantines it.
+        assert await asyncio.create_task(query('get')) == ['http://node-b:8888']
+        pool.clients[1].error = httpx.ConnectError('private upstream detail')
+        # The in-query retry stays on its pinned exit; the next query moves.
+        assert await asyncio.create_task(query('post', 'get')) == ['ConnectError', 'ConnectError']
+        assert await asyncio.create_task(query('get')) == ['http://node-a:8888']
+        assert pool.clients[1].calls == 3
+    finally:
+        collection_egress_key.reset(token)

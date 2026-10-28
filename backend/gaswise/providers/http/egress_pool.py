@@ -4,8 +4,9 @@ Lane availability comes from the operator-owned heartbeat produced by the VPN
 supervisor. A query resolves one lane before provider HTTP and keeps it for every
 page, so a lane is never switched mid-query. When no lane is usable the source
 defers with ``pricing_egress_unavailable`` instead of making an unverified direct
-request. A GasBuddy transport failure quarantines that lane locally for a few
-minutes so the next attempt uses another exit. The diagnostic in
+request. A transport failure quarantines that lane locally for a few minutes so
+later queries use another exit, while an in-query retry keeps its pinned exit; an
+HTTP status response never quarantines a lane. The diagnostic in
 ``scripts/diagnostics/egress_lanes.py`` proves a lane with an HTTPS 200 and a US
 location rather than container health alone.
 """
@@ -37,6 +38,11 @@ def _record_lane(index):
     if trace is not None:
         trace['egress_lane'] = index
     return index
+
+
+def quarantine_lane(quarantine, index):
+    """Keep later queries off an exit whose transport just failed."""
+    quarantine[index] = time.monotonic() + LANE_QUARANTINE_SECONDS
 
 
 def selected_lane(size, health_file=None, quarantine=None):
@@ -76,15 +82,24 @@ class PooledHTTPClient:
     """Separate cookie jars per exit; provider-supplied authentication headers win."""
     def __init__(self, proxies, *, client_factory=None, health_file=None):
         self.health_file = health_file
+        self.quarantine = {}
         factory = client_factory or (lambda proxy: httpx.AsyncClient(
             proxy=proxy, trust_env=False, http2=True, timeout=20, follow_redirects=False))
         self.clients = [factory(str(proxy)) for proxy in proxies]
 
     async def get(self, url, **kwargs):
-        return await self.clients[selected_lane(len(self.clients), self.health_file)].get(url, **kwargs)
+        return await self._request("get", url, **kwargs)
 
     async def post(self, url, **kwargs):
-        return await self.clients[selected_lane(len(self.clients), self.health_file)].post(url, **kwargs)
+        return await self._request("post", url, **kwargs)
+
+    async def _request(self, method, url, **kwargs):
+        index = selected_lane(len(self.clients), self.health_file, self.quarantine)
+        try:
+            return await getattr(self.clients[index], method)(url, **kwargs)
+        except httpx.TransportError:
+            quarantine_lane(self.quarantine, index)
+            raise
 
     async def aclose(self):
         for client in self.clients:
@@ -118,7 +133,7 @@ class PooledGasBuddySession:
             # The whole snapshot failed, so no page is split across exits; the next
             # attempt (even of the same job) re-resolves away from this lane.
             if str(error) == 'gasbuddy_http_unavailable':
-                self.quarantine[index] = time.monotonic() + LANE_QUARANTINE_SECONDS
+                quarantine_lane(self.quarantine, index)
                 _selection.set(None)
             raise
 
