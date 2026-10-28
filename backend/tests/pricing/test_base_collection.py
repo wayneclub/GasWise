@@ -180,6 +180,24 @@ async def test_lane_outage_defers_quickly_without_marking_provider_failure():
     assert cache.saved[0][2:4] == (60, "pricing_egress_unavailable")
 
 
+async def test_transport_failure_retries_soon_when_another_exit_exists():
+    from gaswise.domain.ports import ProviderError
+    for lanes, delay in ((2, 60), (1, 3600)):
+        cache, provider = Cache(), Provider()
+        service = SimpleNamespace(shared_cache=cache, gasbuddy=provider, maps_web=None, waze=None,
+                                  background_gasbuddy_slot=asyncio.Semaphore(1), source_slots={})
+        collector = BaseCollection(service, ["la", "irvine", "sd"], egress_lanes=lanes)
+        await collector.initialize()
+        async def unavailable(*args, **kwargs):
+            raise ProviderError("gasbuddy_http_unavailable")
+        cache.get = unavailable
+        assert not await collector.step()
+        # Still a recorded provider failure, but the quarantined exit lets a
+        # pooled deployment retry promptly on another lane.
+        assert cache.saved[0][2:4] == (delay, "collection_failed")
+        assert cache.saved[0][6]["failure_code"] == "gasbuddy_http_unavailable"
+
+
 async def test_pacing_pauses_optional_jobs_but_allows_due_mandatory_work():
     collector, cache, provider = setup()
     await collector.initialize()

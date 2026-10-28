@@ -150,3 +150,69 @@ def test_no_available_lane_defers_as_a_source_failure(tmp_path):
             selected_lane(2, path)
     finally:
         collection_egress_key.reset(token)
+
+
+async def test_transport_failure_quarantines_lane_so_the_next_attempt_uses_another_exit():
+    class Worker:
+        def __init__(self, session_seconds, client_factory):
+            self.client = client_factory()
+            self.fail = False
+            self.calls = 0
+        async def snapshot(self, query, url, fuel):
+            self.calls += 1
+            if self.fail:
+                raise ProviderError('gasbuddy_http_unavailable')
+            return self.client.proxy
+        async def close(self):
+            await self.client.aclose()
+    pool = PooledGasBuddySession(['http://node-a:8888', 'http://node-b:8888'], worker_factory=Worker)
+    pool.workers[1].fail = True
+    token = collection_egress_key.set(keys_for_lanes()[1])
+    try:
+        with pytest.raises(ProviderError, match='^gasbuddy_http_unavailable$'):
+            await pool.snapshot(None, '', 1)
+        # Same job retried in the same context: the failed exit is skipped.
+        assert await pool.snapshot(None, '', 1) == 'http://node-a:8888'
+        assert pool.workers[1].calls == 1
+    finally:
+        collection_egress_key.reset(token)
+    await pool.close()
+
+
+async def test_lane_quarantine_expires_and_only_follows_transport_failures(monkeypatch):
+    import gaswise.providers.http.egress_pool as egress_pool
+    class Worker:
+        def __init__(self, session_seconds, client_factory):
+            self.client = client_factory()
+            self.error = None
+        async def snapshot(self, query, url, fuel):
+            if self.error:
+                raise self.error
+            return self.client.proxy
+        async def close(self):
+            await self.client.aclose()
+    now = [1000.0]
+    monkeypatch.setattr(egress_pool.time, 'monotonic', lambda: now[0])
+    pool = PooledGasBuddySession(['http://node-a:8888', 'http://node-b:8888'], worker_factory=Worker)
+    key = keys_for_lanes()[1]
+    for error, quarantined in ((ProviderError('gasbuddy_http_api_rejected'), False),
+                               (ProviderError('gasbuddy_http_unavailable'), True)):
+        pool.workers[1].error = error
+        token = collection_egress_key.set(key)
+        try:
+            with pytest.raises(ProviderError):
+                await pool.snapshot(None, '', 1)
+            pool.workers[1].error = None
+            egress_pool._selection.set(None)
+            expected = 'http://node-a:8888' if quarantined else 'http://node-b:8888'
+            assert await pool.snapshot(None, '', 1) == expected
+        finally:
+            collection_egress_key.reset(token)
+    now[0] += egress_pool.LANE_QUARANTINE_SECONDS + 1
+    egress_pool._selection.set(None)
+    token = collection_egress_key.set(key)
+    try:
+        assert await pool.snapshot(None, '', 1) == 'http://node-b:8888'
+    finally:
+        collection_egress_key.reset(token)
+    await pool.close()

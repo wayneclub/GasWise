@@ -205,7 +205,10 @@ class BaseCollection:
             deferred = isinstance(error, ProviderError) and reason in local_reasons
             if not deferred:
                 attempt['failure_code'] = safe_failure_code(error)
-            await self.cache._db("finish_base_job", job.id, owner, 60 if deferred else 3600,
+            # The pool quarantined the failed exit, so a pooled deployment can
+            # retry promptly on another lane; a single exit keeps the long backoff.
+            rerouted = reason == "gasbuddy_http_unavailable" and self.egress_lanes > 1
+            await self.cache._db("finish_base_job", job.id, owner, 60 if deferred or rerouted else 3600,
                                  reason if deferred else "collection_failed", 0, 0, dict(attempt))
             completed = True
             logger.warning("Fixed base collection deferred for %s", job.id)
