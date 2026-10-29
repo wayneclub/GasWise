@@ -65,6 +65,28 @@ export function StationList({ rows, navApp = 'google', tripMode = 'round_trip' }
               <CopyAddress address={row.station.address} display={row.station.address?.split(',')[0]} className="w-full text-xs text-muted" />
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">{row.station.rating != null ? <StationRating station={row.station} /> : null}{row.station.membership_required ? <span className="text-xs text-caution">{t('station.member', { name: row.station.membership_required })}</span> : null}</div>
               <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1"><StationSources source={row.station.source} row={row} selectedOnly /><span className="text-xs text-muted">{t('age.updated', { age: age(row.station.price_updated_at, t) })}</span></div>
+              {row.break_even && row.break_even.reference_station_id !== row.station.id ? (() => {
+                const s = Number(row.break_even.fuel_savings_at_requested_gallons)
+                if (s >= 0.05) {
+                  return (
+                    <div className="mt-1.5 flex items-center">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent" title={row.break_even.reference_station_name ? `vs ${row.break_even.reference_station_name}` : undefined}>
+                        {t('badge.netSave', { amount: usd(s) })}
+                      </span>
+                    </div>
+                  )
+                }
+                if (s <= -0.05) {
+                  return (
+                    <div className="mt-1.5 flex items-center">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-caution-soft px-2 py-0.5 text-xs font-semibold text-caution" title={row.break_even.reference_station_name ? `vs ${row.break_even.reference_station_name}` : undefined}>
+                        {t('badge.detourLoss', { amount: usd(Math.abs(s)) })}
+                      </span>
+                    </div>
+                  )
+                }
+                return null
+              })() : null}
               {row.route.source === 'straight_line_estimate' ? <p className="mt-1 text-xs text-caution">{t('coverage.estimated_route')}</p> : null}
             </td>
             <td role="cell" className="comparison-metric">

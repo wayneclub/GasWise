@@ -146,6 +146,26 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
             waze_client = PooledHTTPClient(settings.pricing_egress_proxies, health_file=settings.pricing_egress_health_file)
             stack.push_async_callback(maps_client.aclose)
             stack.push_async_callback(waze_client.aclose)
+
+            async def run_egress_prober():
+                await asyncio.sleep(2)
+                while True:
+                    try:
+                        await price_worker.probe_all()
+                    except asyncio.CancelledError:
+                        break
+                    except Exception:
+                        pass
+                    await asyncio.sleep(180)
+
+            probe_task = asyncio.create_task(run_egress_prober())
+
+            async def stop_egress_prober():
+                probe_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await probe_task
+
+            stack.push_async_callback(stop_egress_prober)
         else:
             waze_client = client
         stack.push_async_callback(price_worker.close)

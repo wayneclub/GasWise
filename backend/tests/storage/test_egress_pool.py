@@ -288,3 +288,45 @@ async def test_http_transport_failure_quarantines_lane_for_later_queries_only():
         assert pool.clients[1].calls == 3
     finally:
         collection_egress_key.reset(token)
+
+
+async def test_active_egress_probe_quarantines_unhealthy_lane_and_clears_on_recovery():
+    class MockWorker:
+        def __init__(self, session_seconds, client_factory):
+            self.healthy = True
+            self.closed = False
+        async def probe(self, timeout=4.0):
+            return self.healthy
+        async def snapshot(self, query, url, fuel):
+            return "ok"
+        async def close(self):
+            self.closed = True
+
+    pool = PooledGasBuddySession(['http://node-a:8888', 'http://node-b:8888'], worker_factory=MockWorker)
+    # Both healthy
+    results = await pool.probe_all()
+    assert results[0] is not None
+    assert results[1] is not None
+    assert len(pool.quarantine) == 0
+
+    # Node B becomes unhealthy
+    pool.workers[1].healthy = False
+    assert await pool.probe_lane(1) is None
+    assert 1 in pool.quarantine
+
+    # Queries for lane 1 fall back to lane 0
+    token = collection_egress_key.set(keys_for_lanes()[1])
+    try:
+        from gaswise.providers.http import egress_pool
+        egress_pool._selection.set(None)
+        assert egress_pool.selected_lane(2, quarantine=pool.quarantine) == 0
+    finally:
+        collection_egress_key.reset(token)
+
+    # Node B recovers
+    pool.workers[1].healthy = True
+    recovered = await pool.probe_lane(1)
+    assert recovered is not None
+    assert 1 not in pool.quarantine
+    await pool.close()
+

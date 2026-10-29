@@ -44,7 +44,7 @@ def quarantine_lane(quarantine, index):
     quarantine[index] = time.monotonic() + LANE_QUARANTINE_SECONDS
 
 
-def selected_lane(size, health_file=None, quarantine=None):
+def selected_lane(size, health_file=None, quarantine=None, latencies=None):
     """Resolve once per query; offline or quarantined lanes fall back before provider HTTP."""
     key = (collection_egress_key.get(), size, str(health_file))
     previous = _selection.get()
@@ -72,7 +72,10 @@ def selected_lane(size, health_file=None, quarantine=None):
         raise ProviderError('pricing_egress_unavailable')
     index = lane_index(size)
     if index not in available:
-        index = available[0]
+        if latencies:
+            index = min(available, key=lambda i: latencies.get(i, 999.0))
+        else:
+            index = available[0]
     _selection.set((key, index))
     return _record_lane(index)
 
@@ -126,7 +129,7 @@ class PooledGasBuddySession:
     async def snapshot(self, query, url, fuel):
         max_attempts = max(1, len(self.workers))
         for attempt in range(max_attempts):
-            index = selected_lane(len(self.workers), self.health_file, self.quarantine)
+            index = selected_lane(len(self.workers), self.health_file, self.quarantine, latencies=self.lane_latencies)
             worker = self.workers[index]
             worker.request_budget = self.request_budget
             start_time = time.monotonic()
@@ -145,6 +148,55 @@ class PooledGasBuddySession:
                     if attempt + 1 < max_attempts and any(i not in quarantined for i in range(len(self.workers))):
                         continue
                 raise
+
+    async def probe_lane(self, index: int, timeout: float = 4.0) -> float | None:
+        """Actively test a single egress lane's transport connectivity.
+
+        Returns latency in seconds if healthy, or None if failed/timed out.
+        Automatically quarantines degraded lanes and clears quarantine on recovery.
+        """
+        if index < 0 or index >= len(self.workers):
+            return None
+        worker = self.workers[index]
+        client = None
+        start = time.monotonic()
+        try:
+            if hasattr(worker, "probe"):
+                ok = await worker.probe(timeout=timeout)
+                if not ok:
+                    quarantine_lane(self.quarantine, index)
+                    return None
+            elif hasattr(worker, "_factory"):
+                client = worker._factory()
+                if hasattr(client, "timeout"):
+                    client.timeout = timeout
+                response = await client.get("https://www.gasbuddy.com/")
+                if response.status_code != 200:
+                    quarantine_lane(self.quarantine, index)
+                    return None
+            elif hasattr(worker, "client"):
+                if hasattr(worker.client, "get"):
+                    response = await worker.client.get("https://www.gasbuddy.com/")
+                    if getattr(response, "status_code", 200) != 200:
+                        quarantine_lane(self.quarantine, index)
+                        return None
+            latency = max(0.01, round(time.monotonic() - start, 3))
+            self.lane_latencies[index] = latency
+            if index in self.quarantine:
+                del self.quarantine[index]
+            return latency
+        except Exception:
+            quarantine_lane(self.quarantine, index)
+            return None
+        finally:
+            if client is not None and hasattr(client, "aclose"):
+                await client.aclose()
+
+    async def probe_all(self, timeout: float = 4.0) -> dict[int, float | None]:
+        results = {}
+        for index in range(len(self.workers)):
+            results[index] = await self.probe_lane(index, timeout=timeout)
+        return results
 
     async def close(self):
         for worker in self.workers:

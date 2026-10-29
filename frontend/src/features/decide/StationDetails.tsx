@@ -85,6 +85,15 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
         {Number(row.credit_cashback_amount ?? 0) > 0 ? <><dt>{t('prefs.cashback')}</dt><dd className="text-right num text-accent">−{usd(row.credit_cashback_amount)}</dd></> : null}
         <dt>{t('breakdown.detour', { distance: miles(row.detour_miles, t) })}</dt><dd className="text-right num">{usd(row.detour_fuel_cost)}</dd>
         <dt>{t('pick.driveLabel')}</dt><dd className="text-right num">{tripMode === 'on_route' ? t('route.extraTime', { time: minutes(row.extra_travel_minutes, t) }) : t('pick.roundTrip', { time: minutes(row.extra_travel_minutes, t) })}</dd>
+        {row.break_even && row.break_even.reference_station_id !== row.station.id ? (() => {
+          const s = Number(row.break_even.fuel_savings_at_requested_gallons)
+          return <>
+            <dt>{t('breakdown.difference')}</dt>
+            <dd className={`text-right font-semibold num ${s > 0 ? 'text-accent' : s < 0 ? 'text-caution' : ''}`}>
+              {s > 0 ? t('badge.netSave', { amount: usd(s) }) : s < 0 ? t('badge.detourLoss', { amount: usd(Math.abs(s)) }) : '$0.00'}
+            </dd>
+          </>
+        })() : null}
       </dl> : null}
       {row ? <p className="text-xs text-muted">{t('pick.comparisonNote')}</p> : null}
       {row?.price_comparison?.evidence.length ? <div className="rounded-control bg-sunken p-3 text-sm">
