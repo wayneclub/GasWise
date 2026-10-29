@@ -10,6 +10,21 @@ def next_local_midnight(clock):
     return datetime.combine(tomorrow, time(), LOCAL_ZONE)
 
 
+def time_aware_next_due(clock, delay):
+    """Align successful base collection with diurnal price change patterns.
+
+    Gas stations in the US rarely change prices overnight (23:00 - 05:00 PT).
+    Most morning price adjustments happen between 05:30 and 09:30 PT.
+    If next_due falls overnight, push it to 05:30 PT to preserve upstream quota.
+    """
+    target = clock + timedelta(seconds=delay)
+    local = target.astimezone(LOCAL_ZONE)
+    if local.hour >= 23 or local.hour < 5 or (local.hour == 5 and local.minute < 30):
+        day = local.date() if local.hour < 5 else local.date() + timedelta(days=1)
+        return datetime.combine(day, time(5, 30), LOCAL_ZONE)
+    return target
+
+
 class CollectionEvents:
     async def _append_collection_run(self, connection, job, owner, error, quotes=0, stations=0, info=None, retry_at=None):
         info = info or {}
@@ -59,6 +74,8 @@ class CollectionEvents:
                 backoff = (60, 300, 900, 3600)
                 delay = min(delay, backoff[min(max(0, job["failures"]), len(backoff) - 1)])
             retry_at = job['clock'] + timedelta(seconds=delay)
+            if error is None and delay >= 3600 and not job.get('coverage_station_id'):
+                retry_at = time_aware_next_due(job['clock'], delay)
             if error == 'coverage_missing':
                 # The station-centred page already listed the target: only a new source
                 # report can fill the gap, and later shared fetches will record it if it appears.
@@ -68,6 +85,15 @@ class CollectionEvents:
                 await connection.execute("""UPDATE gaswise.source_limits SET last_collection_failure_at=now(),
                     daily_review_at=CASE WHEN adaptive_daily_limit IS NULL THEN daily_review_at ELSE now() END,
                     daily_review_requests=0 WHERE source=$1""", job['source'])
+                # Cross-source cascade: when GasBuddy fails for a city, accelerate peer sources
+                # (maps, waze) in the same area so fresh quotes fill the coverage gap promptly.
+                if job.get('source') == 'gasbuddy' and job.get('base'):
+                    await connection.execute("""
+                        UPDATE gaswise.base_collection_jobs
+                        SET next_due = LEAST(next_due, now() + interval '30 seconds')
+                        WHERE base = $1 AND source IN ('maps', 'waze') AND enabled
+                          AND (next_due > now() + interval '30 seconds')
+                    """, job['base'])
             await connection.execute("""
                 UPDATE gaswise.base_collection_jobs SET next_due=$3,lease_owner=NULL,lease_until=NULL,last_error=$4,
                     last_success=CASE WHEN $5='success' THEN now() ELSE last_success END,

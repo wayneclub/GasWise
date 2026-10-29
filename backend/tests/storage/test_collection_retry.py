@@ -84,3 +84,45 @@ async def test_coverage_missing_journal_keeps_fetched_quote_counts():
     insert = connection.fetchval.call_args.args
     assert insert[7:9] == ('deferred', 'coverage_missing')
     assert insert[13:15] == (7, 5)
+
+
+async def test_time_aware_next_due_shifts_overnight_target_to_morning():
+    from zoneinfo import ZoneInfo
+    local_tz = ZoneInfo('America/Los_Angeles')
+    # A successful base collection finishing at 2:00 AM local time + 24 hours would normally fall at 2:00 AM.
+    # It should be shifted forward to 5:30 AM local time to match morning price updates.
+    clock = datetime(2026, 10, 25, 9, 0, tzinfo=UTC)  # 2:00 AM PDT
+    job = dict(id='sd:regular:gasbuddy', owner='owner', base='sd', source='gasbuddy', fuel='regular',
+               clock=clock, failures=0)
+    connection = AsyncMock()
+    connection.transaction = lambda: Scope(None)
+    connection.fetchrow.side_effect = [job]
+    events = CollectionEvents()
+    events.pool = type('Pool', (), {'acquire': lambda self: Scope(connection)})()
+    events._append_collection_run = AsyncMock(return_value=('success', None))
+
+    assert await events.finish_collection_attempt(job['id'], 'owner', 86400, None, 10, 8)
+    retry_at = events._append_collection_run.call_args.args[7]
+    local_due = retry_at.astimezone(local_tz)
+    assert local_due.hour == 5 and local_due.minute == 30
+
+
+async def test_cross_source_cascade_accelerates_peer_sources_on_gasbuddy_failure():
+    clock = datetime(2026, 10, 25, 17, 0, tzinfo=UTC)
+    job = dict(id='sd:regular:gasbuddy', owner='owner', base='sd', source='gasbuddy', fuel='regular',
+               clock=clock, failures=0)
+    connection = AsyncMock()
+    connection.transaction = lambda: Scope(None)
+    connection.fetchval.return_value = 'gasbuddy'
+    connection.fetchrow.side_effect = [None, job]
+    events = CollectionEvents()
+    events.pool = type('Pool', (), {'acquire': lambda self: Scope(connection)})()
+    events._append_collection_run = AsyncMock(return_value=('failure', 'gasbuddy_http_unavailable'))
+
+    assert await events.finish_collection_attempt(job['id'], 'owner', 3600, 'collection_failed', 0, 0,
+                                                {'failure_code': 'gasbuddy_http_unavailable'})
+    # Verify the cascade UPDATE query was called for peer sources in the same base ('sd')
+    calls = [call.args[0] for call in connection.execute.call_args_list]
+    cascade_sql = next((sql for sql in calls if "UPDATE gaswise.base_collection_jobs" in sql and "SET next_due = LEAST" in sql), None)
+    assert cascade_sql is not None
+    assert "source IN ('maps', 'waze')" in cascade_sql
