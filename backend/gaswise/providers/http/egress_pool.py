@@ -1,12 +1,11 @@
-"""Pinned per-query egress sessions. Source budgets remain global, with no in-query HTTP failover.
+"""Pinned per-query egress sessions with transport-layer failover. Source budgets remain global.
 
 Lane availability comes from the operator-owned heartbeat produced by the VPN
-supervisor. A query resolves one lane before provider HTTP and keeps it for every
-page, so a lane is never switched mid-query. When no lane is usable the source
-defers with ``pricing_egress_unavailable`` instead of making an unverified direct
-request. A transport failure quarantines that lane locally for a few minutes so
-later queries use another exit, while an in-query retry keeps its pinned exit; an
-HTTP status response never quarantines a lane. The diagnostic in
+supervisor. A query resolves one lane before provider HTTP. When no lane is usable
+the source defers with ``pricing_egress_unavailable`` instead of making an unverified
+direct request. A GasBuddy transport failure quarantines that lane locally for a few
+minutes and immediately fails over to an alternate healthy lane in the same query.
+An HTTP status response never quarantines a lane. The diagnostic in
 ``scripts/diagnostics/egress_lanes.py`` proves a lane with an HTTPS 200 and a US
 location rather than container health alone.
 """
@@ -124,18 +123,24 @@ class PooledGasBuddySession:
             self.workers.append(worker)
 
     async def snapshot(self, query, url, fuel):
-        index = selected_lane(len(self.workers), self.health_file, self.quarantine)
-        worker = self.workers[index]
-        worker.request_budget = self.request_budget
-        try:
-            return await worker.snapshot(query, url, fuel)
-        except ProviderError as error:
-            # The whole snapshot failed, so no page is split across exits; the next
-            # attempt (even of the same job) re-resolves away from this lane.
-            if str(error) == 'gasbuddy_http_unavailable':
-                quarantine_lane(self.quarantine, index)
-                _selection.set(None)
-            raise
+        max_attempts = max(1, len(self.workers))
+        for attempt in range(max_attempts):
+            index = selected_lane(len(self.workers), self.health_file, self.quarantine)
+            worker = self.workers[index]
+            worker.request_budget = self.request_budget
+            try:
+                return await worker.snapshot(query, url, fuel)
+            except ProviderError as error:
+                # The whole snapshot failed on this lane; quarantine the exit.
+                # If other healthy exits remain, fail over immediately in the same snapshot.
+                if str(error) == 'gasbuddy_http_unavailable':
+                    quarantine_lane(self.quarantine, index)
+                    _selection.set(None)
+                    now = time.monotonic()
+                    quarantined = {lane for lane, until in self.quarantine.items() if until > now}
+                    if attempt + 1 < max_attempts and any(i not in quarantined for i in range(len(self.workers))):
+                        continue
+                raise
 
     async def close(self):
         for worker in self.workers:
