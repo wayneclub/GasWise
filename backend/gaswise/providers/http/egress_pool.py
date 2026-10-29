@@ -111,13 +111,14 @@ class PooledGasBuddySession:
         self.health_file = health_file
         self.request_budget = None
         self.quarantine = {}
+        self.lane_latencies = {}
         self.workers = []
         for index, proxy in enumerate(proxies):
             # Consistent libcurl browser defaults include matching protocol headers.
             profile = ("chrome", "safari")[index % 2]
             def factory(proxy=str(proxy), profile=profile):
                 return CurlHTTPClient(allowed_hosts={"www.gasbuddy.com"}, preserve_cookies=True,
-                                      proxy=proxy, profile=profile)
+                                      proxy=proxy, profile=profile, timeout=8)
             worker = (worker_factory or GasBuddyHTTPSession)(
                 session_seconds=session_seconds, client_factory=factory)
             self.workers.append(worker)
@@ -128,8 +129,11 @@ class PooledGasBuddySession:
             index = selected_lane(len(self.workers), self.health_file, self.quarantine)
             worker = self.workers[index]
             worker.request_budget = self.request_budget
+            start_time = time.monotonic()
             try:
-                return await worker.snapshot(query, url, fuel)
+                result = await worker.snapshot(query, url, fuel)
+                self.lane_latencies[index] = round(time.monotonic() - start_time, 2)
+                return result
             except ProviderError as error:
                 # The whole snapshot failed on this lane; quarantine the exit.
                 # If other healthy exits remain, fail over immediately in the same snapshot.

@@ -12,17 +12,18 @@ from curl_cffi.requests import AsyncSession, RequestsError
 
 class CurlHTTPClient:
     def __init__(
-        self, *, allowed_hosts, session_factory=AsyncSession, profile=None, preserve_cookies=False, proxy=None
+        self, *, allowed_hosts, session_factory=AsyncSession, profile=None, preserve_cookies=False, proxy=None, timeout=15
     ):
         self.allowed_hosts = frozenset(allowed_hosts)
         self.proxy = proxy
         self.session_factory = session_factory
         self.profile = profile
         self.preserve_cookies = preserve_cookies
+        self.timeout = timeout
         self.session = None
 
     def new_session(self):
-        options = dict(trust_env=False, timeout=15, allow_redirects=False, max_clients=1)
+        options = dict(trust_env=False, timeout=self.timeout, allow_redirects=False, max_clients=1)
         if self.profile:
             options["impersonate"] = self.profile
         if self.proxy:

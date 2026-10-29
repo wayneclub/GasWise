@@ -238,6 +238,31 @@ export function PreferencesForm({
               %
             </span>
           </div>
+          {prefs.payment !== 'cash' ? (
+            <div className="mt-2.5 flex flex-wrap gap-1.5 text-xs">
+              {[
+                { label: 'Costco (4%)', val: '4' },
+                { label: 'Citi / Amex (5%)', val: '5' },
+                { label: 'Amex BCE (3%)', val: '3' },
+                { label: '2%', val: '2' },
+                { label: '1.5%', val: '1.5' },
+                { label: '0%', val: '0' },
+              ].map(({ label, val }) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => update({ creditCashbackPercent: val })}
+                  className={`rounded border px-2 py-0.5 transition-colors ${
+                    prefs.creditCashbackPercent === val
+                      ? 'border-accent bg-accent/10 font-medium text-accent'
+                      : 'border-line text-muted hover:border-ink hover:text-ink'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </Field>
 
         <details className="rounded-control border border-line p-3 text-xs text-muted">
