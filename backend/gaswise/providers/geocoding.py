@@ -29,6 +29,20 @@ def country(row):
         return None
 
 
+def normalize_hl(locale: str | None) -> str:
+    if not locale:
+        return 'en'
+    norm = locale.lower().replace('_', '-')
+    if norm.startswith('zh-tw') or norm.startswith('zh-hk') or norm.startswith('zh-hant'):
+        return 'zh-TW'
+    if norm.startswith('zh'):
+        return 'zh-CN'
+    for lang in ('es', 'ja', 'ko', 'en'):
+        if norm.startswith(lang):
+            return lang
+    return 'en'
+
+
 class LocationProvider:
     def __init__(self, maps_web: MapsWebProvider):
         self.maps_web = maps_web
@@ -61,20 +75,27 @@ class LocationProvider:
                 break
         return candidates
 
-    async def search(self, text: str):
+    async def search(self, text: str, locale: str | None = None):
         text = ' '.join(text.split())
         if len(text) < 2 or len(text) > 200:
             raise ProviderError('location_invalid_query')
+        hl = normalize_hl(locale)
         headers = self.maps_web.headers()
         zip_code = re.fullmatch(r'\d{5}(?:-\d{4})?', text)
         query = text + US_SCOPE if zip_code else text
-        key = hashlib.sha256(query.casefold().encode()).hexdigest()
+        key = hashlib.sha256(f'{query.casefold()}:{hl}'.encode()).hexdigest()
         async with self.lock:
             now = time.monotonic()
             self.cache = {k: v for k, v in self.cache.items() if v[0] > now}
             if key in self.cache:
                 return self.cache[key][1]
-            data = await self.request(query, headers)
+            try:
+                data = await self.request(query, headers, hl=hl)
+            except ProviderError as error:
+                if str(error) == 'google_maps_web_unavailable':
+                    data = await self.request(query, headers, hl=hl)
+                else:
+                    raise
             rows = list(records(data))
             us_top = next((row for row in rows if country(row) == 'US'), None)
             result = {'candidates': self.parse(data), 'reason': None}
@@ -85,7 +106,7 @@ class LocationProvider:
                   and not query.casefold().endswith(US_SCOPE.casefold())):
                 # A business top hit for a place-like query ("new york, new york" is a
                 # Las Vegas casino). Prefer a city or area when a US-scoped query has one.
-                scoped = await self.request(query + US_SCOPE, headers)
+                scoped = await self.request(query + US_SCOPE, headers, hl=hl)
                 top = next((r for r in records(scoped) if country(r) == 'US'), None)
                 if top is not None and not is_business(top):
                     result['candidates'] = self.parse(scoped)
@@ -95,10 +116,10 @@ class LocationProvider:
                 self.cache[key] = (time.monotonic() + 120, result)
             return result
 
-    async def request(self, query, headers):
+    async def request(self, query, headers, hl='en'):
         # Caller holds self.lock; requests stay at most one per second.
         await asyncio.sleep(max(0, 1 - (time.monotonic() - self.last_request)))
         self.last_request = time.monotonic()
         # US-wide initial viewport. Each result still requires explicit US metadata.
         pb = '!4m12!1m3!1d10000000!2d-98!3d39!2m3!1f0!2f0!3f0!3m2!1i1280!2i720!4f13.1!7i20!10b1' + FEATURES
-        return await self.maps_web.get_data('/search', {'tbm': 'map', 'hl': 'en', 'gl': 'us', 'pb': pb, 'q': query}, headers)
+        return await self.maps_web.get_data('/search', {'tbm': 'map', 'hl': hl, 'gl': 'us', 'pb': pb, 'q': query}, headers)

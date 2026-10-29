@@ -14,6 +14,7 @@ from gaswise.domain.ports import ProviderError
 class LocationQuery(Model):
     # Two characters admit state and city abbreviations such as NY, LA and SF.
     text: str = Field(min_length=2, max_length=200)
+    locale: str | None = Field(default=None, max_length=16)
 
 class LocationCandidate(Model):
     id: str
@@ -34,7 +35,7 @@ async def resolve_location(query: LocationQuery, services: Services = Depends(ge
         raise HTTPException(503, 'location_not_configured')
     async def run():
         try:
-            return LocationResult(**await services.locations.search(query.text))
+            return LocationResult(**await services.locations.search(query.text, locale=query.locale))
         except ProviderError as error:
             raise HTTPException(503, str(error)) from None
         except (KeyError, TypeError, ValueError):

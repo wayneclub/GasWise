@@ -146,3 +146,28 @@ async def test_no_results_have_no_reason():
     [result] = await lookup(lambda request: maps_response(), 'zzqx')
     assert result.candidates == []
     assert result.reason is None
+
+async def test_native_language_search_passes_hl_and_resolves_local_labels():
+    calls = []
+    def handler(request):
+        calls.append(request)
+        assert request.url.params['hl'] == 'zh-TW'
+        return maps_response(row('la_dt', name='洛杉磯市中心', lat=34.05))
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        services = SimpleNamespace(locations=LocationProvider(MapsWebProvider(client)))
+        result = await resolve_location(LocationQuery(text='downtown la', locale='zh-TW'), services, OperationRunner(1))
+    assert len(calls) == 1
+    assert result.candidates[0].label == '洛杉磯市中心'
+
+async def test_location_search_retries_once_on_temporary_transport_failure():
+    attempts = [0]
+    def handler(request):
+        attempts[0] += 1
+        if attempts[0] == 1:
+            raise httpx.ConnectError('connection failed on exit 1')
+        return maps_response(row('la_dt', name='Downtown LA', lat=34.05))
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        services = SimpleNamespace(locations=LocationProvider(MapsWebProvider(client)))
+        result = await resolve_location(LocationQuery(text='downtown la'), services, OperationRunner(1))
+    assert attempts[0] == 2
+    assert result.candidates[0].id == 'la_dt'

@@ -6,7 +6,7 @@ import type { Origin } from '../../lib/session'
 
 export function LocationSearch({ onChoose }: { onChoose: (location: Origin, label: string) => void }) {
   const id = useId()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const [text, setText] = useState('')
   const [items, setItems] = useState<{id: string; label: string; location: Origin}[]>([])
   const [status, setStatus] = useState<'idle' | 'pending' | 'empty' | 'unsupported' | 'error'>('idle')
@@ -19,7 +19,7 @@ export function LocationSearch({ onChoose }: { onChoose: (location: Origin, labe
     const abort = new AbortController(); controller.current = abort
     setStatus('pending'); setItems([])
     try {
-      const result = await api.resolveLocation(text.trim(), abort.signal)
+      const result = await api.resolveLocation(text.trim(), locale, abort.signal)
       if (abort.signal.aborted) return
       setStatus(result.candidates.length ? 'idle' : result.reason === 'unsupported_area' ? 'unsupported' : 'empty')
       if (result.candidates.length === 1) {

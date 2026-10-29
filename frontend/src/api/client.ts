@@ -63,7 +63,7 @@ export const api = {
   updateAlertWatch: (body: AlertAuth & AlertWatch) => post<{ status: 'watched' | 'removed' }>('/v1/alerts/watches', body),
   alertInbox: (body: AlertAuth) => post<{ items: { id: number; title: string; body: string; created_at: string }[] }>('/v1/alerts/inbox', body),
   priceHistory: (body: import('./schema').components['schemas']['HistoryRequest'], signal?: AbortSignal) => post<PriceHistory>('/v1/prices/history', body, signal),
-  resolveLocation: (text: string, signal?: AbortSignal) => post<LocationResult>('/v1/locations/resolve', { text }, signal),
+  resolveLocation: (text: string, locale?: string, signal?: AbortSignal) => post<LocationResult>('/v1/locations/resolve', { text, locale }, signal),
   partsSearch: (body: PartsSearchRequest, signal?: AbortSignal) => post<PartsSearchResult>('/v1/parts/search', body, signal),
   routes: (snapshot: SmartSnapshot, signature: string, signal?: AbortSignal, routeLimit = 3) => post<SmartResult>('/v1/smart/routes', { snapshot, signature, route_limit: routeLimit }, signal),
   parts: (body: PartsRequest, signal?: AbortSignal) => post<PartsResult>('/v1/parts/fitment', body, signal),

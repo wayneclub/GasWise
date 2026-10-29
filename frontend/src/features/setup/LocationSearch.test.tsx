@@ -47,5 +47,16 @@ it('accepts two-letter city and state abbreviations', async () => {
   const choose = vi.fn()
   search(choose, 'NY')
   await waitFor(() => expect(choose).toHaveBeenCalledExactlyOnceWith(candidate.location, candidate.label))
-  expect(resolve).toHaveBeenCalledWith('NY', expect.any(AbortSignal))
+  expect(resolve).toHaveBeenCalledWith('NY', 'en', expect.any(AbortSignal))
+})
+
+it('passes current locale for native language resolution', async () => {
+  const candidate = { id: 'la_dt', label: '洛杉磯市中心', location: { lat: 34.05, lng: -118.25 } }
+  const resolve = vi.spyOn(api, 'resolveLocation').mockResolvedValue({ candidates: [candidate], source: 'google_maps_web' })
+  const choose = vi.fn()
+  render(<I18nProvider locale="zh-TW"><LocationSearch onChoose={choose} /></I18nProvider>)
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'downtown la' } })
+  fireEvent.click(screen.getByRole('button', { name: '搜尋' }))
+  await waitFor(() => expect(choose).toHaveBeenCalledExactlyOnceWith(candidate.location, candidate.label))
+  expect(resolve).toHaveBeenCalledWith('downtown la', 'zh-TW', expect.any(AbortSignal))
 })
