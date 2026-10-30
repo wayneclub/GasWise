@@ -617,6 +617,21 @@ export const en = {
   "favorites.sortName": "By name",
   "favorites.myTitle": "My Stations & Fuel Analytics",
   "favorites.viewHistory": "Price History Trend",
+  "favorites.spectrumTitle": "Price Distribution Spectrum",
+  "favorites.tankCostTitle": "Full Tank Cost Comparison",
+  "favorites.qualityTitle": "Fuel Quality & Value Assessment",
+  "favorites.topTierAvg": "TOP TIER Average: {price}",
+  "favorites.standardAvg": "Standard Average: {price}",
+  "favorites.qualityAdviceWin": "Best of both worlds: the lowest priced station is TOP TIER certified for engine protection.",
+  "favorites.qualityAdvicePremium": "TOP TIER detergent fuel premium is only {diff}/gal ({tankDiff} more per fill). Highly recommended.",
+  "favorites.driverProfile": "Driver & Fuel Profile",
+  "favorites.tankCapacity": "Fill Capacity",
+  "favorites.activeVehicle": "Active Vehicle",
+  "favorites.noVehicle": "Standard Profile",
+  "favorites.privateStorage": "Local Encrypted Storage",
+  "favorites.pricePerGallon": "per gallon",
+  "favorites.baseline": "Baseline",
+  "favorites.overpay": "+{amount} more",
 }
 
 export type MessageKey = keyof typeof en

@@ -1,4 +1,4 @@
-import { BellIcon, GasPumpIcon, GearSixIcon, HeartIcon, UserIcon, WrenchIcon } from '@phosphor-icons/react'
+import { BellIcon, GasPumpIcon, GearSixIcon, UserIcon, WrenchIcon } from '@phosphor-icons/react'
 import { LanguagePicker } from './components/LanguagePicker'
 import { PreferencesForm } from './features/setup/PreferencesForm'
 import { useEffect, useState } from 'react'
@@ -6,8 +6,6 @@ import { Decide } from './features/decide/Decide'
 import { Parts } from './features/parts/Parts'
 import { MyPage } from './features/my/MyPage'
 import { Setup } from './features/setup/Setup'
-import { FavoritesDrawer } from './features/decide/FavoritesDrawer'
-import { useFavorites } from './lib/favorites'
 import { useBrowserLocale, useI18n } from './i18n'
 import { I18nProvider } from './i18n/I18nProvider'
 import { usePrefs, type Prefs } from './lib/prefs'
@@ -17,8 +15,6 @@ import { getLocalProfile } from './lib/localProfile'
 function ServiceTabs({ prefs, update, replace }: { prefs: Prefs; update: (change: Partial<Prefs>) => void; replace: (prefs: Prefs) => void }) {
   const { t } = useI18n()
   const [settingsView, setSettingsView] = useState<'all' | 'alerts' | null>(null)
-  const [favoritesOpen, setFavoritesOpen] = useState(false)
-  const { favorites } = useFavorites()
   const settingsOpen = settingsView !== null
   const [tab, setTab] = useState<'fuel' | 'parts' | 'my'>('fuel')
   useEffect(() => {
@@ -56,23 +52,10 @@ function ServiceTabs({ prefs, update, replace }: { prefs: Prefs; update: (change
           })}
         </nav>
         <LanguagePicker compact value={prefs.locale} onChange={locale => update({ locale })} className="ml-auto shrink-0" />
-        <button
-          type="button"
-          onClick={() => { setTab('my'); setSettingsView(null) }}
-          aria-label={t('favorites.title')}
-          aria-pressed={tab === 'my'}
-          className={`grid size-11 shrink-0 place-items-center rounded-control hover:bg-sunken ${
-            favorites.length > 0 ? 'text-rose-500' : 'text-muted hover:text-ink'
-          }`}
-          title={favorites.length > 0 ? `${t('favorites.title')} (${favorites.length})` : t('favorites.title')}
-        >
-          <HeartIcon size={20} weight={favorites.length > 0 ? 'fill' : 'regular'} />
-        </button>
         <button type="button" onClick={() => setSettingsView('alerts')} aria-label={t('alerts.title')} aria-pressed={settingsView === 'alerts'} className={`grid size-11 shrink-0 place-items-center rounded-control hover:bg-sunken ${settingsView === 'alerts' ? 'text-accent' : 'text-muted hover:text-ink'}`}><BellIcon size={20} /></button>
         <button type="button" onClick={() => setSettingsView('all')} aria-label={t('decide.settings')} className="grid size-11 shrink-0 place-items-center rounded-control text-muted hover:bg-sunken hover:text-ink"><GearSixIcon size={20} /></button>
       </div>
     </header>
-    <FavoritesDrawer open={favoritesOpen} onClose={() => setFavoritesOpen(false)} navApp={prefs.navApp} />
     <div role="tabpanel" id="panel-fuel" aria-labelledby="tab-fuel" hidden={settingsOpen || tab !== 'fuel'}><Decide active={!settingsOpen && tab === 'fuel'} prefs={prefs} update={update} onSettings={() => setSettingsView('all')} /></div>
     <div role="tabpanel" id="panel-parts" aria-labelledby="tab-parts" hidden={settingsOpen || tab !== 'parts'}><Parts key={prefs.vehicle?.id ?? 'manual'} vehicle={prefs.vehicle} onChooseCar={() => setSettingsView('all')} /></div>
     <div role="tabpanel" id="panel-my" aria-labelledby="tab-my" hidden={settingsOpen || tab !== 'my'}><MyPage prefs={prefs} onNavigateToFuel={() => { setTab('fuel'); setSettingsView(null) }} /></div>

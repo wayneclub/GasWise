@@ -1,11 +1,13 @@
 import {
   CaretDownIcon,
+  CarIcon,
   CoinsIcon,
   GasPumpIcon,
   HeartIcon,
   NavigationArrowIcon,
   NotePencilIcon,
   ShieldCheckIcon,
+  SparkleIcon,
   TrendUpIcon,
   TrashIcon,
 } from '@phosphor-icons/react'
@@ -64,7 +66,16 @@ export function MyPage({
     const gallons = prefs.gallons || 10
     const maxSavings = spread * gallons
 
-    // Check if there is a TOP TIER station close to min price
+    // Top tier vs standard comparison
+    const topTierStations = pricedStations.filter((s) => Boolean(s.topTierBrand))
+    const standardStations = pricedStations.filter((s) => !s.topTierBrand)
+    const topTierAvg = topTierStations.length > 0
+      ? topTierStations.reduce((acc, s) => acc + s.numericPrice, 0) / topTierStations.length
+      : null
+    const standardAvg = standardStations.length > 0
+      ? standardStations.reduce((acc, s) => acc + s.numericPrice, 0) / standardStations.length
+      : null
+
     const topTierStation = pricedStations.find(
       (s) => s.topTierBrand && s.numericPrice > minPrice && s.numericPrice - minPrice <= 0.08,
     )
@@ -79,6 +90,10 @@ export function MyPage({
       gallons,
       maxSavings,
       topTierStation,
+      topTierStations,
+      standardStations,
+      topTierAvg,
+      standardAvg,
     }
   }, [pricedStations, prefs.gallons])
 
@@ -87,8 +102,8 @@ export function MyPage({
     const list = [...favorites]
     if (sort === 'price') {
       return list.sort((a, b) => {
-        const pa = a.lastObservedPrice ? Number(a.lastObservedPrice) : Infinity
-        const pb = b.lastObservedPrice ? Number(b.lastObservedPrice) : Infinity
+        const pa = a.lastObservedPrice ?? (a as any).price_per_gallon ? Number(a.lastObservedPrice ?? (a as any).price_per_gallon) : Infinity
+        const pb = b.lastObservedPrice ?? (b as any).price_per_gallon ? Number(b.lastObservedPrice ?? (b as any).price_per_gallon) : Infinity
         return pa - pb
       })
     }
@@ -112,34 +127,63 @@ export function MyPage({
   return (
     <main
       aria-label={t('favorites.myTitle')}
-      className="mx-auto w-full max-w-md px-4 pb-16 pt-6 sm:max-w-2xl sm:px-6 lg:max-w-5xl"
+      className="mx-auto w-full max-w-md px-4 pb-20 pt-6 sm:max-w-2xl sm:px-6 lg:max-w-5xl"
     >
-      {/* Header */}
-      <div className="mb-6 flex flex-col gap-1 border-b border-line pb-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="grid size-10 place-items-center rounded-2xl bg-rose-500/10 text-rose-500">
-              <HeartIcon size={22} weight="fill" />
-            </span>
-            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-              {t('favorites.myTitle')}
-            </h1>
+      {/* 1. Driver & Fuel Command Hub Banner */}
+      <section
+        aria-label={t('favorites.driverProfile')}
+        className="mb-8 rounded-box border border-line bg-gradient-to-br from-surface via-surface to-sunken/40 p-5 sm:p-6 shadow-sm"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent text-white shadow-sm">
+              <CarIcon size={24} weight="duotone" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold text-ink sm:text-xl truncate">
+                  {prefs.vehicle ? prefs.vehicle.label : t('favorites.noVehicle')}
+                </h1>
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent">
+                  <ShieldCheckIcon size={12} weight="fill" />
+                  <span>{t('favorites.privateStorage')}</span>
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-muted flex flex-wrap items-center gap-x-2">
+                <span>{t(fuelKey(prefs.fuelType))}</span>
+                <span>·</span>
+                <span>{prefs.gallons} gal ({t('favorites.tankCapacity')})</span>
+                {prefs.vehicle?.combinedMpg ? (
+                  <>
+                    <span>·</span>
+                    <span>{prefs.vehicle.combinedMpg} MPG</span>
+                  </>
+                ) : null}
+              </p>
+            </div>
           </div>
-          <span className="rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted">
-            {t('favorites.count', { count: favorites.length })}
-          </span>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="rounded-control bg-surface border border-line px-3 py-1.5 text-center">
+              <span className="block text-[10px] text-muted uppercase font-medium">{t('favorites.title')}</span>
+              <span className="block text-sm font-bold num text-ink">{favorites.length}</span>
+            </div>
+            {analytics ? (
+              <div className="rounded-control bg-accent-soft border border-accent/30 px-3 py-1.5 text-center">
+                <span className="block text-[10px] text-accent font-medium uppercase">{t('favorites.lowestPrice')}</span>
+                <span className="block text-sm font-bold num text-accent">{perGallon(String(analytics.minPrice))}</span>
+              </div>
+            ) : null}
+          </div>
         </div>
-        <p className="mt-1 text-xs text-muted leading-relaxed">
-          {t('favorites.description')}
-        </p>
-      </div>
+      </section>
 
       {favorites.length === 0 ? (
         /* Empty State */
-        <div className="rounded-box border border-dashed border-line bg-surface/50 p-8 text-center sm:p-12">
-          <span className="mx-auto mb-4 grid size-16 place-items-center rounded-3xl bg-rose-500/10 text-rose-500">
+        <div className="rounded-box border border-dashed border-line bg-surface/50 p-8 text-center sm:p-14">
+          <div className="mx-auto mb-4 grid size-16 place-items-center rounded-3xl bg-rose-500/10 text-rose-500">
             <HeartIcon size={32} weight="duotone" />
-          </span>
+          </div>
           <h2 className="text-lg font-semibold text-ink sm:text-xl">
             {t('favorites.empty')}
           </h2>
@@ -150,7 +194,7 @@ export function MyPage({
             <Button
               variant="primary"
               onClick={onNavigateToFuel}
-              className="min-h-12 gap-2 px-6 text-sm font-semibold"
+              className="min-h-12 gap-2 px-6 text-sm font-semibold shadow-sm"
             >
               <GasPumpIcon size={18} weight="fill" />
               <span>{t('favorites.goSearch')}</span>
@@ -159,119 +203,196 @@ export function MyPage({
         </div>
       ) : (
         <div className="flex flex-col gap-8">
-          {/* Price Analytics Section */}
+          {/* 2. Fuel Price Analytics Dashboard */}
           {analytics ? (
             <section
               aria-label={t('favorites.analyticsTitle')}
-              className="rounded-box border border-line bg-surface p-5 sm:p-6 shadow-sm"
+              className="rounded-box border border-line bg-surface p-5 sm:p-6 shadow-sm flex flex-col gap-6"
             >
-              <div className="flex items-center gap-2 mb-4">
-                <TrendUpIcon size={20} weight="bold" className="text-accent" />
-                <h2 className="text-base font-semibold text-ink sm:text-lg">
-                  {t('favorites.analyticsTitle')}
-                </h2>
+              <div className="flex items-center justify-between border-b border-line pb-3">
+                <div className="flex items-center gap-2">
+                  <TrendUpIcon size={22} weight="bold" className="text-accent" />
+                  <h2 className="text-base font-bold text-ink sm:text-lg">
+                    {t('favorites.analyticsTitle')}
+                  </h2>
+                </div>
+                <span className="text-xs text-muted">
+                  {pricedStations.length} {t('list.station')}
+                </span>
               </div>
 
               {/* 4 Stat Cards */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-control bg-accent-soft/40 border border-accent/20 p-3.5 flex flex-col justify-between">
+                <div className="rounded-control bg-accent-soft/50 border border-accent/30 p-4 flex flex-col justify-between">
                   <span className="text-xs font-medium text-muted">{t('favorites.lowestPrice')}</span>
-                  <div className="mt-1">
-                    <span className="num text-2xl font-bold text-accent">
+                  <div className="mt-2">
+                    <span className="num text-2xl font-bold text-accent sm:text-3xl">
                       {perGallon(String(analytics.minPrice))}
                     </span>
-                    <span className="block truncate text-[11px] text-ink font-medium mt-0.5" title={analytics.lowestStation.name}>
+                    <span className="block truncate text-xs text-ink font-semibold mt-1" title={analytics.lowestStation.name}>
                       {analytics.lowestStation.name}
                     </span>
                   </div>
                 </div>
 
-                <div className="rounded-control bg-sunken p-3.5 flex flex-col justify-between">
+                <div className="rounded-control bg-sunken p-4 flex flex-col justify-between">
                   <span className="text-xs font-medium text-muted">{t('favorites.averagePrice')}</span>
-                  <div className="mt-1">
-                    <span className="num text-2xl font-semibold text-ink">
+                  <div className="mt-2">
+                    <span className="num text-2xl font-bold text-ink sm:text-3xl">
                       {perGallon(analytics.avgPrice.toFixed(3))}
                     </span>
-                    <span className="block text-[11px] text-muted mt-0.5">
-                      {pricedStations.length} {t('list.station')}
+                    <span className="block text-xs text-muted mt-1">
+                      {t('favorites.pricePerGallon')}
                     </span>
                   </div>
                 </div>
 
-                <div className="rounded-control bg-sunken p-3.5 flex flex-col justify-between">
+                <div className="rounded-control bg-sunken p-4 flex flex-col justify-between">
                   <span className="text-xs font-medium text-muted">{t('favorites.spread')}</span>
-                  <div className="mt-1">
-                    <span className="num text-2xl font-semibold text-ink">
+                  <div className="mt-2">
+                    <span className="num text-2xl font-bold text-ink sm:text-3xl">
                       {analytics.spread > 0 ? usd(analytics.spread) : '$0.00'}
                     </span>
-                    <span className="block text-[11px] text-muted mt-0.5">
-                      /gal
+                    <span className="block text-xs text-muted mt-1">
+                      {analytics.spread > 0 ? `Max - Min` : t('comparison.lowestCost')}
                     </span>
                   </div>
                 </div>
 
-                <div className="rounded-control bg-emerald-500/10 border border-emerald-500/20 p-3.5 flex flex-col justify-between">
-                  <span className="text-xs font-medium text-muted">{t('favorites.maxSavings')}</span>
-                  <div className="mt-1">
-                    <span className="num text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                <div className="rounded-control bg-emerald-500/10 border border-emerald-500/25 p-4 flex flex-col justify-between">
+                  <span className="text-xs font-medium text-emerald-800 dark:text-emerald-300 font-semibold">{t('favorites.maxSavings')}</span>
+                  <div className="mt-2">
+                    <span className="num text-2xl font-bold text-emerald-600 dark:text-emerald-400 sm:text-3xl">
                       {usd(analytics.maxSavings)}
                     </span>
-                    <span className="block text-[11px] text-muted mt-0.5">
-                      {analytics.gallons} gal
+                    <span className="block text-xs text-muted mt-1">
+                      / {analytics.gallons} gal fill
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Insights banner */}
+              {/* Smart Savings Insight Banner */}
               {analytics.spread >= 0.05 ? (
-                <div className="mt-4 rounded-control bg-accent-soft/30 border border-accent/30 p-3 text-xs leading-relaxed text-ink flex items-start gap-2.5">
-                  <CoinsIcon size={18} weight="fill" className="text-accent shrink-0 mt-0.5" />
-                  <p>
-                    {t('favorites.savingsNotice', {
-                      gallons: String(analytics.gallons),
-                      station: analytics.lowestStation.name,
-                      amount: usd(analytics.maxSavings),
-                    })}
-                  </p>
+                <div className="rounded-control bg-accent-soft/30 border border-accent/40 p-3.5 text-xs leading-relaxed text-ink flex items-start gap-3">
+                  <CoinsIcon size={20} weight="fill" className="text-accent shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-ink text-sm">
+                      {t('favorites.savingsNotice', {
+                        gallons: String(analytics.gallons),
+                        station: analytics.lowestStation.name,
+                        amount: usd(analytics.maxSavings),
+                      })}
+                    </p>
+                  </div>
                 </div>
               ) : null}
 
-              {analytics.topTierStation ? (
-                <div className="mt-3 rounded-control bg-sunken p-3 text-xs leading-relaxed text-ink flex items-start gap-2.5">
-                  <ShieldCheckIcon size={18} weight="fill" className="text-accent shrink-0 mt-0.5" />
-                  <p>
-                    {t('favorites.topTierNotice', {
-                      station: analytics.topTierStation.name,
-                      diff: usd(analytics.topTierStation.numericPrice - analytics.minPrice),
-                    })}
-                  </p>
-                </div>
-              ) : null}
-
-              {/* Visual Price Comparison Bars */}
+              {/* 3. Price Distribution Spectrum (Horizontal Gauge) */}
               {pricedStations.length >= 2 ? (
-                <div className="mt-6 border-t border-line pt-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
-                    {t('favorites.priceComparison')}
-                  </h3>
-                  <div className="flex flex-col gap-3">
+                <div className="rounded-control bg-sunken/60 border border-line p-4 flex flex-col gap-3">
+                  <div className="flex items-center justify-between text-xs font-semibold text-ink">
+                    <div className="flex items-center gap-1.5">
+                      <SparkleIcon size={16} weight="fill" className="text-accent" />
+                      <span>{t('favorites.spectrumTitle')}</span>
+                    </div>
+                    <span className="text-muted font-normal text-[11px]">
+                      {t('favorites.averagePrice')}: {perGallon(analytics.avgPrice.toFixed(2))}
+                    </span>
+                  </div>
+
+                  {/* Spectrum Bar with Station Nodes */}
+                  <div className="relative pt-6 pb-4">
+                    {/* Background Track with Color Gradient */}
+                    <div className="h-3 w-full rounded-full bg-gradient-to-r from-emerald-500 via-amber-400 to-rose-500 opacity-90 shadow-inner" />
+
+                    {/* Average price reference dashed line */}
+                    {analytics.spread > 0 ? (
+                      <div
+                        className="absolute top-2 bottom-1 w-0.5 border-l-2 border-dashed border-ink/40 z-0"
+                        style={{
+                          left: `${((analytics.avgPrice - analytics.minPrice) / analytics.spread) * 100}%`,
+                        }}
+                        title={`Average: ${perGallon(analytics.avgPrice.toFixed(2))}`}
+                      />
+                    ) : null}
+
+                    {/* Station Pin Markers */}
+                    {pricedStations.map((station) => {
+                      const pos = analytics.spread > 0
+                        ? ((station.numericPrice - analytics.minPrice) / analytics.spread) * 100
+                        : 50
+                      const isMin = station.numericPrice === analytics.minPrice
+                      const isMax = station.numericPrice === analytics.maxPrice
+
+                      return (
+                        <div
+                          key={station.id}
+                          className="absolute top-0 -translate-x-1/2 flex flex-col items-center group cursor-pointer"
+                          style={{ left: `${Math.max(4, Math.min(96, pos))}%` }}
+                        >
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold shadow-sm whitespace-nowrap transition-transform group-hover:scale-110 ${
+                              isMin
+                                ? 'bg-emerald-600 text-white'
+                                : isMax
+                                ? 'bg-rose-600 text-white'
+                                : 'bg-surface border border-line text-ink'
+                            }`}
+                          >
+                            {perGallon(String(station.numericPrice))}
+                          </span>
+                          <div
+                            className={`size-2.5 rounded-full border-2 border-surface shadow-sm mt-0.5 ${
+                              isMin
+                                ? 'bg-emerald-600'
+                                : isMax
+                                ? 'bg-rose-600'
+                                : 'bg-amber-500'
+                            }`}
+                          />
+                          <span className="hidden group-hover:block absolute top-7 text-[10px] font-medium text-ink bg-surface border border-line px-1.5 py-0.5 rounded shadow-md z-10 whitespace-nowrap">
+                            {station.name}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-muted px-1">
+                    <span>{t('favorites.lowestPrice')}: {perGallon(String(analytics.minPrice))}</span>
+                    <span>{t('favorites.spread')}: {usd(analytics.spread)}</span>
+                    <span>Max: {perGallon(String(analytics.maxPrice))}</span>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* 4. Full Tank Cost Comparison (Waterfall / Bars) */}
+              {pricedStations.length >= 2 ? (
+                <div className="flex flex-col gap-3 border-t border-line pt-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted">
+                      {t('favorites.tankCostTitle')} ({analytics.gallons} gal)
+                    </h3>
+                  </div>
+
+                  <div className="flex flex-col gap-2.5">
                     {pricedStations
                       .sort((a, b) => a.numericPrice - b.numericPrice)
                       .map((station) => {
-                        const diff = station.numericPrice - analytics.minPrice
-                        const isLowest = diff === 0
-                        const ratio = Math.min(
-                          100,
-                          analytics.spread > 0
-                            ? 35 + ((station.numericPrice - analytics.minPrice) / analytics.spread) * 65
-                            : 50,
-                        )
+                        const cost = station.numericPrice * analytics.gallons
+                        const minCost = analytics.minPrice * analytics.gallons
+                        const diffCost = cost - minCost
+                        const isLowest = diffCost === 0
+
                         return (
-                          <div key={station.id} className="flex flex-col gap-1 text-xs">
+                          <div
+                            key={station.id}
+                            className="rounded-control bg-sunken/40 border border-line/60 p-3 flex flex-col gap-2 text-xs"
+                          >
                             <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span className={`font-medium truncate ${isLowest ? 'text-accent font-semibold' : 'text-ink'}`}>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="font-semibold text-ink text-sm truncate">
                                   {station.name}
                                 </span>
                                 {station.topTierBrand ? (
@@ -279,26 +400,34 @@ export function MyPage({
                                 ) : null}
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                {diff > 0 ? (
-                                  <span className="text-muted text-[11px] num">
-                                    +{usd(diff)}
+                                {isLowest ? (
+                                  <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                    {t('favorites.baseline')}
                                   </span>
                                 ) : (
-                                  <span className="rounded-full bg-accent-soft px-1.5 py-0 text-[10px] font-semibold text-accent">
-                                    {t('comparison.lowestCost')}
+                                  <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                                    {t('favorites.overpay', { amount: usd(diffCost) })}
                                   </span>
                                 )}
-                                <span className="font-semibold num text-ink text-sm">
-                                  {perGallon(String(station.numericPrice))}
+                                <span className="font-bold text-ink num text-sm">
+                                  {usd(cost)}
                                 </span>
                               </div>
                             </div>
+
+                            {/* Bar comparison */}
                             <div className="h-2 w-full rounded-full bg-sunken overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all duration-300 ${
-                                  isLowest ? 'bg-accent' : diff < 0.15 ? 'bg-amber-500' : 'bg-muted/70'
+                                  isLowest
+                                    ? 'bg-emerald-500'
+                                    : diffCost < 3
+                                    ? 'bg-amber-500'
+                                    : 'bg-rose-500'
                                 }`}
-                                style={{ width: `${ratio}%` }}
+                                style={{
+                                  width: `${Math.min(100, Math.max(15, (cost / (analytics.maxPrice * analytics.gallons)) * 100))}%`,
+                                }}
                               />
                             </div>
                           </div>
@@ -307,20 +436,56 @@ export function MyPage({
                   </div>
                 </div>
               ) : null}
+
+              {/* 5. Quality vs Value Assessment (Top Tier Matrix) */}
+              {analytics.topTierStations.length > 0 && analytics.standardStations.length > 0 && analytics.topTierAvg && analytics.standardAvg ? (
+                <div className="rounded-control bg-surface border border-line p-4 flex flex-col gap-2 text-xs">
+                  <div className="flex items-center gap-2 font-semibold text-ink">
+                    <ShieldCheckIcon size={18} weight="fill" className="text-accent" />
+                    <span>{t('favorites.qualityTitle')}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-1">
+                    <div className="rounded-control bg-accent-soft/30 p-2.5">
+                      <span className="block text-[11px] text-muted">
+                        {t('favorites.topTierAvg', { price: perGallon(analytics.topTierAvg.toFixed(2)) })}
+                      </span>
+                      <span className="font-semibold text-accent num">
+                        {analytics.topTierStations.length} {t('list.station')}
+                      </span>
+                    </div>
+                    <div className="rounded-control bg-sunken p-2.5">
+                      <span className="block text-[11px] text-muted">
+                        {t('favorites.standardAvg', { price: perGallon(analytics.standardAvg.toFixed(2)) })}
+                      </span>
+                      <span className="font-semibold text-ink num">
+                        {analytics.standardStations.length} {t('list.station')}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-muted leading-relaxed">
+                    {analytics.lowestStation.topTierBrand
+                      ? t('favorites.qualityAdviceWin')
+                      : t('favorites.qualityAdvicePremium', {
+                          diff: usd(Math.max(0, analytics.topTierAvg - analytics.minPrice)),
+                          tankDiff: usd(Math.max(0, (analytics.topTierAvg - analytics.minPrice) * analytics.gallons)),
+                        })}
+                  </p>
+                </div>
+              ) : null}
             </section>
           ) : null}
 
-          {/* Stations List Section */}
+          {/* 6. Stations List Section */}
           <section
             aria-label={t('favorites.title')}
             className="flex flex-col gap-4"
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-semibold text-ink">
+              <h2 className="text-lg font-bold text-ink">
                 {t('favorites.title')} ({favorites.length})
               </h2>
               {favorites.length > 1 ? (
-                <div className="w-full sm:w-48">
+                <div className="w-full sm:w-52">
                   <Select<SortOption>
                     label={t('comparison.sort')}
                     value={sort}
@@ -339,19 +504,28 @@ export function MyPage({
               {sortedFavorites.map((station) => {
                 const navUrl = navigationUrl(prefs.navApp, station.location.lat, station.location.lng)
                 const isHistoryExpanded = expandedHistoryId === station.id
+                const price = station.lastObservedPrice ?? (station as any).price_per_gallon
+                const numeric = price ? Number(price) : null
+                const isLowest = analytics && numeric === analytics.minPrice
+
                 return (
                   <article
                     key={station.id}
-                    className="rounded-box border border-line bg-surface p-4 sm:p-5 flex flex-col gap-3 transition shadow-sm hover:border-line/80"
+                    className="rounded-box border border-line bg-surface p-4 sm:p-5 flex flex-col gap-3.5 transition shadow-sm hover:border-line/90"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <h3 className="font-semibold text-ink text-base break-words">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-bold text-ink text-base sm:text-lg break-words">
                             {station.name}
                           </h3>
                           {station.topTierBrand ? (
                             <TopTierBadge brand={station.topTierBrand} />
+                          ) : null}
+                          {isLowest ? (
+                            <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                              {t('favorites.lowestPrice')}
+                            </span>
                           ) : null}
                         </div>
                         {station.address ? (
@@ -373,23 +547,28 @@ export function MyPage({
                       </button>
                     </div>
 
-                    {station.lastObservedPrice || (station as any).price_per_gallon ? (
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm border-t border-line/60 pt-2.5">
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-xl font-bold num text-ink">
-                            {perGallon(String(station.lastObservedPrice ?? (station as any).price_per_gallon))}
+                    {price ? (
+                      <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-line/60 pt-3">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-2xl font-extrabold num text-ink">
+                            {perGallon(String(price))}
                           </span>
                           {station.fuelType ? (
-                            <span className="text-xs text-muted">
+                            <span className="text-xs text-muted font-medium">
                               · {t(fuelKey(station.fuelType as any))}
                             </span>
                           ) : null}
                         </div>
+                        {analytics && numeric && numeric > analytics.minPrice ? (
+                          <span className="text-xs text-muted num">
+                            +{usd(numeric - analytics.minPrice)}/gal vs min
+                          </span>
+                        ) : null}
                       </div>
                     ) : null}
 
-                    {/* Private Notes */}
-                    <div className="rounded-control bg-sunken/70 p-2.5 text-xs">
+                    {/* Private Notes in Yellow/Sunken Badge */}
+                    <div className="rounded-control bg-sunken/70 border border-line/50 p-2.5 text-xs">
                       {editingNoteId === station.id ? (
                         <div className="flex flex-col gap-2">
                           <TextInput
@@ -458,7 +637,7 @@ export function MyPage({
                         href={navUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-control min-h-9 border border-line px-3.5 text-xs font-medium text-ink hover:bg-sunken transition active:scale-[0.98]"
+                        className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-control min-h-9 border border-line px-4 text-xs font-semibold text-ink hover:bg-sunken transition active:scale-[0.98] shadow-xs"
                       >
                         <NavigationArrowIcon size={14} weight="fill" className="text-accent" />
                         <span>{t('favorites.navigate')}</span>

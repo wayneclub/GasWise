@@ -85,9 +85,10 @@ describe('MyPage', () => {
     // Max savings = 0.90 * 10 = $9.00
     expect(screen.getByText('$9.00')).toBeInTheDocument()
 
-    // Price comparison bars section
-    expect(screen.getByText('Station Price Comparison')).toBeInTheDocument()
-    expect(screen.getByText('Lowest total')).toBeInTheDocument()
+    // Price visualization sections
+    expect(screen.getByText('Price Distribution Spectrum')).toBeInTheDocument()
+    expect(screen.getByText(/Full Tank Cost Comparison/)).toBeInTheDocument()
+    expect(screen.getByText('Baseline')).toBeInTheDocument()
 
     // Station list items
     expect(screen.getAllByText('Costco Wholesale').length).toBeGreaterThan(0)
