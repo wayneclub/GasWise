@@ -372,6 +372,7 @@ export const en = {
   "prefs.allHint": "Compare cash and card prices. Each result shows the required payment method. Unconfirmed terms remain optional.",
   "nav.fuel": "Save on fuel",
   "nav.parts": "Car parts",
+  "nav.my": "My Space",
   "station.details": "Station details",
   "station.view": "View details",
   "station.rating": "{rating} · {count} reviews",
@@ -602,6 +603,20 @@ export const en = {
   "favorites.navigate": "Navigate",
   "favorites.viewStation": "View details",
   "favorites.lastObserved": "Last price: {price}",
+  "favorites.analyticsTitle": "Favorite Stations Price Analysis",
+  "favorites.lowestPrice": "Lowest Price",
+  "favorites.averagePrice": "Average Price",
+  "favorites.spread": "Price Spread",
+  "favorites.maxSavings": "Max Fill Savings",
+  "favorites.savingsNotice": "Filling {gallons} gal at {station} saves {amount} compared to the highest priced station.",
+  "favorites.topTierNotice": "{station} is TOP TIER certified and only costs {diff} more than the lowest price, offering excellent quality and value.",
+  "favorites.priceComparison": "Station Price Comparison",
+  "favorites.goSearch": "Find Gas Stations",
+  "favorites.sortPrice": "Lowest price first",
+  "favorites.sortRecent": "Recently added",
+  "favorites.sortName": "By name",
+  "favorites.myTitle": "My Stations & Fuel Analytics",
+  "favorites.viewHistory": "Price History Trend",
 }
 
 export type MessageKey = keyof typeof en
