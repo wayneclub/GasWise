@@ -11,6 +11,7 @@ import { comparisonPrice, age, fuelKey, perGallon, usd, miles, minutes } from '.
 import { navigationUrl } from '../../lib/navigation'
 import type { NavApp } from '../../lib/prefs'
 import { WatchStation } from './WatchStation'
+import { FavoriteButton } from '../../components/FavoriteButton'
 
 export type StationSummary = Pick<Station, 'name' | 'location'> & Partial<Station> & { discovery_state?: 'observed' | 'known'; last_seen_at?: string | null }
 import { reasonKey } from '../../lib/stationStatus'
@@ -53,7 +54,16 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
   }
   return <Sheet open={open} onClose={onClose} title={t('station.details')}>
     <div className="flex flex-col gap-4">
-      <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-xl font-semibold"><a href={googleStationUrl(station)} target="_blank" rel="noreferrer" className="underline decoration-line underline-offset-4">{station.name}</a></h3>{station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}</div><CopyAddress address={station.address} className="mt-1 w-full text-sm text-muted" /></div>
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h3 className="text-xl font-semibold"><a href={googleStationUrl(station)} target="_blank" rel="noreferrer" className="underline decoration-line underline-offset-4">{station.name}</a></h3>
+            {station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}
+          </div>
+          {station.id ? <FavoriteButton station={station as any} /> : null}
+        </div>
+        <CopyAddress address={station.address} className="mt-1 w-full text-sm text-muted" />
+      </div>
       <StationRating station={station} />
       {station.rating != null ? <p className="text-xs text-faint">{t('station.ratingNote', { source: station.rating_source ?? 'Google Maps' })}</p> : null}
       {station.top_tier_brand ? <div className="flex items-start gap-3 rounded-control bg-sunken p-3">

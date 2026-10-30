@@ -4,6 +4,7 @@ import { normalizePrefs } from './prefs'
 import type { VehicleIdentity } from './vehicleIdentity'
 import { loadFuelAssistant, type FuelAssistantSettings, type RefuelEvent } from './fuelAssistant'
 import { loadLifeZones, type LifeZone } from './lifeZones'
+import { loadFavorites, type FavoriteStation } from './favorites'
 
 const DATABASE = 'gaswise-profile-v1'
 const STORE = 'profile'
@@ -32,6 +33,7 @@ interface BackupPayload {
   exportedAt: string
   assistant?: { settings: FuelAssistantSettings; events: RefuelEvent[] }
   lifeZones?: LifeZone[]
+  favorites?: FavoriteStation[]
 }
 
 function open(): Promise<IDBDatabase> {
@@ -108,7 +110,8 @@ export async function exportPrivateBackup(prefs: Prefs, identity: VehicleIdentit
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const assistant = await loadFuelAssistant()
   const lifeZones = await loadLifeZones()
-  const payload: BackupPayload = { profile, prefs: normalizePrefs(prefs), identity, assistant, lifeZones, exportedAt: new Date().toISOString() }
+  const favorites = await loadFavorites()
+  const payload: BackupPayload = { profile, prefs: normalizePrefs(prefs), identity, assistant, lifeZones, favorites, exportedAt: new Date().toISOString() }
   const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: encoder.encode('GasWise private backup v1') }, await key(passphrase, salt, ['encrypt']), encoder.encode(JSON.stringify(payload)))
   const envelope: BackupEnvelope = { format: 'gaswise-private-backup', version: 1, kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: ITERATIONS, salt: base64(salt) }, cipher: { name: 'AES-GCM', iv: base64(iv) }, ciphertext: base64(new Uint8Array(ciphertext)) }
   return JSON.stringify(envelope)

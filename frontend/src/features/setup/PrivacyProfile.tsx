@@ -8,6 +8,7 @@ import { useVehicleIdentity } from '../../lib/vehicleIdentity'
 import { clearSmartAlertStorage } from '../../lib/smartAlerts'
 import { clearFuelAssistant, replaceFuelAssistant } from '../../lib/fuelAssistant'
 import { clearLifeZones, replaceLifeZones } from '../../lib/lifeZones'
+import { clearFavorites, replaceFavorites } from '../../lib/favorites'
 
 type Notice = 'exported' | 'imported' | 'cleared' | 'error' | null
 
@@ -45,6 +46,7 @@ export function PrivacyProfile({ prefs, replace }: { prefs: Prefs; replace: (pre
       const restored = await importPrivateBackup(await file.text(), passphrase)
       await replaceFuelAssistant(restored.assistant ?? null)
       if (restored.lifeZones) await replaceLifeZones(restored.lifeZones)
+      if (restored.favorites) await replaceFavorites(restored.favorites)
       await saveIdentity(restored.identity)
       setIdentity(restored.identity)
       replace(restored.prefs)
@@ -61,6 +63,7 @@ export function PrivacyProfile({ prefs, replace }: { prefs: Prefs; replace: (pre
       await clearSmartAlertStorage()
       await clearFuelAssistant()
       await clearLifeZones()
+      await clearFavorites()
       await saveIdentity(null)
       setIdentity(null)
       localStorage.clear()

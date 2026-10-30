@@ -9,6 +9,7 @@ import type { NavApp } from '../../lib/prefs'
 import { reasonKey } from '../../lib/stationStatus'
 import { ExcludedStations } from './ExcludedStations'
 import { StationDetails, StationRating, TopTierBadge, type StationSummary } from './StationDetails'
+import { FavoriteButton } from '../../components/FavoriteButton'
 
 export function NearbyStations({ result, navApp, onExpandRoutes, allowUnknownPayment, onUnknownPayment }: { allowUnknownPayment?: boolean; onUnknownPayment?: (value: boolean) => void; result: SmartResult; navApp: NavApp; onExpandRoutes?: () => void }) {
   const { t } = useI18n()
@@ -49,7 +50,14 @@ export function NearbyStations({ result, navApp, onExpandRoutes, allowUnknownPay
     <ExcludedStations records={excluded} result={result} />
     <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-1">
       {[...stations].slice(0, visible).map(([key, s]) => <article key={key} className="rounded-box border border-line bg-surface p-4">
-        <div className="flex items-start justify-between gap-3"><div className="flex min-w-0 flex-wrap items-center gap-1.5"><h3 className="font-medium">{s.name}</h3>{s.top_tier_brand ? <TopTierBadge brand={s.top_tier_brand} /> : null}</div><span className="shrink-0 text-sm num">{perGallon(comparisonPrice({ ...s, price_per_gallon: s.price_per_gallon! }))}</span></div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {s.id ? <FavoriteButton station={s as any} size={16} className="!size-7 shrink-0 -ml-1" /> : null}
+            <h3 className="font-medium">{s.name}</h3>
+            {s.top_tier_brand ? <TopTierBadge brand={s.top_tier_brand} /> : null}
+          </div>
+          <span className="shrink-0 text-sm num">{perGallon(comparisonPrice({ ...s, price_per_gallon: s.price_per_gallon! }))}</span>
+        </div>
         {s.comparison_price_per_gallon ? <span className="text-[10px] text-caution">{t('payment.estimated')}</span> : null}
         <CopyAddress address={s.address} className="mt-1 w-full text-xs text-muted" /><div className="mt-1"><SourcePill source={s.source ?? ''}/></div>
         <div className="mt-2"><StationRating station={s} /></div>

@@ -23,6 +23,7 @@ import { type MessageKey, type Translate, useI18n } from '../../i18n'
 import { comparisonPrice, age, gallons as gal, miles, minutes, perGallon, usd } from '../../lib/format'
 import { navigationUrl } from '../../lib/navigation'
 import type { NavApp } from '../../lib/prefs'
+import { FavoriteButton } from '../../components/FavoriteButton'
 import { type Assessment, breakdown, openingLabel, type Pick, type Tradeoff } from '../../lib/recommend'
 
 const ICON = { best_value: TrophyIcon, cheapest_overall: CoinsIcon, fastest_stop: LightningIcon, on_my_route: NavigationArrowIcon }
@@ -163,6 +164,7 @@ export function HeroPick({
           <Icon size={16} weight="fill" className="shrink-0 text-accent" />
           {pickLabel(pick.keys[0], assessment, t)}
         </p>
+        <FavoriteButton station={station} />
       </div>
 
       <Verdict pick={pick} row={row} trade={trade} tripMode={tripMode} />

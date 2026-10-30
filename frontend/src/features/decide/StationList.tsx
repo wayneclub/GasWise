@@ -10,6 +10,7 @@ import type { NavApp } from '../../lib/prefs'
 import { googleStationUrl } from '../../lib/stationLinks'
 import { StationSources } from './SourcePill'
 import { StationDetails, StationRating, TopTierBadge } from './StationDetails'
+import { FavoriteButton } from '../../components/FavoriteButton'
 import './StationList.css'
 
 type Sort = 'cost' | 'time' | 'price'
@@ -58,6 +59,7 @@ export function StationList({ rows, navApp = 'google', tripMode = 'round_trip' }
           {ordered.slice(0, visible).map(({ row, index, cost, time, price }) => <tr role="row" key={`${row.price_comparison?.station_key ?? `${row.station.source}:${row.station.id}`}:${index}`}>
             <td role="cell" className="comparison-identity">
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                <FavoriteButton station={row.station} size={16} className="!size-7 shrink-0 -ml-1" />
                 <a href={googleStationUrl(row.station)} target="_blank" rel="noreferrer" className="break-words text-base font-semibold underline decoration-line underline-offset-4">{row.station.name}</a>
                 {row.station.top_tier_brand ? <TopTierBadge brand={row.station.top_tier_brand} /> : null}
                 <button type="button" onClick={() => setSelected(row)} aria-label={`${t('station.view')} ${row.station.name}`} className="ml-auto min-h-11 shrink-0 rounded-control px-2 text-xs text-muted underline hover:bg-sunken focus-visible:outline-accent">{t('station.view')}</button>

@@ -14,6 +14,7 @@ import { PrivacyProfile } from './PrivacyProfile'
 import { SmartAlerts } from './SmartAlerts'
 import { FuelAssistant } from './FuelAssistant'
 import { LifeZones } from './LifeZones'
+import { FavoriteStationsSection } from './FavoriteStationsSection'
 
 function SettingsSection({
   id,
@@ -400,7 +401,10 @@ export function PreferencesForm({
       {/* 8. Smart Fuel Alerts (Advanced) */}
       {advanced ? <SmartAlerts /> : null}
 
-      {/* 9. Privacy Profile & Danger Zone (Advanced & replace) */}
+      {/* 9. Favorite Stations (Advanced) */}
+      {advanced ? <FavoriteStationsSection navApp={prefs.navApp} /> : null}
+
+      {/* 10. Privacy Profile & Danger Zone (Advanced & replace) */}
       {advanced && replace ? <PrivacyProfile prefs={prefs} replace={replace} /> : null}
     </div>
   )

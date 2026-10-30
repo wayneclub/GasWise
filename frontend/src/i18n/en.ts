@@ -585,6 +585,23 @@ export const en = {
   "lifezones.quickSwitch": "Life Zones",
   "lifezones.inputPlaceholder": "Enter ZIP or city (e.g. 90015, 90007)",
   "lifezones.empty": "No life zones saved yet. Add Home or Work above.",
+  "favorites.title": "Favorite Stations",
+  "favorites.description": "Save your preferred gas stations for quick access. Stored locally with zero-knowledge privacy.",
+  "favorites.empty": "No favorite stations yet",
+  "favorites.emptyHint": "Tap the heart icon on any gas station to save it here for quick access.",
+  "favorites.add": "Save station",
+  "favorites.remove": "Remove from favorites",
+  "favorites.badge": "Favorite",
+  "favorites.notes": "Notes",
+  "favorites.editNotes": "Edit",
+  "favorites.notesPlaceholder": "Add private notes (e.g. member perks, car wash)",
+  "favorites.saveNotes": "Save notes",
+  "favorites.cancel": "Cancel",
+  "favorites.deleteConfirm": "Remove this station from your favorites?",
+  "favorites.count": "Favorites ({count})",
+  "favorites.navigate": "Navigate",
+  "favorites.viewStation": "View details",
+  "favorites.lastObserved": "Last price: {price}",
 }
 
 export type MessageKey = keyof typeof en
