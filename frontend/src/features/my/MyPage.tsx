@@ -22,6 +22,8 @@ import type { Prefs } from '../../lib/prefs'
 import { useFavorites, type FavoriteStation } from '../../lib/favorites'
 import { PriceHistory } from '../decide/PriceHistory'
 import { TopTierBadge } from '../decide/StationDetails'
+import { MultiStationPriceChart, type TrendAnalysisSummary } from './MultiStationPriceChart'
+import { SmartFuelAdvisor } from './SmartFuelAdvisor'
 
 type SortOption = 'price' | 'recent' | 'name'
 
@@ -38,6 +40,7 @@ export function MyPage({
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [noteDraft, setNoteDraft] = useState('')
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null)
+  const [trendSummary, setTrendSummary] = useState<TrendAnalysisSummary | null>(null)
 
   // Parse stations with numeric prices for analytics
   const pricedStations = useMemo(() => {
@@ -475,7 +478,23 @@ export function MyPage({
             </section>
           ) : null}
 
-          {/* 6. Stations List Section */}
+          {/* 3. Smart Fuel Recommendations & AI Advisor */}
+          {analytics ? (
+            <SmartFuelAdvisor
+              analytics={analytics}
+              trendSummary={trendSummary}
+              vehicleSummary={prefs.vehicle ? prefs.vehicle.label : null}
+            />
+          ) : null}
+
+          {/* 4. Multi-Station Historical Fuel Price Continuous Chart */}
+          <MultiStationPriceChart
+            favorites={favorites}
+            fuelType={(prefs.fuelType as any) || 'regular'}
+            onTrendAnalysis={setTrendSummary}
+          />
+
+          {/* 5. Stations List Section */}
           <section
             aria-label={t('favorites.title')}
             className="flex flex-col gap-4"

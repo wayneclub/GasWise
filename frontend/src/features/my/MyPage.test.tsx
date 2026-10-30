@@ -90,6 +90,11 @@ describe('MyPage', () => {
     expect(screen.getByText(/Full Tank Cost Comparison/)).toBeInTheDocument()
     expect(screen.getByText('Baseline')).toBeInTheDocument()
 
+    // Smart Recommendations and Multi-Station Price Trend History
+    expect(screen.getByText('Smart Recommendations & Fuel Advisor')).toBeInTheDocument()
+    expect(screen.getByText('Favorite Stations Price Trend History')).toBeInTheDocument()
+    expect(screen.getByText('Annual Savings Potential')).toBeInTheDocument()
+
     // Station list items
     expect(screen.getAllByText('Costco Wholesale').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Shell Downtown').length).toBeGreaterThan(0)

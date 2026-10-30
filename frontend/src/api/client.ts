@@ -53,6 +53,7 @@ async function post<T>(path: string, body: unknown, signal?: AbortSignal): Promi
 
 export type PriceObservation = import('./schema').components['schemas']['PriceObservation']
 export type PriceHistory = import('./schema').components['schemas']['PriceHistory']
+export type HistoryAnalysis = import('./schema').components['schemas']['HistoryAnalysis']
 
 export const api = {
   alertConfig: (signal?: AbortSignal) => post<{ enabled: boolean; vapid_public_key: string | null }>('/v1/alerts/config', {}, signal),
