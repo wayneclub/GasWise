@@ -26,3 +26,27 @@ it('shows three ranked choices for each category, with dated AAA regional contex
   expect(names()[0]).toBe(rows[1].station.name)
   expect(within(board).getAllByRole('listitem')).toHaveLength(3)
 })
+
+it('opens station details and provides navigation button for ranked stations', () => {
+  HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) { this.open = true }
+  HTMLDialogElement.prototype.close ??= function (this: HTMLDialogElement) { this.open = false }
+  const result = structuredClone(fixture) as unknown as SmartResult
+  const rows = result.ranking!.results.slice(0, 3)
+  result.ranking!.leaderboards = { best_value: rows, cheapest_overall: rows, fastest_stop: rows }
+  render(<I18nProvider locale="en"><Leaderboards result={result} primary="best_value" navApp="google" tripMode="round_trip"/></I18nProvider>)
+  const board = screen.getByRole('region', { name: 'Top 3 stations' })
+  const firstItem = within(board).getAllByRole('listitem')[0]
+
+  // Verify prominent "View details" button
+  const viewButton = within(firstItem).getByRole('button', { name: new RegExp(`View details ${rows[0].station.name}`) })
+  expect(viewButton).toBeInTheDocument()
+
+  // Verify navigation link
+  const navLink = within(firstItem).getByRole('link', { name: new RegExp(`Navigate ${rows[0].station.name}`) })
+  expect(navLink).toHaveAttribute('href', expect.stringContaining('google.com/maps/dir'))
+
+  // Click view details
+  fireEvent.click(viewButton)
+  expect(screen.getByRole('dialog', { name: 'Station details' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: rows[0].station.name })).toBeInTheDocument()
+})
