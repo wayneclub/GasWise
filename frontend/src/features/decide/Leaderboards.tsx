@@ -1,4 +1,5 @@
 import { CopyAddress } from '../../components/CopyAddress'
+import { FavoriteButton } from '../../components/FavoriteButton'
 import { CaretDownIcon, CaretRightIcon, InfoIcon, NavigationArrowIcon } from '@phosphor-icons/react'
 import {googleStationUrl} from '../../lib/stationLinks'
 import { StationSources } from './SourcePill'
@@ -61,6 +62,7 @@ export function Leaderboards({result, primary, onStrategyChange, navApp, tripMod
                     {station.name}
                   </a>
                   {station.top_tier_brand ? <TopTierBadge brand={station.top_tier_brand} /> : null}
+                  {station.id ? <FavoriteButton station={station} size={15} className="!size-7 shrink-0 text-muted" /> : null}
                 </div>
               </div>
 

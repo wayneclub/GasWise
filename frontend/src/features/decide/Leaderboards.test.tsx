@@ -45,6 +45,10 @@ it('opens station details and provides navigation button for ranked stations', (
   const navLink = within(firstItem).getByRole('link', { name: new RegExp(`Navigate ${rows[0].station.name}`) })
   expect(navLink).toHaveAttribute('href', expect.stringContaining('google.com/maps/dir'))
 
+  // Verify favorite button
+  const favButton = within(firstItem).getByRole('button', { name: /save/i })
+  expect(favButton).toBeInTheDocument()
+
   // Click view details
   fireEvent.click(viewButton)
   expect(screen.getByRole('dialog', { name: 'Station details' })).toBeInTheDocument()
