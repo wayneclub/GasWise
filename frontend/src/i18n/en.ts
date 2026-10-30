@@ -156,6 +156,7 @@ export const en = {
   'setup.title': 'Tell us how you fill up.',
   'setup.lead': 'Set this once. Next time GasWise opens straight to the station worth driving to.',
   'setup.submit': 'Find my station',
+  'setup.skip': 'Skip setup and view gas prices →',
 
   'prefs.car': 'Your car',
   'prefs.carHint': 'Sets the fuel grade and EPA fuel economy used for detour costs.',
@@ -545,6 +546,7 @@ export const en = {
   "alerts.iosPwaTipTitle": "iPhone / Safari Requirement",
   "alerts.iosPwaTip": "Per Apple iOS requirements, tap the Safari Share button ➔ 'Add to Home Screen', then launch GasWise from your Home Screen to enable Push notifications.",
   "alerts.error": "Smart alerts could not be changed. Check browser permission and server configuration.",
+  "alerts.permissionDeniedGuide": "Push notification permission was denied by iOS. Please open iPhone Settings > Notifications > GasWise, turn on \"Allow Notifications\", then try again.",
   "alerts.watch": "Watch this price",
   "alerts.unwatch": "Stop watching",
   "alerts.watchHint": "When GasWise observes this exact price condition, evaluate drops of at least 10¢/gal.",

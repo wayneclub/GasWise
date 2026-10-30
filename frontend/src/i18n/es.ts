@@ -156,6 +156,7 @@ export const es: Record<MessageKey, string> = {
   'setup.title': 'Cuéntanos cómo cargas gasolina.',
   'setup.lead': 'Configúralo una vez. La próxima vez GasWise abrirá directo en la gasolinera que vale la pena.',
   'setup.submit': 'Buscar mi gasolinera',
+  'setup.skip': 'Saltar configuración y ver precios →',
 
   'prefs.car': 'Tu auto',
   'prefs.carHint': 'Define el tipo de gasolina y el rendimiento EPA para calcular el costo del desvío.',
@@ -545,6 +546,7 @@ export const es: Record<MessageKey, string> = {
   "alerts.iosPwaTipTitle": "Requisito para iPhone / Safari",
   "alerts.iosPwaTip": "Según las normas de Apple iOS, toca el botón Compartir de Safari ➔ 'Agregar a pantalla de inicio' y abre GasWise desde tu pantalla de inicio para recibir notificaciones.",
   "alerts.error": "No se pudieron cambiar las alertas. Revisa los permisos y la configuración del servidor.",
+  "alerts.permissionDeniedGuide": "El permiso de notificación fue denegado en iOS. Abra Ajustes de iPhone > Notificaciones > GasWise y active \"Permitir notificaciones\".",
   "alerts.watch": "Seguir este precio",
   "alerts.unwatch": "Dejar de seguir",
   "alerts.watchHint": "Cuando GasWise observe esta condición exacta, evaluará bajadas de al menos 10¢/gal.",

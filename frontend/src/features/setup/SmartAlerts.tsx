@@ -8,6 +8,7 @@ export function SmartAlerts() {
   const [enabled, setEnabled] = useState(false)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<'ready' | 'error' | null>(null)
+  const [errorReason, setErrorReason] = useState<string | null>(null)
   const [items, setItems] = useState<{ id: number; title: string; body: string; created_at: string }[]>([])
   const supported = smartAlertsSupported()
   const isIos = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
@@ -18,11 +19,16 @@ export function SmartAlerts() {
   }).catch(() => setNotice('error')) }, [])
 
   async function toggle() {
-    setBusy(true); setNotice(null)
+    setBusy(true); setNotice(null); setErrorReason(null)
     try {
       if (enabled) { await disableSmartAlerts(); setItems([]) } else await enableSmartAlerts(locale)
       setEnabled(!enabled); setNotice('ready')
-    } catch { setNotice('error') } finally { setBusy(false) }
+    } catch (err: unknown) {
+      setNotice('error')
+      if (err instanceof Error) {
+        setErrorReason(err.message)
+      }
+    } finally { setBusy(false) }
   }
 
   return (
@@ -72,7 +78,18 @@ export function SmartAlerts() {
             <p className="mt-1 leading-relaxed opacity-90">{t('alerts.iosPwaTip')}</p>
           </div>
         ) : null}
-        {notice ? <p role="status" className={`text-xs ${notice === 'error' ? 'text-caution' : 'text-muted'}`}>{t(notice === 'error' ? 'alerts.error' : enabled ? 'alerts.enabled' : 'alerts.disabled')}</p> : null}
+        {notice === 'error' ? (
+          <div className="flex flex-col gap-1.5 rounded-control bg-caution/10 border border-caution/20 p-3.5 text-xs text-caution">
+            <p className="font-semibold">{t('alerts.error')}</p>
+            {errorReason === 'permission_denied' || (typeof Notification !== 'undefined' && Notification.permission === 'denied') ? (
+              <p className="leading-relaxed opacity-95 text-ink">{t('alerts.permissionDeniedGuide')}</p>
+            ) : errorReason ? (
+              <p className="font-mono text-[11px] opacity-80">({errorReason})</p>
+            ) : null}
+          </div>
+        ) : notice ? (
+          <p role="status" className="text-xs text-muted">{t(enabled ? 'alerts.enabled' : 'alerts.disabled')}</p>
+        ) : null}
 
         {items.length ? (
           <div className="border-t border-line pt-4">

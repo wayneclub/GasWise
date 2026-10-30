@@ -20,9 +20,18 @@ export function Setup({ prefs, update }: { prefs: Prefs; update: (change: Partia
       <div className="mt-8">
         <PreferencesForm prefs={prefs} update={update} />
       </div>
-      <Button className="mt-6 h-12 w-full lg:w-72 lg:self-end" disabled={!ready} onClick={() => update({ onboarded: true })}>
-        {t('setup.submit')}
-      </Button>
+      <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          onClick={() => update({ onboarded: true })}
+          className="text-sm text-muted underline hover:text-ink px-2 py-1 self-center sm:self-auto"
+        >
+          {t('setup.skip')}
+        </button>
+        <Button className="h-12 w-full sm:w-72" disabled={!ready} onClick={() => update({ onboarded: true })}>
+          {t('setup.submit')}
+        </Button>
+      </div>
       <p className="mt-3 text-center text-[13px] text-muted lg:self-end lg:text-right">{t('app.locationPrivacy')}</p>
     </main>
   )

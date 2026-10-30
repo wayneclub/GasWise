@@ -5,9 +5,14 @@ import App from './App'
 import { serviceWorkerUrl } from './lib/serviceWorker'
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    void navigator.serviceWorker.register(serviceWorkerUrl(import.meta.url), { scope: '/', updateViaCache: 'none' })
-  })
+  const register = () => {
+    void navigator.serviceWorker.register(serviceWorkerUrl(import.meta.url), { scope: '/', updateViaCache: 'none' }).catch(() => {})
+  }
+  if (document.readyState === 'complete') {
+    register()
+  } else {
+    window.addEventListener('load', register)
+  }
 }
 
 createRoot(document.getElementById('root')!).render(

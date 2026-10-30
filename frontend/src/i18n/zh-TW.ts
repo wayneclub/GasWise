@@ -156,6 +156,7 @@ export const zhTW: Record<MessageKey, string> = {
   'setup.title': '告訴我們你怎麼加油。',
   'setup.lead': '只需設定一次。下次打開 GasWise，就會直接告訴你最值得去的加油站。',
   'setup.submit': '幫我找加油站',
+  'setup.skip': '跳過設定，直接瀏覽附近油價 →',
 
   'prefs.car': '你的車',
   'prefs.carHint': '用來決定油品等級與 EPA 油耗，計算繞路成本。',
@@ -545,6 +546,7 @@ export const zhTW: Record<MessageKey, string> = {
   "alerts.iosPwaTipTitle": "iPhone / Safari 使用提示",
   "alerts.iosPwaTip": "根據 Apple iOS 規範，iPhone 必須先點擊 Safari 下方「分享」按鈕 ➔ 選擇「加入主畫面」，並從桌面圖示開啟，才能啟用 Push 智能通知。",
   "alerts.error": "無法變更智能提醒，請檢查瀏覽器權限與伺服器設定。",
+  "alerts.permissionDeniedGuide": "推播通知權限已被 iPhone 系統封鎖。請開啟 iPhone「設定」>「通知」> 找到「GasWise」並開啟「允許通知」，然後返回此處重新開啟。",
   "alerts.watch": "追蹤這個油價",
   "alerts.unwatch": "停止追蹤",
   "alerts.watchHint": "GasWise 觀察到這個相同條件時，評估每加侖至少下降 10¢ 的機會。",

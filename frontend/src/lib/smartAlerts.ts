@@ -87,18 +87,46 @@ export async function enableSmartAlerts(locale: string): Promise<void> {
   if (!smartAlertsSupported()) throw new Error('unsupported')
   const config = await api.alertConfig()
   if (!config.enabled || !config.vapid_public_key) throw new Error('unavailable')
+
+  if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+    throw new Error('permission_denied')
+  }
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') throw new Error('permission_denied')
+
+  if (typeof navigator.serviceWorker.getRegistration === 'function') {
+    const reg = await navigator.serviceWorker.getRegistration('/').catch(() => null)
+    if (!reg && typeof navigator.serviceWorker.register === 'function') {
+      await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' }).catch(() => {})
+    }
+  }
   const registration = await navigator.serviceWorker.ready
+
   const previous = await registration.pushManager.getSubscription()
   const subscription = previous ?? await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: applicationServerKey(config.vapid_public_key),
   })
+
+  const subJson = subscription.toJSON()
+  if (!subJson.keys?.p256dh || !subJson.keys?.auth) {
+    if (typeof subscription.getKey === 'function') {
+      const p256dhKey = subscription.getKey('p256dh')
+      const authKey = subscription.getKey('auth')
+      if (p256dhKey && authKey) {
+        const toB64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+        subJson.keys = {
+          p256dh: toB64(p256dhKey),
+          auth: toB64(authKey),
+        }
+      }
+    }
+  }
+
   let created: AlertAuth | null = null
   try {
     created = await api.createAlertInstallation({
-      subscription: subscription.toJSON(),
+      subscription: subJson as unknown as PushSubscriptionJSON,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
       locale,
     })
