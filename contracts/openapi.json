@@ -2911,6 +2911,28 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HistoryAnalysis": {
+        "properties": {
+          "price_band": {
+            "$ref": "#/components/schemas/PriceBand"
+          },
+          "weekend_cycle": {
+            "$ref": "#/components/schemas/WeekendCycle"
+          },
+          "observation_count": {
+            "type": "integer",
+            "title": "Observation Count"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "price_band",
+          "weekend_cycle",
+          "observation_count"
+        ],
+        "title": "HistoryAnalysis"
+      },
       "HistoryRequest": {
         "properties": {
           "canonical_id": {
@@ -3121,6 +3143,18 @@
             "maxLength": 200,
             "minLength": 2,
             "title": "Text"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale"
           }
         },
         "additionalProperties": false,
@@ -4261,6 +4295,93 @@
         ],
         "title": "Point"
       },
+      "PriceBand": {
+        "properties": {
+          "min_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Price"
+          },
+          "max_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Price"
+          },
+          "median_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Price"
+          },
+          "current_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Price"
+          },
+          "percentile": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentile"
+          },
+          "band": {
+            "type": "string",
+            "enum": [
+              "near_low",
+              "mid_range",
+              "near_high"
+            ],
+            "title": "Band",
+            "default": "mid_range"
+          },
+          "is_cycle_low": {
+            "type": "boolean",
+            "title": "Is Cycle Low",
+            "default": false
+          },
+          "is_cycle_high": {
+            "type": "boolean",
+            "title": "Is Cycle High",
+            "default": false
+          },
+          "advice": {
+            "type": "string",
+            "title": "Advice",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PriceBand"
+      },
       "PriceComparison": {
         "properties": {
           "station_key": {
@@ -4449,6 +4570,16 @@
           "truncated": {
             "type": "boolean",
             "title": "Truncated"
+          },
+          "analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HistoryAnalysis"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -9002,6 +9133,55 @@
           "origin"
         ],
         "title": "WazePriceSearch"
+      },
+      "WeekendCycle": {
+        "properties": {
+          "day_of_week": {
+            "type": "string",
+            "title": "Day Of Week"
+          },
+          "is_pre_weekend": {
+            "type": "boolean",
+            "title": "Is Pre Weekend",
+            "default": false
+          },
+          "pre_weekend_hike_risk": {
+            "type": "boolean",
+            "title": "Pre Weekend Hike Risk",
+            "default": false
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Risk Level",
+            "default": "low"
+          },
+          "trend": {
+            "type": "string",
+            "enum": [
+              "rising",
+              "falling",
+              "stable"
+            ],
+            "title": "Trend",
+            "default": "stable"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "day_of_week"
+        ],
+        "title": "WeekendCycle"
       }
     },
     "securitySchemes": {

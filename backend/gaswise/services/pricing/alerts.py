@@ -81,7 +81,11 @@ class SmartAlerts:
         try:
             change = Decimal(str(candidate["current_price"])) - Decimal(str(candidate["previous_price"]))
             threshold = Decimal(candidate["threshold_cents"]) / 100
-            if change > -threshold:
+            trend = candidate.get("trend", "stable")
+            cycle_risk = bool(candidate.get("cycle_risk", False))
+            is_cycle_low = bool(candidate.get("is_cycle_low", False))
+
+            if change > -threshold and not (trend == "rising" or cycle_risk or is_cycle_low):
                 await self.store.finish_alert_candidate(candidate["watch_id"], owner,
                                                         candidate["observation_key"], None, "ignore")
                 return True
@@ -89,6 +93,7 @@ class SmartAlerts:
                 change, Decimal(str(candidate["expected_gallons"])), candidate["need_state"],
                 candidate["need_confidence"], candidate["quote_age_minutes"],
                 candidate["comparable_observations"], candidate["source_conflict"],
+                trend=trend, cycle_risk=cycle_risk, is_cycle_low=is_cycle_low,
             ))
             payload = self._opportunity_payload(candidate, decision) if decision.action != "ignore" else None
             await self.store.finish_alert_candidate(candidate["watch_id"], owner,
@@ -100,17 +105,41 @@ class SmartAlerts:
 
     @staticmethod
     def _opportunity_payload(candidate, decision):
-        drop = abs(Decimal(str(candidate["current_price"])) - Decimal(str(candidate["previous_price"])))
         locale = candidate["locale"]
-        if locale == "zh-TW":
-            title = f'{candidate["station_name"]} 降價 {drop:.2f} 美元'
-            body = f'目前每加侖 ${Decimal(str(candidate["current_price"])):.2f}，預估這次可省 ${decision.estimated_savings:.2f}。'
-        elif locale == "zh-CN":
-            title = f'{candidate["station_name"]} 降价 {drop:.2f} 美元'
-            body = f'目前每加仑 ${Decimal(str(candidate["current_price"])):.2f}，预计本次可省 ${decision.estimated_savings:.2f}。'
+        is_hike = decision.reason in {"pre_hike_hedge_due", "pre_hike_hedge_approaching", "pre_hike_warning"}
+        is_low = decision.reason == "cycle_low_opportunity"
+
+        if is_hike:
+            if locale == "zh-TW":
+                title = f'⚠️ {candidate["station_name"]} 預期將調漲，建議提前加油'
+                body = f'油價呈現上漲趨勢或適逢週末調漲期，目前每加侖 ${Decimal(str(candidate["current_price"])):.2f}，提前加滿可規避後續漲幅（預估省 ${decision.estimated_savings:.2f}）。'
+            elif locale == "zh-CN":
+                title = f'⚠️ {candidate["station_name"]} 预期将调涨，建议提前加油'
+                body = f'油价呈现上涨趋势或适逢周末调涨期，目前每加仑 ${Decimal(str(candidate["current_price"])):.2f}，提前加满可规避后续涨幅（预估省 ${decision.estimated_savings:.2f}）。'
+            else:
+                title = f'⚠️ {candidate["station_name"]} price hike risk: refuel advised'
+                body = f'Prices are trending up before the weekend. Refuel now at ${Decimal(str(candidate["current_price"])):.2f}/gal to hedge against hikes (estimated savings ${decision.estimated_savings:.2f}).'
+        elif is_low:
+            if locale == "zh-TW":
+                title = f'✨ {candidate["station_name"]} 來到近期低點'
+                body = f'目前每加侖 ${Decimal(str(candidate["current_price"])):.2f}，處於近期低位，建議把握時機加油（預估省 ${decision.estimated_savings:.2f}）。'
+            elif locale == "zh-CN":
+                title = f'✨ {candidate["station_name"]} 处于近期低点'
+                body = f'目前每加仑 ${Decimal(str(candidate["current_price"])):.2f}，处于近期低位，建议把握时机加油（预估省 ${decision.estimated_savings:.2f}）。'
+            else:
+                title = f'✨ {candidate["station_name"]} is near 30-day low'
+                body = f'Currently ${Decimal(str(candidate["current_price"])):.2f}/gal. Great timing to refuel (estimated savings ${decision.estimated_savings:.2f}).'
         else:
-            title = f'{candidate["station_name"]} dropped ${drop:.2f}/gal'
-            body = f'Now ${Decimal(str(candidate["current_price"])):.2f}/gal; estimated savings ${decision.estimated_savings:.2f}.'
+            drop = abs(Decimal(str(candidate["current_price"])) - Decimal(str(candidate["previous_price"])))
+            if locale == "zh-TW":
+                title = f'{candidate["station_name"]} 降價 {drop:.2f} 美元'
+                body = f'目前每加侖 ${Decimal(str(candidate["current_price"])):.2f}，預估這次可省 ${decision.estimated_savings:.2f}。'
+            elif locale == "zh-CN":
+                title = f'{candidate["station_name"]} 降价 {drop:.2f} 美元'
+                body = f'目前每加仑 ${Decimal(str(candidate["current_price"])):.2f}，预计本次可省 ${decision.estimated_savings:.2f}。'
+            else:
+                title = f'{candidate["station_name"]} dropped ${drop:.2f}/gal'
+                body = f'Now ${Decimal(str(candidate["current_price"])):.2f}/gal; estimated savings ${decision.estimated_savings:.2f}.'
         return {"title": title, "body": body, "url": "/?smart-alert=opportunity",
                 "tag": f'gaswise-watch-{candidate["watch_id"]}'}
 

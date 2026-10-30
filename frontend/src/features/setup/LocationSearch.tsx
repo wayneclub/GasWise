@@ -3,6 +3,7 @@ import { api } from '../../api/client'
 import { Button, TextInput } from '../../components/ui'
 import { useI18n } from '../../i18n'
 import type { Origin } from '../../lib/session'
+import { loadLifeZones, type LifeZone } from '../../lib/lifeZones'
 
 export interface RecentLocation {
   id: string
@@ -46,8 +47,13 @@ export function LocationSearch({ onChoose }: { onChoose: (location: Origin, labe
   const [text, setText] = useState('')
   const [items, setItems] = useState<{ id: string; label: string; location: Origin }[]>([])
   const [recents, setRecents] = useState<RecentLocation[]>(() => loadRecents())
+  const [lifeZones, setLifeZones] = useState<LifeZone[]>([])
   const [status, setStatus] = useState<'idle' | 'pending' | 'empty' | 'unsupported' | 'error'>('idle')
   const controller = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    void loadLifeZones().then(setLifeZones)
+  }, [])
 
   useEffect(() => () => controller.current?.abort(), [])
 
@@ -119,6 +125,25 @@ export function LocationSearch({ onChoose }: { onChoose: (location: Origin, labe
       {/* Recent searches & quick presets */}
       {items.length === 0 && text.trim().length === 0 ? (
         <div className="flex flex-col gap-2 pt-1">
+          {lifeZones.length ? (
+            <div className="flex flex-col gap-1.5 pb-1">
+              <span className="text-xs text-muted">{t('lifezones.quickSwitch')}</span>
+              <div className="flex flex-wrap gap-1.5">
+                {lifeZones.map((zone) => (
+                  <button
+                    key={zone.id}
+                    type="button"
+                    className="inline-flex max-w-full items-center gap-1 rounded-full border border-accent/40 bg-accent-soft/30 px-2.5 py-1 text-xs font-medium text-ink transition hover:border-accent hover:bg-accent-soft"
+                    onClick={() => onChoose(zone.origin, zone.name)}
+                  >
+                    <span>{zone.kind === 'home' ? '🏠' : zone.kind === 'work' ? '💼' : '📍'}</span>
+                    <span className="truncate">{zone.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {recents.length > 0 ? (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between text-xs text-muted">

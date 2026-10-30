@@ -44,6 +44,7 @@ def test_zip_plus_four_matches_zip_five_but_not_a_different_zip():
 def test_warehouse_names_keep_membership_gate():
     assert membership_for_name("Costco Gasoline") == "costco"
     assert membership_for_name("Sam's Club Fuel Center") == "sams_club"
+    assert membership_for_name("BJ's Gas") == "bjs"
     assert membership_for_name("Shell") is None
 
 

@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     base_collection_radius_meters: int = Field(default=10000, ge=1000, le=50000)
     base_collection_max_radius_meters: int = Field(default=20000, ge=1000, le=50000)
     base_collection_cycle_request_budget: int = Field(default=2300, ge=1, le=10000)
+    base_collection_gasbuddy_max_pages: int = Field(default=8, ge=1, le=10)
     gasbuddy_background_daily_requests: int | None = Field(default=None, ge=1, le=1000)
     gasbuddy_background_pacing_enabled: bool = True
     pricing_daily_ramp_enabled: bool = False

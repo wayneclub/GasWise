@@ -6,6 +6,11 @@ from statistics import median
 from gaswise.contracts.common import Station
 
 
+UNIFORM_PAYMENT_BRANDS = {
+    "costco", "sam's club", "sams club", "bj's", "bjs", "quiktrip", "wawa", "buc-ee's", "bucees", "sheetz"
+}
+
+
 def source_family(source):
     # Maps and Waze may share OPIS. Never count them as independent confirmation.
     if source in {"gasbuddy", "gasbuddy_web"}:
@@ -48,6 +53,18 @@ def infer_payment(station: Station, records: list[Station], history: list[Statio
         result["reasons"].append("Price match is evidence, not verified payment terms.")
         if station.source in {"google_maps_web", "google_places"}:
             result["reasons"].append("Maps prices may be rounded to cents. Payment evidence applies only to this fuel grade; raw price and payment type are unchanged.")
+    if result["classification"] == "unknown":
+        name_lower = (station.name or "").lower()
+        if station.membership_required in {"costco", "sams_club", "bjs"} or any(b in name_lower for b in UNIFORM_PAYMENT_BRANDS):
+            result.update(
+                classification="same_price",
+                confidence="high",
+                basis="uniform_brand_terms",
+                spread="0.00",
+                spread_min="0.00",
+                spread_max="0.00",
+            )
+            result["reasons"].append("Station brand has uniform cash and credit pricing; no card surcharge applies.")
     # Same-provider, same-conditions, close-time raw pairs; one observation per day.
     raw = [r for r in history if same(r) and fresh(r, 30) and r.payment_type in {"cash", "credit"} and r.comparison_price_per_gallon is None]
     daily = {}

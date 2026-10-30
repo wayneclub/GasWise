@@ -38,3 +38,22 @@ def test_unknown_need_only_pushes_for_exceptional_savings():
     assert ordinary.action == "inbox"
     assert exceptional.action == "push"
     assert exceptional.reason == "exceptional_savings"
+
+
+def test_rising_trend_or_cycle_risk_triggers_pre_hike_hedge():
+    policy = SmartAlertPolicy()
+    # When price is flat but trend is rising and user is due
+    flat_rising = policy.evaluate(signal(change_per_gallon=Decimal("0.00"), trend="rising", need="due", confidence="high"))
+    assert flat_rising.action == "push"
+    assert flat_rising.reason == "pre_hike_hedge_due"
+    assert flat_rising.estimated_savings > Decimal("0")
+
+    # When cycle risk is present and user is approaching
+    cycle_risk = policy.evaluate(signal(change_per_gallon=Decimal("0.02"), cycle_risk=True, need="approaching", confidence="medium"))
+    assert cycle_risk.action == "push"
+    assert cycle_risk.reason == "pre_hike_hedge_approaching"
+
+    # Cycle low opportunity
+    cycle_low = policy.evaluate(signal(change_per_gallon=Decimal("0.00"), is_cycle_low=True, need="due", confidence="medium"))
+    assert cycle_low.action == "push"
+    assert cycle_low.reason == "cycle_low_opportunity"

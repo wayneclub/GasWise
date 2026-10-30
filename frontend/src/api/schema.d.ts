@@ -1220,6 +1220,13 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HistoryAnalysis */
+        HistoryAnalysis: {
+            price_band: components["schemas"]["PriceBand"];
+            weekend_cycle: components["schemas"]["WeekendCycle"];
+            /** Observation Count */
+            observation_count: number;
+        };
         /** HistoryRequest */
         HistoryRequest: {
             /** Canonical Id */
@@ -1294,6 +1301,8 @@ export interface components {
         LocationQuery: {
             /** Text */
             text: string;
+            /** Locale */
+            locale?: string | null;
         };
         /** LocationResult */
         LocationResult: {
@@ -1687,6 +1696,40 @@ export interface components {
             /** Lng */
             lng: number;
         };
+        /** PriceBand */
+        PriceBand: {
+            /** Min Price */
+            min_price?: string | null;
+            /** Max Price */
+            max_price?: string | null;
+            /** Median Price */
+            median_price?: string | null;
+            /** Current Price */
+            current_price?: string | null;
+            /** Percentile */
+            percentile?: number | null;
+            /**
+             * Band
+             * @default mid_range
+             * @enum {string}
+             */
+            band: "near_low" | "mid_range" | "near_high";
+            /**
+             * Is Cycle Low
+             * @default false
+             */
+            is_cycle_low: boolean;
+            /**
+             * Is Cycle High
+             * @default false
+             */
+            is_cycle_high: boolean;
+            /**
+             * Advice
+             * @default
+             */
+            advice: string;
+        };
         /** PriceComparison */
         PriceComparison: {
             /** Station Key */
@@ -1755,6 +1798,7 @@ export interface components {
             observations: components["schemas"]["PriceObservation"][];
             /** Truncated */
             truncated: boolean;
+            analysis?: components["schemas"]["HistoryAnalysis"] | null;
         };
         /** PriceObservation */
         PriceObservation: {
@@ -3420,6 +3464,38 @@ export interface components {
             venue_id?: string | null;
             /** Postal Code */
             postal_code?: string | null;
+        };
+        /** WeekendCycle */
+        WeekendCycle: {
+            /** Day Of Week */
+            day_of_week: string;
+            /**
+             * Is Pre Weekend
+             * @default false
+             */
+            is_pre_weekend: boolean;
+            /**
+             * Pre Weekend Hike Risk
+             * @default false
+             */
+            pre_weekend_hike_risk: boolean;
+            /**
+             * Risk Level
+             * @default low
+             * @enum {string}
+             */
+            risk_level: "low" | "medium" | "high";
+            /**
+             * Trend
+             * @default stable
+             * @enum {string}
+             */
+            trend: "rising" | "falling" | "stable";
+            /**
+             * Message
+             * @default
+             */
+            message: string;
         };
     };
     responses: never;

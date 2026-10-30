@@ -10,6 +10,8 @@ export function SmartAlerts() {
   const [notice, setNotice] = useState<'ready' | 'error' | null>(null)
   const [items, setItems] = useState<{ id: number; title: string; body: string; created_at: string }[]>([])
   const supported = smartAlertsSupported()
+  const isIos = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
+  const isStandalone = typeof window !== 'undefined' && (Boolean((window.navigator as unknown as { standalone?: boolean }).standalone) || Boolean(window.matchMedia?.('(display-mode: standalone)')?.matches))
   useEffect(() => { void alertCredential().then(async value => {
     setEnabled(Boolean(value))
     if (value) setItems((await api.alertInbox(value)).items)
@@ -62,6 +64,14 @@ export function SmartAlerts() {
         </div>
 
         {!supported ? <p role="status" className="text-xs text-caution">{t('alerts.unsupported')}</p> : null}
+        {isIos && !isStandalone ? (
+          <div className="rounded-control bg-amber-500/10 border border-amber-500/30 p-3.5 text-xs text-amber-800 dark:text-amber-200">
+            <p className="font-semibold flex items-center gap-1.5">
+              <span>📱 {t('alerts.iosPwaTipTitle')}</span>
+            </p>
+            <p className="mt-1 leading-relaxed opacity-90">{t('alerts.iosPwaTip')}</p>
+          </div>
+        ) : null}
         {notice ? <p role="status" className={`text-xs ${notice === 'error' ? 'text-caution' : 'text-muted'}`}>{t(notice === 'error' ? 'alerts.error' : enabled ? 'alerts.enabled' : 'alerts.disabled')}</p> : null}
 
         {items.length ? (

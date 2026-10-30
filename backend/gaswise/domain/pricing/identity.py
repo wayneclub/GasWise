@@ -38,11 +38,13 @@ def inventory_match(inventory, address, location=None):
 
 
 def membership_for_name(name):
-    name = name.lower()
+    name = (name or "").lower()
     if "costco" in name:
         return "costco"
     if "sam's club" in name or "sams club" in name:
         return "sams_club"
+    if "bj's" in name or "bjs" in name:
+        return "bjs"
     return None
 
 

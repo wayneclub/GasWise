@@ -44,6 +44,7 @@ async def run(args):
                 print(json.dumps({"http_status": response.status_code, "detail": response.json().get("detail")}))
                 return 1
             result = response.json()
+            result.pop("coverage", None)
             parsed = SmartResult.model_validate(result)
             snapshot = parsed.snapshot
             exclusions = Counter(ineligible(s, snapshot.query, snapshot.collected_at) or "eligible"

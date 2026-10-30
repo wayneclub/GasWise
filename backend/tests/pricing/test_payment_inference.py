@@ -1,7 +1,7 @@
 from datetime import timedelta
 from decimal import Decimal
 
-from gaswise.domain.pricing.comparison import comparable_prices
+from gaswise.domain.pricing.comparison import comparable_prices, comparison_price
 from gaswise.domain.pricing.payment import infer_payment
 from tests.support.comparison import NOW, quote, select
 
@@ -144,3 +144,20 @@ def test_rounded_maps_cash_and_card_collision_is_unresolved_not_same_price():
 def test_maps_three_digit_price_is_not_treated_as_a_cent_rounded_quote():
     raw = unknown().model_copy(update={'source': 'google_maps_web', 'price_per_gallon': Decimal('6.039')})
     assert infer_payment(raw, [quote(canonical_id='site', price='6.041')], [], NOW)['classification'] == 'unknown'
+
+
+def test_uniform_brand_costco_infers_same_price_zero_spread():
+    costco_raw = unknown().model_copy(update={'name': 'Costco Gasoline', 'membership_required': 'costco', 'price_per_gallon': Decimal('5.59')})
+    inferred = infer_payment(costco_raw, [], [], NOW)
+    assert inferred['classification'] == 'same_price'
+    assert inferred['confidence'] == 'high'
+    assert inferred['basis'] == 'uniform_brand_terms'
+    assert inferred['spread'] == '0.00'
+
+    selected, excluded, _ = select([costco_raw], payment_type='credit', memberships=['costco'], allow_unknown_payment=True)
+    assert excluded == 0
+    assert len(selected) == 1
+    # No $0.20 markup applied to uniform brand
+    assert comparison_price(selected[0].station) == Decimal('5.59')
+    assert selected[0].station.payment_price_adjustment == Decimal(0)
+

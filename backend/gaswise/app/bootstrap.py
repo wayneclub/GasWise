@@ -337,7 +337,8 @@ async def build_services(settings: Settings, overrides: ProviderOverrides):
                 coverage_strategy=settings.base_collection_coverage_strategy,
                 base_radius=settings.base_collection_radius_meters,
                 max_radius=settings.base_collection_max_radius_meters,
-                cycle_request_budget=settings.base_collection_cycle_request_budget)
+                cycle_request_budget=settings.base_collection_cycle_request_budget,
+                gasbuddy_max_pages=settings.base_collection_gasbuddy_max_pages)
             await smart.base_collection.initialize()
             base_task = asyncio.create_task(smart.base_collection.run())
 

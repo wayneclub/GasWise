@@ -4,6 +4,7 @@ import math
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
+from statistics import median
 
 from pydantic import ValidationError
 
@@ -37,6 +38,8 @@ def search_limit_meters(query) -> float:
 
 
 def ineligible(station: Station, query: Search, now: datetime) -> str | None:
+    if station.price_per_gallon < Decimal("1.00") or station.price_per_gallon > Decimal("15.00"):
+        return "price_outlier_suspected"
     if station.fuel_type != query.fuel_type:
         return "wrong_fuel_type"
     if distance_meters(query.origin, station.location) > search_limit_meters(query):
@@ -125,7 +128,11 @@ def select_prices(stations: list[Station], query: Search, now: datetime):
         payment = infer_payment(station, qualified, history, now)
         station = station.model_copy(update={"payment_inference": payment})
         adjustment = query.unknown_payment_credit_markup if station.payment_type == "unknown" and query.payment_type != "cash" else Decimal(0)
-        if station.payment_type == "unknown" and query.payment_type != "cash" and payment["classification"] == "cash" and payment["spread"] is not None:
+        if station.payment_type == "unknown" and query.payment_type != "cash" and payment["classification"] in {"same_price", "credit"}:
+            adjustment = Decimal(0)
+            if payment.get("spread") is not None and payment["classification"] == "same_price" and payment.get("basis") != "uniform_brand_terms":
+                adjustment = Decimal(payment["spread"])
+        elif station.payment_type == "unknown" and query.payment_type != "cash" and payment["classification"] == "cash" and payment["spread"] is not None:
             adjustment = Decimal(payment["spread"])
             station = station.model_copy(update={"comparison_price_min": station.price_per_gallon, "comparison_price_max": station.price_per_gallon + Decimal(payment["spread_max"])})
             payment["basis"] = "station_history_estimate"
@@ -256,6 +263,14 @@ def select_prices(stations: list[Station], query: Search, now: datetime):
         warnings.append(
             f"Opening status is unknown for {unknown_hours} eligible stations; confirm hours before driving."
         )
+    if len(selected) >= 3:
+        all_prices = [s.station.price_per_gallon for s in selected]
+        med_price = median(all_prices)
+        for s in selected:
+            if s.station.price_per_gallon < med_price * Decimal("0.65") or (med_price - s.station.price_per_gallon) > Decimal("2.50"):
+                warnings.append(
+                    f"Price anomaly detected at {s.key} (${s.station.price_per_gallon}): unusually low compared to local median ${med_price:.2f}. Verify pump price before fueling."
+                )
     return selected, excluded, warnings
 
 

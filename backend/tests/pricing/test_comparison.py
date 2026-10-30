@@ -231,3 +231,22 @@ def test_station_metadata_can_merge_without_promoting_payment_amenity():
     assert selected[0].station.rating == 4.2
     assert selected[0].station.details["phone"] == "+1 555 0100"
     assert not selected[0].evidence[0].eligible
+
+
+def test_absurd_price_outlier_is_ineligible():
+    too_low = quote(station_id="bad_low", price="0.50")
+    too_high = quote(station_id="bad_high", price="25.00")
+    normal = quote(station_id="ok", price="5.50")
+    selected, excluded, _ = select([too_low, too_high, normal])
+    assert excluded == 2
+    assert len(selected) == 1
+    assert selected[0].station.id == "ok"
+
+
+def test_price_anomaly_warning_triggered_for_deep_discount():
+    s1 = quote(station_id="s1", price="5.80", canonical_id="google_places:s1")
+    s2 = quote(station_id="s2", price="5.90", canonical_id="google_places:s2")
+    s3 = quote(station_id="s3", price="2.90", canonical_id="google_places:s3")
+    selected, _, warnings = select([s1, s2, s3])
+    assert any("Price anomaly detected" in w for w in warnings)
+

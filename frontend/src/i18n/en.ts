@@ -542,6 +542,8 @@ export const en = {
   "alerts.enabled": "Smart alerts are on. A test notification was queued.",
   "alerts.disabled": "Smart alerts and their server subscription were removed.",
   "alerts.unsupported": "Push notifications are not supported in this browser or context.",
+  "alerts.iosPwaTipTitle": "iPhone / Safari Requirement",
+  "alerts.iosPwaTip": "Per Apple iOS requirements, tap the Safari Share button ➔ 'Add to Home Screen', then launch GasWise from your Home Screen to enable Push notifications.",
   "alerts.error": "Smart alerts could not be changed. Check browser permission and server configuration.",
   "alerts.watch": "Watch this price",
   "alerts.unwatch": "Stop watching",
@@ -568,7 +570,19 @@ export const en = {
   "assistant.justFilled": "I just refuelled",
   "assistant.history": "Refuel history ({count})",
   "assistant.delete": "Delete",
-
+  "lifezones.title": "Life Zones & Commute",
+  "lifezones.description": "Set your frequent living zones (Home, Work). 100% private and stored locally on your device.",
+  "lifezones.privacy": "Zero-Knowledge Local Storage: Your home and work addresses are kept exclusively inside your browser private database. No server travel logs or tracking.",
+  "lifezones.home": "Home",
+  "lifezones.work": "Work",
+  "lifezones.custom": "Custom",
+  "lifezones.add": "Add zone",
+  "lifezones.delete": "Delete",
+  "lifezones.arbitrageTitle": "Cross-Zone Arbitrage",
+  "lifezones.arbitrageHint": "Refueling near {zone} on your commute saves {amount} (saves {diff}/gal, minus {detour} mi detour cost).",
+  "lifezones.quickSwitch": "Life Zones",
+  "lifezones.inputPlaceholder": "Enter ZIP or city (e.g. 90015, 90007)",
+  "lifezones.empty": "No life zones saved yet. Add Home or Work above.",
 }
 
 export type MessageKey = keyof typeof en

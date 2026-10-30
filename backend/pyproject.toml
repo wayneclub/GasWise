@@ -21,6 +21,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+filterwarnings = [
+    "ignore:.*starlette.testclient.*",
+]
 [tool.ruff]
 line-length = 110
 [tool.hatch.build.targets.wheel]

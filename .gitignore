@@ -89,6 +89,7 @@ Thumbs.db
 
 # Local research outputs and workspace-specific tools
 artifacts/
+*.zip
 .claude/
 .taste-skill/
 .docker-secrets/

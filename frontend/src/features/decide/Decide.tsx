@@ -12,6 +12,7 @@ import { assess, PRIORITY_STRATEGY, picks, tradeoff } from '../../lib/recommend'
 import { messageId } from '../../lib/errorMessages'
 import { useFuelSession } from '../../lib/session'
 import { LocationSearch } from '../setup/LocationSearch'
+import { calculateArbitrage, estimateDistanceMiles, loadLifeZones, saveLifeZone, type ArbitrageOpportunity } from '../../lib/lifeZones'
 import { HeroPick } from './PickCards'
 import { ErrorState, PickSkeleton } from './States'
 import { SearchFallback } from './SearchFallback'
@@ -26,6 +27,7 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
   const session = useFuelSession(prefs, active)
   const [fillOpen, setFillOpen] = useState(false)
   const [locationOpen, setLocationOpen] = useState(false)
+  const [arbitrage, setArbitrage] = useState<ArbitrageOpportunity | null>(null)
   const { start } = session
   const started = useRef(!!session.origin)
 
@@ -41,6 +43,33 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
   }, [start])
 
   const { phase, result, error } = session
+
+  // Observe and evaluate life-zones arbitrage opportunity
+  useEffect(() => {
+    if (!result || !session.origin) return
+    let active = true
+    void (async () => {
+      const zones = await loadLifeZones()
+      if (!zones.length || !active) return
+      const topStation = result.ranking?.results?.[0]?.station
+      const bestPriceStr = topStation?.comparison_price_per_gallon ?? topStation?.price_per_gallon
+      const bestPrice = bestPriceStr ? Number(bestPriceStr) : undefined
+      if (bestPrice && session.origin) {
+        const match = zones.find(z => estimateDistanceMiles(z.origin, session.origin!) < 3.0)
+        if (match && match.lastObservedPrice !== bestPrice) {
+          await saveLifeZone({ ...match, lastObservedPrice: bestPrice })
+        }
+      }
+      const home = zones.find(z => z.kind === 'home')
+      const work = zones.find(z => z.kind === 'work')
+      if (home && work && active) {
+        const mpg = Number(prefs.vehicle?.combinedMpg ?? prefs.mpg ?? 25)
+        const opp = calculateArbitrage(home, work, prefs.gallons, mpg)
+        setArbitrage(opp && opp.isBeneficial ? opp : null)
+      }
+    })()
+    return () => { active = false }
+  }, [result, session.origin, prefs.gallons, prefs.mpg, prefs.vehicle])
   const primary = PRIORITY_STRATEGY[prefs.preference]
   const cards = result ? picks(result, primary) : []
   const assessment = result ? assess(result, primary) : null
@@ -62,6 +91,23 @@ export function Decide({ prefs, update, onSettings, active = true }: { active?: 
           <LocationSearch onChoose={(location, label) => { setLocationOpen(false); void start({ override: location, label }) }} />
         </> : null}
       </SearchContext>
+
+      {arbitrage && arbitrage.isBeneficial ? (
+        <div className="mb-4 rounded-control border border-accent/40 bg-accent-soft/30 p-3.5 flex items-start gap-3 text-sm">
+          <span className="text-xl shrink-0" aria-hidden="true">💡</span>
+          <div className="flex-1 min-w-0">
+            <span className="font-semibold text-accent block text-sm">{t('lifezones.arbitrageTitle')}</span>
+            <p className="text-xs text-ink mt-0.5 leading-relaxed">
+              {t('lifezones.arbitrageHint', {
+                zone: arbitrage.toZone.name,
+                diff: `$${arbitrage.priceDiff.toFixed(2)}`,
+                detour: arbitrage.detourMiles.toString(),
+                amount: `$${arbitrage.netSavings.toFixed(2)}`,
+              })}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
         <div className="flex flex-col gap-4">

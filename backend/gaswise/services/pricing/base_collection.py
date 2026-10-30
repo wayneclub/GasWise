@@ -46,7 +46,7 @@ class CollectionJob:
         return namespace + self.query.model_dump_json()
 
 
-def collection_jobs(service, bases, *, coverage_strategy="legacy", base_radius=10000, max_radius=20000):
+def collection_jobs(service, bases, *, coverage_strategy="legacy", base_radius=10000, max_radius=20000, gasbuddy_max_pages=8):
     jobs = {}
     radii = requested_radii(
         bases, strategy=coverage_strategy, base_radius=base_radius, max_radius=max_radius
@@ -56,7 +56,7 @@ def collection_jobs(service, bases, *, coverage_strategy="legacy", base_radius=1
         for fuel in ("regular", "premium"):
             for source, provider, query in (
                 ("gasbuddy", service.gasbuddy, GasBuddySearch(
-                    origin=centre, radius_meters=radius, fuel_type=fuel, max_pages=8,
+                    origin=centre, radius_meters=radius, fuel_type=fuel, max_pages=gasbuddy_max_pages,
                     max_results=160, payment_type="cash_or_credit", include_payment_variants=True)),
                 ("maps", service.maps_web, MapsWebSearch(
                     origin=centre, radius_meters=radius, fuel_type=fuel, detail_limit=3 if fuel == "premium" else 0)),
@@ -76,15 +76,17 @@ def collection_jobs(service, bases, *, coverage_strategy="legacy", base_radius=1
 class BaseCollection:
     def __init__(self, service, bases, *, interval=86400, limits=None, daily_limit=40, egress_lanes=1,
                  coverage_strategy="legacy", base_radius=10000, max_radius=20000,
-                 cycle_request_budget=2300):
+                 cycle_request_budget=2300, gasbuddy_max_pages=8):
         self.service = service
         self.cache = service.shared_cache
         self.coverage_strategy = coverage_strategy
         self.base_radius = base_radius
         self.max_radius = max_radius
+        self.gasbuddy_max_pages = gasbuddy_max_pages
         self.jobs = collection_jobs(
             service, bases, coverage_strategy=coverage_strategy,
             base_radius=base_radius, max_radius=max_radius,
+            gasbuddy_max_pages=gasbuddy_max_pages,
         )
         reserve = sum(job.request_reserve for job in self.jobs.values())
         if reserve > cycle_request_budget:

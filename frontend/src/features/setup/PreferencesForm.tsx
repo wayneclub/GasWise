@@ -13,6 +13,7 @@ import { VehiclePicker } from './VehiclePicker'
 import { PrivacyProfile } from './PrivacyProfile'
 import { SmartAlerts } from './SmartAlerts'
 import { FuelAssistant } from './FuelAssistant'
+import { LifeZones } from './LifeZones'
 
 function SettingsSection({
   id,
@@ -77,6 +78,7 @@ export function PreferencesForm({
     { id: 'section-priority', label: t('prefs.priority') },
     { id: 'section-stations', label: t('prefs.costco') },
     { id: 'section-route', label: t('route.mode') },
+    { id: 'section-lifezones', label: t('lifezones.title') },
     { id: 'section-assistant', label: t('assistant.title') },
     { id: 'smart-alerts', label: t('alerts.title') },
     { id: 'section-privacy', label: t('privacy.title') },
@@ -389,13 +391,16 @@ export function PreferencesForm({
         </SettingsSection>
       ) : null}
 
-      {/* 6. Fuel Timing Assistant (Advanced) */}
+      {/* 6. Life Zones (Advanced) */}
+      {advanced ? <LifeZones prefs={prefs} /> : null}
+
+      {/* 7. Fuel Timing Assistant (Advanced) */}
       {advanced ? <FuelAssistant prefs={prefs} /> : null}
 
-      {/* 7. Smart Fuel Alerts (Advanced) */}
+      {/* 8. Smart Fuel Alerts (Advanced) */}
       {advanced ? <SmartAlerts /> : null}
 
-      {/* 8. Privacy Profile & Danger Zone (Advanced & replace) */}
+      {/* 9. Privacy Profile & Danger Zone (Advanced & replace) */}
       {advanced && replace ? <PrivacyProfile prefs={prefs} replace={replace} /> : null}
     </div>
   )

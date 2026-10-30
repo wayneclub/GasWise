@@ -19,6 +19,7 @@ from gaswise.contracts.search import Search
 from gaswise.contracts.sources import GasBuddyPrices, GasBuddyQuote, GasBuddySearch, gasbuddy_variables
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.comparison import distance_meters
+from gaswise.domain.pricing.identity import membership_for_name
 
 # Exact public SearchPrices document observed from normal page loading.
 PRICE_QUERY = """query SearchPrices($brandId: Int, $cursor: String, $fuel: Int, $lat: Float, $lng: Float, $maxAge: Int, $search: String) {
@@ -209,9 +210,7 @@ class GasBuddyWebProvider:
                             GasBuddyQuote(
                                 id=str(item["id"]),
                                 name=metadata["name"],
-                                membership_required="costco"
-                                if metadata["name"].strip().casefold() == "costco"
-                                else None,
+                                membership_required=membership_for_name(metadata.get("name", "")),
                                 address=f"{address['line1']}, {address['locality']}, {address['region']} {address['postalCode']}",
                                 street=address["line1"],
                                 city=address["locality"],
@@ -284,11 +283,7 @@ class GasBuddyWebProvider:
                 fetched_at=quote.fetched_at,
                 source="gasbuddy_web",
                 payment_type=quote.payment_type,
-                membership_required="costco"
-                if "costco" in quote.name.lower()
-                else "sams_club"
-                if "sam's club" in quote.name.lower()
-                else None,
+                membership_required=membership_for_name(quote.name),
                 attribution=["GasBuddy", "Google Maps"],
             )
 
