@@ -13,6 +13,7 @@ class PushKeys(Model):
 
 class PushSubscription(Model):
     endpoint: HttpUrl
+    expirationTime: int | None = None
     keys: PushKeys
 
     @field_validator("endpoint")

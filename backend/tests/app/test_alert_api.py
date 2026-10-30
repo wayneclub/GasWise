@@ -49,8 +49,10 @@ async def test_installation_and_need_state_never_accept_extra_private_fields():
 
 def test_push_contract_rejects_private_network_targets_and_fake_timezones():
     base = {"subscription": {"endpoint": "https://push.example.test/one",
+            "expirationTime": None,
             "keys": {"p256dh": "p" * 24, "auth": "a" * 12}}, "timezone": "America/Los_Angeles"}
     assert InstallationCreate.model_validate(base).timezone == "America/Los_Angeles"
+    assert InstallationCreate.model_validate(base).subscription.expirationTime is None
     with pytest.raises(ValidationError):
         InstallationCreate.model_validate({**base, "subscription": {**base["subscription"], "endpoint": "https://127.0.0.1/push"}})
     with pytest.raises(ValidationError):

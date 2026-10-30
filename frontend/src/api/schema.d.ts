@@ -1871,6 +1871,8 @@ export interface components {
              * Format: uri
              */
             endpoint: string;
+            /** Expirationtime */
+            expirationTime?: number | null;
             keys: components["schemas"]["PushKeys"];
         };
         /** RankOptions */

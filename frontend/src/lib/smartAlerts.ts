@@ -109,24 +109,33 @@ export async function enableSmartAlerts(locale: string): Promise<void> {
   })
 
   const subJson = subscription.toJSON()
-  if (!subJson.keys?.p256dh || !subJson.keys?.auth) {
+  let p256dh = subJson.keys?.p256dh
+  let auth = subJson.keys?.auth
+  if (!p256dh || !auth) {
     if (typeof subscription.getKey === 'function') {
       const p256dhKey = subscription.getKey('p256dh')
       const authKey = subscription.getKey('auth')
       if (p256dhKey && authKey) {
         const toB64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-        subJson.keys = {
-          p256dh: toB64(p256dhKey),
-          auth: toB64(authKey),
-        }
+        p256dh = toB64(p256dhKey)
+        auth = toB64(authKey)
       }
     }
+  }
+
+  const cleanSubscription = {
+    endpoint: subJson.endpoint!,
+    ...(subJson.expirationTime ? { expirationTime: subJson.expirationTime } : {}),
+    keys: {
+      p256dh: p256dh!,
+      auth: auth!,
+    },
   }
 
   let created: AlertAuth | null = null
   try {
     created = await api.createAlertInstallation({
-      subscription: subJson as unknown as PushSubscriptionJSON,
+      subscription: cleanSubscription as unknown as PushSubscriptionJSON,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
       locale,
     })

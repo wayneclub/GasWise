@@ -4790,6 +4790,17 @@
             "format": "uri",
             "title": "Endpoint"
           },
+          "expirationTime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expirationtime"
+          },
           "keys": {
             "$ref": "#/components/schemas/PushKeys"
           }
