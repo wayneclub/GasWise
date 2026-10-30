@@ -6,7 +6,7 @@ from gaswise.domain.pricing.collection_bases import BASE_CATALOG
 from gaswise.domain.pricing.collection_errors import SAFE_CODES
 
 LOCAL_ZONE = ZoneInfo('America/Los_Angeles')
-DEFERRALS = {'source_budget_deferred', 'configuration_changed', 'service_shutdown', 'coverage_missing'} | {
+DEFERRALS = {'source_budget_deferred', 'configuration_changed', 'service_shutdown', 'coverage_missing', 'pricing_egress_unavailable'} | {
     f'{source}_{suffix}' for source in ('gasbuddy', 'maps', 'waze') for suffix in (
         'mandatory_budget_reserved', 'background_daily_budget_exhausted', 'background_budget_exhausted',
         'request_budget_exhausted', 'background_wait_exhausted')}
@@ -21,6 +21,7 @@ LABELS = {
     'gasbuddy_http_csrf_missing': 'GasBuddy 首頁缺少 CSRF',
     'gasbuddy_rate_limited': 'GasBuddy 來源限流',
     'gasbuddy_access_rejected_cooldown': 'GasBuddy 來源拒絕／驗證挑戰',
+    'pricing_egress_unavailable': '出口代理暫時不可用',
     'unclassified': '未分類錯誤（已省略原始訊息）',
     'lease_expired': '程序未完成，任務租約已到期',
     'interrupted': '採集程序中斷',

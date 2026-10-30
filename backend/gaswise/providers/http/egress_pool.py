@@ -64,9 +64,18 @@ def selected_lane(size, health_file=None, quarantine=None, latencies=None):
         except (OSError, ValueError, KeyError, TypeError):
             unavailable = set(range(1, size))
     now = time.monotonic()
-    unavailable |= {lane for lane, until in (quarantine or {}).items() if until > now}
+    offline = set(unavailable)
+    quarantined = {lane for lane, until in (quarantine or {}).items() if until > now}
+    unavailable = offline | quarantined
     available = [index for index in range(size) if index not in unavailable]
     if not available:
+        # If all heartbeat-healthy lanes are quarantined by transient errors,
+        # fallback to the lane whose quarantine expires earliest to avoid deadlock.
+        vpn_online = [index for index in range(size) if index not in offline]
+        if vpn_online and quarantine:
+            index = min(vpn_online, key=lambda i: quarantine.get(i, 0))
+            _selection.set((key, index))
+            return _record_lane(index)
         # A source failure, not a programming error: callers report the source as
         # deferred and the ranking keeps other evidence instead of returning 500.
         raise ProviderError('pricing_egress_unavailable')
@@ -82,9 +91,9 @@ def selected_lane(size, health_file=None, quarantine=None, latencies=None):
 
 class PooledHTTPClient:
     """Separate cookie jars per exit; provider-supplied authentication headers win."""
-    def __init__(self, proxies, *, client_factory=None, health_file=None):
+    def __init__(self, proxies, *, client_factory=None, health_file=None, quarantine=None):
         self.health_file = health_file
-        self.quarantine = {}
+        self.quarantine = quarantine if quarantine is not None else {}
         factory = client_factory or (lambda proxy: httpx.AsyncClient(
             proxy=proxy, trust_env=False, http2=True, timeout=20, follow_redirects=False))
         self.clients = [factory(str(proxy)) for proxy in proxies]
@@ -98,7 +107,10 @@ class PooledHTTPClient:
     async def _request(self, method, url, **kwargs):
         index = selected_lane(len(self.clients), self.health_file, self.quarantine)
         try:
-            return await getattr(self.clients[index], method)(url, **kwargs)
+            response = await getattr(self.clients[index], method)(url, **kwargs)
+            if index in self.quarantine:
+                del self.quarantine[index]
+            return response
         except httpx.TransportError:
             quarantine_lane(self.quarantine, index)
             raise
@@ -110,10 +122,10 @@ class PooledHTTPClient:
 
 class PooledGasBuddySession:
     """Keep CSRF, cookies and browser protocol together on each fixed US exit."""
-    def __init__(self, proxies, *, session_seconds=600, worker_factory=None, health_file=None):
+    def __init__(self, proxies, *, session_seconds=600, worker_factory=None, health_file=None, quarantine=None):
         self.health_file = health_file
         self.request_budget = None
-        self.quarantine = {}
+        self.quarantine = quarantine if quarantine is not None else {}
         self.lane_latencies = {}
         self.workers = []
         for index, proxy in enumerate(proxies):

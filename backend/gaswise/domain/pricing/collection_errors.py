@@ -13,6 +13,7 @@ SAFE_CODES = frozenset({
     'google_maps_web_session_expired', 'google_maps_web_private_session_invalid',
     'waze_upstream_unavailable', 'waze_upstream_rejected_request', 'waze_invalid_response',
     'waze_rate_limited', 'waze_reauthentication_required',
+    'pricing_egress_unavailable',
 })
 
 

@@ -44,6 +44,7 @@ def test_no_http_response_is_not_presented_as_evidence_of_a_block():
 
 def test_internal_budget_and_interruptions_do_not_inflate_source_failure_statistics():
     assert completion('gasbuddy_background_daily_budget_exhausted') == ('deferred', 'gasbuddy_background_daily_budget_exhausted')
+    assert completion('pricing_egress_unavailable') == ('deferred', 'pricing_egress_unavailable')
     assert completion('interrupted') == ('interrupted', 'interrupted')
     assert completion('lease_expired') == ('interrupted', 'lease_expired')
     assert completion('service_shutdown') == ('deferred', 'service_shutdown')

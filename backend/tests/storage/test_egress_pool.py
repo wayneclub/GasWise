@@ -330,3 +330,36 @@ async def test_active_egress_probe_quarantines_unhealthy_lane_and_clears_on_reco
     assert 1 not in pool.quarantine
     await pool.close()
 
+
+async def test_all_lanes_quarantined_falls_back_to_earliest_expiration_without_deadlock(monkeypatch):
+    import gaswise.providers.http.egress_pool as egress_pool
+    now = [1000.0]
+    monkeypatch.setattr(egress_pool.time, 'monotonic', lambda: now[0])
+    quarantine = {0: 1200.0, 1: 1100.0}
+    token = collection_egress_key.set(keys_for_lanes()[0])
+    try:
+        egress_pool._selection.set(None)
+        # Both lanes quarantined, but VPN is up: falls back to lane 1 (earliest expiration: 1100 < 1200)
+        assert egress_pool.selected_lane(2, quarantine=quarantine) == 1
+    finally:
+        collection_egress_key.reset(token)
+
+
+async def test_pooled_http_client_clears_quarantine_on_successful_response():
+    from gaswise.providers.http.egress_pool import PooledHTTPClient
+    class FakeClient:
+        def __init__(self, proxy):
+            self.proxy = proxy
+        async def post(self, url, **kwargs):
+            return "ok"
+        async def aclose(self):
+            pass
+
+    quarantine = {0: 9999.0}
+    client = PooledHTTPClient(['http://a:8888'], client_factory=FakeClient, quarantine=quarantine)
+    assert 0 in client.quarantine
+    resp = await client.post('https://example.com')
+    assert resp == 'ok'
+    assert 0 not in client.quarantine
+
+
