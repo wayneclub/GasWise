@@ -14,6 +14,7 @@ function respond(body: unknown, status = 200, headers: Record<string, string> = 
 }
 
 beforeEach(() => {
+  sessionStorage.clear()
   vi.stubGlobal('indexedDB', new IDBFactory())
   localStorage.setItem('gaswise.prefs.v1', JSON.stringify({ onboarded: true, fuelType: 'premium', mpg: '22', locale: 'en' }))
   Object.defineProperty(window, 'isSecureContext', { configurable: true, value: true })
@@ -35,6 +36,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks()
   localStorage.clear()
+  sessionStorage.clear()
 })
 
 describe('Decide', () => {

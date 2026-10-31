@@ -268,4 +268,42 @@ describe('MyPage', () => {
       }),
     )
   })
+
+  it('allows user to customize vehicle colors in garage', async () => {
+    const update = vi.fn()
+    const car = {
+      id: 201,
+      label: '2018 Mercedes-Benz E400 Coupe',
+      fuelType: 'premium' as const,
+      combinedMpg: '22',
+      color: '#1e293b',
+    }
+
+    render(
+      <MyPage
+        prefs={{
+          ...DEFAULT_PREFS,
+          vehicle: car,
+          garage: [car],
+        }}
+        update={update}
+        onNavigateToFuel={() => {}}
+      />,
+    )
+
+    // Open color customization
+    const colorBtn = screen.getByRole('button', { name: 'Vehicle Color' })
+    fireEvent.click(colorBtn)
+
+    // Pick Soul Red
+    const redBtn = screen.getByRole('button', { name: 'Soul Red' })
+    fireEvent.click(redBtn)
+
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        garage: [expect.objectContaining({ color: '#dc2626' })],
+        vehicle: expect.objectContaining({ color: '#dc2626' }),
+      }),
+    )
+  })
 })

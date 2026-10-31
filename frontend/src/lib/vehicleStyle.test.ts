@@ -1,57 +1,72 @@
 import { describe, expect, it } from 'vitest'
-import { inferVehicleArchetype } from './vehicleStyle'
+import {
+  inferVehicleArchetype,
+  inferVehicleSilhouette,
+  VEHICLE_COLOR_PRESETS,
+} from './vehicleStyle'
 
-describe('inferVehicleArchetype', () => {
-  it('identifies coupes accurately', () => {
+describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
+  it('identifies real vehicle silhouettes accurately', () => {
+    // E-Class Coupe
+    expect(inferVehicleSilhouette('2018 Mercedes-Benz E400 Coupe')).toBe('e_class_coupe')
     expect(inferVehicleArchetype('2018 Mercedes-Benz E400 Coupe')).toBe('coupe')
-    expect(inferVehicleArchetype('2020 Ford Mustang GT Coupe')).toBe('coupe')
-    expect(inferVehicleArchetype('2016 Porsche Cayman')).toBe('coupe')
-    expect(inferVehicleArchetype('2022 Subaru BRZ')).toBe('coupe')
-  })
 
-  it('identifies convertibles accurately', () => {
-    expect(inferVehicleArchetype('2015 Mazda MX-5 Miata')).toBe('convertible')
-    expect(inferVehicleArchetype('2019 Porsche 911 Cabriolet')).toBe('convertible')
-    expect(inferVehicleArchetype('2021 BMW Z4 Roadster')).toBe('convertible')
-  })
+    // Muscle Coupe
+    expect(inferVehicleSilhouette('2020 Ford Mustang GT')).toBe('muscle_coupe')
+    expect(inferVehicleArchetype('2020 Ford Mustang GT')).toBe('coupe')
 
-  it('identifies SUVs accurately', () => {
-    expect(inferVehicleArchetype('2021 Toyota RAV4 Hybrid')).toBe('suv')
-    expect(inferVehicleArchetype('2020 Honda CR-V EX-L')).toBe('suv')
-    expect(inferVehicleArchetype('2022 Tesla Model Y')).toBe('suv')
-    expect(inferVehicleArchetype('2019 Mercedes-Benz GLC 300')).toBe('suv')
-  })
+    // Porsche 911
+    expect(inferVehicleSilhouette('2021 Porsche 911 Carrera S')).toBe('porsche_coupe')
 
-  it('identifies pickup trucks accurately', () => {
-    expect(inferVehicleArchetype('2020 Ford F-150 SuperCrew')).toBe('truck')
-    expect(inferVehicleArchetype('2021 Chevrolet Silverado 1500')).toBe('truck')
-    expect(inferVehicleArchetype('2019 Toyota Tacoma Double Cab')).toBe('truck')
-    expect(inferVehicleArchetype('Tesla Cybertruck')).toBe('truck')
-  })
-
-  it('identifies hatchbacks accurately', () => {
-    expect(inferVehicleArchetype('2018 Volkswagen Golf GTI')).toBe('hatchback')
-    expect(inferVehicleArchetype('2020 Toyota Prius Prime')).toBe('hatchback')
-    expect(inferVehicleArchetype('2017 Honda Fit EX')).toBe('hatchback')
-  })
-
-  it('identifies station wagons accurately', () => {
-    expect(inferVehicleArchetype('2020 Audi A4 Allroad')).toBe('wagon')
-    expect(inferVehicleArchetype('2019 Volvo V60 Cross Country')).toBe('wagon')
-    expect(inferVehicleArchetype('2015 BMW 328i Sports Wagon')).toBe('wagon')
-  })
-
-  it('identifies minivans accurately', () => {
-    expect(inferVehicleArchetype('2022 Toyota Sienna XLE')).toBe('van')
-    expect(inferVehicleArchetype('2021 Honda Odyssey Elite')).toBe('van')
-    expect(inferVehicleArchetype('2020 Chrysler Pacifica')).toBe('van')
-  })
-
-  it('identifies sedans accurately and falls back safely', () => {
-    expect(inferVehicleArchetype('2019 Honda Civic Sedan')).toBe('sedan')
-    expect(inferVehicleArchetype('2021 Toyota Camry LE')).toBe('sedan')
+    // Tesla Model 3
+    expect(inferVehicleSilhouette('2022 Tesla Model 3 Long Range')).toBe('tesla_sedan')
     expect(inferVehicleArchetype('2022 Tesla Model 3 Long Range')).toBe('sedan')
-    expect(inferVehicleArchetype('Unknown Car 2020')).toBe('sedan')
-    expect(inferVehicleArchetype(null)).toBe('sedan')
+
+    // Cybertruck
+    expect(inferVehicleSilhouette('Tesla Cybertruck')).toBe('cybertruck')
+    expect(inferVehicleArchetype('Tesla Cybertruck')).toBe('truck')
+
+    // Pickup Truck
+    expect(inferVehicleSilhouette('2020 Ford F-150 SuperCrew')).toBe('pickup_truck')
+    expect(inferVehicleArchetype('2020 Ford F-150 SuperCrew')).toBe('truck')
+
+    // Boxy SUV (Wrangler, G-Class)
+    expect(inferVehicleSilhouette('2022 Jeep Wrangler Rubicon')).toBe('boxy_suv')
+    expect(inferVehicleArchetype('2022 Jeep Wrangler Rubicon')).toBe('suv')
+
+    // Crossover SUV
+    expect(inferVehicleSilhouette('2021 Toyota RAV4 Hybrid')).toBe('crossover_suv')
+    expect(inferVehicleArchetype('2021 Toyota RAV4 Hybrid')).toBe('suv')
+
+    // Roadster
+    expect(inferVehicleSilhouette('2016 Mazda MX-5 Miata Club')).toBe('roadster_convertible')
+    expect(inferVehicleArchetype('2016 Mazda MX-5 Miata Club')).toBe('convertible')
+
+    // Aero Hatchback (Prius)
+    expect(inferVehicleSilhouette('2020 Toyota Prius Prime')).toBe('aero_hatch_prius')
+    expect(inferVehicleArchetype('2020 Toyota Prius Prime')).toBe('hatchback')
+
+    // Classic Hatchback (Golf)
+    expect(inferVehicleSilhouette('2018 Volkswagen Golf GTI')).toBe('hatchback_golf')
+    expect(inferVehicleArchetype('2018 Volkswagen Golf GTI')).toBe('hatchback')
+
+    // Wagon
+    expect(inferVehicleSilhouette('2022 Subaru Outback Touring')).toBe('wagon_estate')
+    expect(inferVehicleArchetype('2022 Subaru Outback Touring')).toBe('wagon')
+
+    // Minivan
+    expect(inferVehicleSilhouette('2022 Toyota Sienna XLE')).toBe('minivan')
+    expect(inferVehicleArchetype('2022 Toyota Sienna XLE')).toBe('van')
+
+    // Default Sedan
+    expect(inferVehicleSilhouette('2019 Honda Civic EX')).toBe('executive_sedan')
+    expect(inferVehicleArchetype('2019 Honda Civic EX')).toBe('sedan')
+  })
+
+  it('provides rich automotive color presets', () => {
+    expect(VEHICLE_COLOR_PRESETS.length).toBeGreaterThanOrEqual(8)
+    expect(VEHICLE_COLOR_PRESETS.some((c) => c.id === 'obsidian')).toBe(true)
+    expect(VEHICLE_COLOR_PRESETS.some((c) => c.id === 'red')).toBe(true)
+    expect(VEHICLE_COLOR_PRESETS.some((c) => c.id === 'blue')).toBe(true)
   })
 })

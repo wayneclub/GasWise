@@ -1,6 +1,7 @@
 import {
   CarIcon,
   CheckCircleIcon,
+  PaletteIcon,
   PlusIcon,
   ShieldCheckIcon,
   TrashIcon,
@@ -14,6 +15,7 @@ import type { Prefs, SavedVehicle } from '../../lib/prefs'
 import { useVehicleIdentity } from '../../lib/vehicleIdentity'
 import { VehicleThumbnail } from './VehicleThumbnail'
 import { VehiclePicker } from '../setup/VehiclePicker'
+import { VEHICLE_COLOR_PRESETS } from '../../lib/vehicleStyle'
 
 interface GarageSectionProps {
   prefs: Prefs
@@ -25,6 +27,8 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
   const { identity, storageStatus } = useVehicleIdentity()
   const [showAddModal, setShowAddModal] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [editingColorId, setEditingColorId] = useState<number | null>(null)
+  const [newCarColor, setNewCarColor] = useState<string>('#1e293b')
 
   // Ensure garage list has at least prefs.vehicle if garage is empty
   const garageList: SavedVehicle[] =
@@ -46,16 +50,17 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
 
   const handleAddCar = (newCar: SavedVehicle | null) => {
     if (!newCar) return
-    const exists = garageList.some((v) => v.id === newCar.id)
+    const carWithColor = { ...newCar, color: newCar.color || newCarColor }
+    const exists = garageList.some((v) => v.id === carWithColor.id)
     const updatedGarage = exists
-      ? garageList.map((v) => (v.id === newCar.id ? newCar : v))
-      : [newCar, ...garageList]
+      ? garageList.map((v) => (v.id === carWithColor.id ? carWithColor : v))
+      : [carWithColor, ...garageList]
 
     update({
       garage: updatedGarage,
-      vehicle: newCar,
-      fuelType: newCar.fuelType,
-      mpg: newCar.combinedMpg,
+      vehicle: carWithColor,
+      fuelType: carWithColor.fuelType,
+      mpg: carWithColor.combinedMpg,
     })
     setShowAddModal(false)
   }
@@ -72,6 +77,21 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
       mpg: nextActive ? nextActive.combinedMpg : prefs.mpg,
     })
     setDeletingId(null)
+  }
+
+  const handleColorChange = (carId: number, color: string) => {
+    const updatedGarage = garageList.map((v) =>
+      v.id === carId ? { ...v, color } : v,
+    )
+    const nextActive =
+      activeId === carId && prefs.vehicle
+        ? { ...prefs.vehicle, color }
+        : prefs.vehicle
+
+    update({
+      garage: updatedGarage,
+      vehicle: nextActive,
+    })
   }
 
   return (
@@ -130,6 +150,7 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {garageList.map((car) => {
             const isActive = activeId === car.id
+            const currentColor = car.color || '#1e293b'
             return (
               <div
                 key={car.id}
@@ -163,10 +184,11 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
 
                 {/* Car Thumbnail & Spec Section */}
                 <div className="my-2 flex items-center gap-4">
-                  {/* Clean Vector Silhouette Thumbnail */}
+                  {/* Clean Vector Silhouette Thumbnail with Dynamic Color */}
                   <VehicleThumbnail
                     label={car.label}
                     bodyStyle={car.bodyStyle}
+                    color={currentColor}
                     size="md"
                     showBadge
                     active={isActive}
@@ -196,6 +218,71 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                       </p>
                     ) : null}
                   </div>
+                </div>
+
+                {/* Color Customization Swatch Bar */}
+                <div className="my-1 flex flex-col gap-1.5 rounded-xl bg-sunken/40 p-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setEditingColorId(editingColorId === car.id ? null : car.id)}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-0.5 text-[11px] font-medium text-muted transition hover:bg-surface hover:text-ink"
+                      aria-label={t('garage.color')}
+                    >
+                      <span
+                        className="size-3.5 rounded-full border border-line shadow-2xs shrink-0"
+                        style={{ backgroundColor: currentColor }}
+                      />
+                      <PaletteIcon size={13} className="text-muted" />
+                      <span>{t('garage.color')}</span>
+                    </button>
+
+                    <label className="relative flex cursor-pointer items-center gap-1 text-[11px] font-mono text-muted hover:text-ink">
+                      <span>{currentColor}</span>
+                      <input
+                        type="color"
+                        value={currentColor}
+                        onChange={(e) => handleColorChange(car.id, e.target.value)}
+                        className="sr-only"
+                        aria-label={t('garage.customColor')}
+                      />
+                    </label>
+                  </div>
+
+                  {editingColorId === car.id ? (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-line/40">
+                      {VEHICLE_COLOR_PRESETS.map((preset) => {
+                        const isSelected = currentColor.toLowerCase() === preset.hex.toLowerCase()
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => handleColorChange(car.id, preset.hex)}
+                            title={preset.name}
+                            aria-label={preset.name}
+                            className={`size-5 rounded-full border transition-transform hover:scale-115 ${
+                              isSelected ? 'ring-2 ring-accent ring-offset-1 scale-110 border-transparent' : 'border-line/70'
+                            }`}
+                            style={{ backgroundColor: preset.hex }}
+                          />
+                        )
+                      })}
+                      {/* Native Custom Color Input Button */}
+                      <label
+                        title={t('garage.customColor')}
+                        className="grid size-5 cursor-pointer place-items-center rounded-full border border-dashed border-line hover:border-ink hover:scale-115 transition-transform"
+                      >
+                        <PlusIcon size={10} className="text-muted" />
+                        <input
+                          type="color"
+                          value={currentColor}
+                          onChange={(e) => handleColorChange(car.id, e.target.value)}
+                          className="sr-only"
+                          aria-label={t('garage.customColor')}
+                        />
+                      </label>
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Bottom Actions */}
@@ -249,6 +336,45 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
               >
                 <XIcon size={18} />
               </button>
+            </div>
+
+            {/* Optional initial color selector before adding */}
+            <div className="rounded-xl border border-line bg-sunken/30 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-ink">{t('garage.color')}</span>
+                <span className="font-mono text-[11px] text-muted">{newCarColor}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {VEHICLE_COLOR_PRESETS.map((preset) => {
+                  const isSelected = newCarColor.toLowerCase() === preset.hex.toLowerCase()
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => setNewCarColor(preset.hex)}
+                      title={preset.name}
+                      aria-label={preset.name}
+                      className={`size-6 rounded-full border transition-transform hover:scale-115 ${
+                        isSelected ? 'ring-2 ring-accent ring-offset-1 scale-110 border-transparent' : 'border-line/70'
+                      }`}
+                      style={{ backgroundColor: preset.hex }}
+                    />
+                  )
+                })}
+                <label
+                  title={t('garage.customColor')}
+                  className="grid size-6 cursor-pointer place-items-center rounded-full border border-dashed border-line hover:border-ink hover:scale-115 transition-transform"
+                >
+                  <PlusIcon size={12} className="text-muted" />
+                  <input
+                    type="color"
+                    value={newCarColor}
+                    onChange={(e) => setNewCarColor(e.target.value)}
+                    className="sr-only"
+                    aria-label={t('garage.customColor')}
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="py-2">

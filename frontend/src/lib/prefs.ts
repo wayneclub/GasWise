@@ -17,6 +17,7 @@ export interface SavedVehicle {
   bodyStyle?: string
   tankGallons?: number
   nickname?: string
+  color?: string
 }
 
 export interface Prefs {

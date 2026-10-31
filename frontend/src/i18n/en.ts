@@ -711,6 +711,8 @@ export const en = {
   "garage.archetype.hatchback": "Hatchback",
   "garage.archetype.wagon": "Station Wagon",
   "garage.archetype.van": "Minivan",
+  "garage.color": "Vehicle Color",
+  "garage.customColor": "Custom color",
 }
 
 export type MessageKey = keyof typeof en

@@ -690,4 +690,6 @@ export const ko: Record<MessageKey, string> = {
   "garage.archetype.hatchback": "해치백",
   "garage.archetype.wagon": "왜건",
   "garage.archetype.van": "미니밴",
+  "garage.color": "차량 색상 설정",
+  "garage.customColor": "커스텀 색상",
 }
