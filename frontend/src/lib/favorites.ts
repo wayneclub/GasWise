@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Station } from '../api/types'
 
 const DATABASE = 'gaswise-favorites-v1'
@@ -149,24 +149,33 @@ export async function replaceFavorites(favorites: FavoriteStation[]): Promise<vo
 export function useFavorites() {
   const [favorites, setFavorites] = useState<FavoriteStation[]>([])
   const [loading, setLoading] = useState(true)
+  const mountedRef = useRef(true)
 
-  const reload = () => {
+  const reload = useCallback(() => {
     loadFavorites()
       .then(items => {
-        setFavorites(items)
-        setLoading(false)
+        if (mountedRef.current) {
+          setFavorites(items)
+          setLoading(false)
+        }
       })
       .catch(() => {
-        setLoading(false)
+        if (mountedRef.current) {
+          setLoading(false)
+        }
       })
-  }
+  }, [])
 
   useEffect(() => {
+    mountedRef.current = true
     reload()
     const handle = () => reload()
     window.addEventListener(CHANGE_EVENT, handle)
-    return () => window.removeEventListener(CHANGE_EVENT, handle)
-  }, [])
+    return () => {
+      mountedRef.current = false
+      window.removeEventListener(CHANGE_EVENT, handle)
+    }
+  }, [reload])
 
   const favoriteIds = new Set(favorites.map(f => f.id))
 
