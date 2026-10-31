@@ -306,4 +306,35 @@ describe('MyPage', () => {
       }),
     )
   })
+
+  it('renders integrated life zones, personal driving & payment preferences and privacy vault in MyPage', async () => {
+    const update = vi.fn()
+    const replace = vi.fn()
+
+    render(
+      <MyPage
+        prefs={DEFAULT_PREFS}
+        update={update}
+        replace={replace}
+        onNavigateToFuel={() => {}}
+      />,
+    )
+
+    // Life zones section
+    expect(screen.getByText('Life Zones & Commute')).toBeInTheDocument()
+
+    // Personal Driving & Payment Preferences section
+    expect(screen.getByText('Driving & Payment Defaults')).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Google Maps' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Apple Maps' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Waze' })).toBeInTheDocument()
+
+    // Quick cashback preset button click
+    const presetBtn = screen.getByRole('button', { name: 'Costco (4%)' })
+    fireEvent.click(presetBtn)
+    expect(update).toHaveBeenCalledWith({ creditCashbackPercent: '4' })
+
+    // Privacy vault backup & reset section
+    expect(screen.getByRole('button', { name: 'Export encrypted backup' })).toBeInTheDocument()
+  })
 })

@@ -692,4 +692,8 @@ export const ko: Record<MessageKey, string> = {
   "garage.archetype.van": "미니밴",
   "garage.color": "차량 색상 설정",
   "garage.customColor": "커스텀 색상",
+  "my.personalPrefsTitle": "운전 및 결제 기본 설정",
+  "my.personalPrefsSubtitle": "기본 내비게이션 앱, 주유 카드 적립률 및 회원 자격",
+  "context.switchCar": "차량 전환",
+  "context.manageGarage": "차고 관리",
 }

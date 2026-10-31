@@ -95,7 +95,7 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
   }
 
   return (
-    <section aria-label={t('garage.title')} className="rounded-box border border-line bg-surface p-5 sm:p-6 shadow-sm flex flex-col gap-5">
+    <section id="garage-section" aria-label={t('garage.title')} className="rounded-box border border-line bg-surface p-5 sm:p-6 shadow-sm flex flex-col gap-5">
       {/* Garage Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
         <div className="flex items-center gap-2.5">

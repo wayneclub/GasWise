@@ -713,4 +713,8 @@ export const es: Record<MessageKey, string> = {
   "garage.archetype.van": "Monovolumen",
   "garage.color": "Color del vehiculo",
   "garage.customColor": "Color personalizado",
+  "my.personalPrefsTitle": "Preferencias de conducción y pago",
+  "my.personalPrefsSubtitle": "Aplicación de navegación, tasa de reembolso y membresías",
+  "context.switchCar": "Cambiar vehículo",
+  "context.manageGarage": "Gestionar garaje",
 }

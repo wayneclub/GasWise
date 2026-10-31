@@ -713,4 +713,8 @@ export const zhTW: Record<MessageKey, string> = {
   "garage.archetype.van": "廂型休旅",
   "garage.color": "車色客製化",
   "garage.customColor": "自訂車色",
+  "my.personalPrefsTitle": "駕駛與支付偏好",
+  "my.personalPrefsSubtitle": "預設導航軟體、加油信用卡回饋率與會員資格",
+  "context.switchCar": "切換車輛",
+  "context.manageGarage": "車庫管理",
 }

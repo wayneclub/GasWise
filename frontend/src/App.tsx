@@ -39,6 +39,15 @@ function ServiceTabs({ prefs, update, replace }: { prefs: Prefs; update: (change
 
   const TABS = ['fuel', 'parts', 'my'] as const
 
+  const handleNavigateToGarage = () => {
+    setTab('my')
+    setSettingsView(null)
+    requestAnimationFrame(() => {
+      const el = document.getElementById('garage-section')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
   return <>
     <header className="liquid-nav">
       <div className="mx-auto flex min-h-16 w-full max-w-5xl flex-wrap items-center gap-x-2 px-4 pt-2 sm:flex-nowrap sm:gap-4 sm:pt-0">
@@ -66,9 +75,9 @@ function ServiceTabs({ prefs, update, replace }: { prefs: Prefs; update: (change
         <button type="button" onClick={() => setSettingsView('all')} aria-label={t('decide.settings')} className="grid size-11 shrink-0 place-items-center rounded-control text-muted hover:bg-sunken hover:text-ink"><GearSixIcon size={20} /></button>
       </div>
     </header>
-    <div role="tabpanel" id="panel-fuel" aria-labelledby="tab-fuel" hidden={settingsOpen || tab !== 'fuel'}><Decide active={!settingsOpen && tab === 'fuel'} prefs={prefs} update={update} onSettings={() => setSettingsView('all')} /></div>
+    <div role="tabpanel" id="panel-fuel" aria-labelledby="tab-fuel" hidden={settingsOpen || tab !== 'fuel'}><Decide active={!settingsOpen && tab === 'fuel'} prefs={prefs} update={update} onSettings={() => setSettingsView('all')} onEditCar={handleNavigateToGarage} /></div>
     <div role="tabpanel" id="panel-parts" aria-labelledby="tab-parts" hidden={settingsOpen || tab !== 'parts'}><Parts key={prefs.vehicle?.id ?? 'manual'} vehicle={prefs.vehicle} onChooseCar={() => { setTab('my'); setSettingsView(null) }} /></div>
-    <div role="tabpanel" id="panel-my" aria-labelledby="tab-my" hidden={settingsOpen || tab !== 'my'}><MyPage prefs={prefs} update={update} onNavigateToFuel={() => { setTab('fuel'); setSettingsView(null) }} /></div>
+    <div role="tabpanel" id="panel-my" aria-labelledby="tab-my" hidden={settingsOpen || tab !== 'my'}><MyPage prefs={prefs} update={update} replace={replace} onNavigateToFuel={() => { setTab('fuel'); setSettingsView(null) }} /></div>
     {settingsOpen ? (
       <main aria-label={t('decide.settings')} className="mx-auto max-w-5xl px-4 py-6 sm:py-8 lg:py-10">
         <div className="mb-6 flex items-center justify-between border-b border-line pb-5">

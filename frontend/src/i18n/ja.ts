@@ -692,4 +692,8 @@ export const ja: Record<MessageKey, string> = {
   "garage.archetype.van": "ミニバン",
   "garage.color": "ボディカラー変更",
   "garage.customColor": "カスタムカラー",
+  "my.personalPrefsTitle": "運転と支払い設定",
+  "my.personalPrefsSubtitle": "既定のナビアプリ、給油カード還元率、会員資格",
+  "context.switchCar": "車を切り替え",
+  "context.manageGarage": "ガレージ管理",
 }

@@ -713,6 +713,10 @@ export const en = {
   "garage.archetype.van": "Minivan",
   "garage.color": "Vehicle Color",
   "garage.customColor": "Custom color",
+  "my.personalPrefsTitle": "Driving & Payment Defaults",
+  "my.personalPrefsSubtitle": "Default navigation app, fuel cashback card rate and club memberships",
+  "context.switchCar": "Switch car",
+  "context.manageGarage": "Garage",
 }
 
 export type MessageKey = keyof typeof en
