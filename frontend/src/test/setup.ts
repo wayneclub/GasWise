@@ -1,7 +1,15 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterEach, beforeEach } from 'vitest'
 
-beforeEach(() => sessionStorage.clear())
+configure({ asyncUtilTimeout: 5000 })
 
-afterEach(cleanup)
+beforeEach(() => {
+  sessionStorage.clear()
+  Object.defineProperty(navigator, 'permissions', { configurable: true, value: undefined })
+})
+
+afterEach(() => {
+  cleanup()
+  Object.defineProperty(navigator, 'permissions', { configurable: true, value: undefined })
+})

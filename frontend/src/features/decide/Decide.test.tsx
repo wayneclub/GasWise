@@ -15,9 +15,11 @@ function respond(body: unknown, status = 200, headers: Record<string, string> = 
 
 beforeEach(() => {
   sessionStorage.clear()
+  localStorage.clear()
   vi.stubGlobal('indexedDB', new IDBFactory())
   localStorage.setItem('gaswise.prefs.v1', JSON.stringify({ onboarded: true, fuelType: 'premium', mpg: '22', locale: 'en' }))
   Object.defineProperty(window, 'isSecureContext', { configurable: true, value: true })
+  Object.defineProperty(navigator, 'permissions', { configurable: true, value: undefined })
   Object.defineProperty(navigator, 'geolocation', {
     configurable: true,
     value: {
@@ -37,6 +39,7 @@ afterEach(() => {
   vi.restoreAllMocks()
   localStorage.clear()
   sessionStorage.clear()
+  Object.defineProperty(navigator, 'permissions', { configurable: true, value: undefined })
 })
 
 describe('Decide', () => {
@@ -208,12 +211,15 @@ describe('Decide', () => {
       configurable: true,
       value: { query: () => Promise.resolve({ state: 'prompt' }) },
     })
-    render(<App />)
-    const button = await screen.findByRole('button', { name: /Use current location/ })
-    expect(fetchMock).not.toHaveBeenCalled()
-    fireEvent.click(button)
-    expect(await screen.findByRole('heading', { name: 'Chevron', level: 2 })).toBeInTheDocument()
-    Object.defineProperty(navigator, 'permissions', { configurable: true, value: undefined })
+    try {
+      render(<App />)
+      const button = await screen.findByRole('button', { name: /Use current location/ })
+      expect(fetchMock).not.toHaveBeenCalled()
+      fireEvent.click(button)
+      expect(await screen.findByRole('heading', { name: 'Chevron', level: 2 })).toBeInTheDocument()
+    } finally {
+      Object.defineProperty(navigator, 'permissions', { configurable: true, value: undefined })
+    }
   })
 
   it('waits out Retry-After before allowing another search', async () => {
@@ -224,9 +230,8 @@ describe('Decide', () => {
     expect(await screen.findByText('GasWise is busy')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Try again in 5s/ })).toBeDisabled()
   })
-})
 
-it('labels estimated card prices and keeps TOP TIER as a compact text badge', async () => {
+  it('labels estimated card prices and keeps TOP TIER as a compact text badge', async () => {
   const data = structuredClone(demo)
   const station = data.ranking!.recommendations!.best_value.station!
   Object.assign(station, { payment_type: 'unknown', price_per_gallon: '6.39', comparison_price_per_gallon: '6.59', payment_price_adjustment: '0.20', top_tier_brand: 'Chevron' })
@@ -348,3 +353,5 @@ it('clicking navigate or record button records refuel and shows toast notificati
   expect(await screen.findByText('Refueling Records (1)')).toBeInTheDocument()
   expect(screen.getAllByText('Chevron').length).toBeGreaterThanOrEqual(1)
 })
+})
+
