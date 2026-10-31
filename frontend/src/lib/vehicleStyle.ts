@@ -168,3 +168,18 @@ export function inferVehicleArchetype(text?: string | null): VehicleArchetype {
   const silhouette = inferVehicleSilhouette(text)
   return SILHOUETTE_TO_ARCHETYPE[silhouette]
 }
+
+/**
+ * Resolves an authentic vehicle photo URL if available or set.
+ */
+export function resolveVehiclePhoto(label?: string | null, customImageUrl?: string | null): string | null {
+  if (customImageUrl && customImageUrl.trim().length > 0) return customImageUrl.trim()
+  if (!label) return null
+  const s = label.toLowerCase()
+  if (
+    (/\b(e\s?400|e\s?450|e\s?350)\b.*\bcoupe\b/i.test(s) || (/\b(mercedes|benz)\b/i.test(s) && /\bcoupe\b/i.test(s)))
+  ) {
+    return '/vehicles/2018_mercedes_benz_e400_coupe_cropped.png'
+  }
+  return null
+}

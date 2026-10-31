@@ -181,6 +181,7 @@ export function SearchContext({
                           color={car.color}
                           size="sm"
                           showBadge={false}
+                          imageUrl={car.imageUrl}
                         />
                       </div>
                       <div className="flex-1 min-w-0">

@@ -1,7 +1,8 @@
-import { useId, useMemo } from 'react'
+import { useId, useMemo, useState } from 'react'
 import {
   inferVehicleArchetype,
   inferVehicleSilhouette,
+  resolveVehiclePhoto,
   SILHOUETTE_TO_ARCHETYPE,
   type VehicleArchetype,
   type VehicleSilhouette,
@@ -16,6 +17,8 @@ interface VehicleThumbnailProps {
   size?: 'sm' | 'md' | 'lg'
   showBadge?: boolean
   active?: boolean
+  imageUrl?: string | null
+  preferVector?: boolean
 }
 
 // Adjust a hex color by a percentage (-100 to +100) to create realistic specular reflections and shadow tones
@@ -39,9 +42,12 @@ export function VehicleThumbnail({
   size = 'md',
   showBadge = false,
   active = false,
+  imageUrl,
+  preferVector = false,
 }: VehicleThumbnailProps) {
   const { t } = useI18n()
   const uid = useId().replace(/:/g, '')
+  const [imgError, setImgError] = useState(false)
 
   const silhouette: VehicleSilhouette = useMemo(() => {
     const specific = inferVehicleSilhouette(label)
@@ -80,6 +86,14 @@ export function VehicleThumbnail({
     return (r * 299 + g * 587 + b * 114) / 1000 > 165
   }, [baseColor])
 
+  const resolvedPhoto = useMemo(() => {
+    return resolveVehiclePhoto(label, imageUrl)
+  }, [label, imageUrl])
+
+  // Show authentic photo if available and not custom-tinted to a non-default color
+  const isCustomColor = Boolean(color && color.toLowerCase() !== '#1e293b' && color.toLowerCase() !== '#ffffff')
+  const showPhoto = Boolean(resolvedPhoto && !imgError && !preferVector && !isCustomColor)
+
   const dimensions = {
     sm: 'w-20 h-10',
     md: 'w-32 h-16',
@@ -89,51 +103,61 @@ export function VehicleThumbnail({
   return (
     <div className={`relative flex flex-col items-center justify-center ${className}`}>
       <div
-        className={`relative flex items-center justify-center rounded-2xl border transition-all ${dimensions} ${
+        className={`relative flex items-center justify-center overflow-hidden rounded-2xl border transition-all ${dimensions} ${
           active
             ? 'border-accent/40 bg-gradient-to-b from-accent/10 via-surface to-accent/5 shadow-sm'
             : 'border-line/80 bg-sunken/40 dark:bg-sunken/20'
         }`}
       >
-        <svg
-          viewBox="0 0 200 80"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-full w-full p-2 select-none"
-          aria-hidden="true"
-        >
-          <defs>
-            {/* Metallic Automotive Finish Gradient */}
-            <linearGradient id={`car-paint-${uid}`} x1="0" y1="20" x2="0" y2="65" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor={highlightColor} />
-              <stop offset="40%" stopColor={baseColor} />
-              <stop offset="100%" stopColor={shadowColor} />
-            </linearGradient>
+        {showPhoto ? (
+          <img
+            src={resolvedPhoto!}
+            alt={label || 'Vehicle'}
+            onError={() => setImgError(true)}
+            className="h-full w-full object-contain p-1 select-none filter drop-shadow-sm transition-transform duration-200 hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <svg
+            viewBox="0 0 200 80"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-full w-full p-2 select-none"
+            aria-hidden="true"
+          >
+            <defs>
+              {/* Metallic Automotive Finish Gradient */}
+              <linearGradient id={`car-paint-${uid}`} x1="0" y1="20" x2="0" y2="65" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor={highlightColor} />
+                <stop offset="40%" stopColor={baseColor} />
+                <stop offset="100%" stopColor={shadowColor} />
+              </linearGradient>
 
-            {/* Tinted Automotive Glass with Specular Glare */}
-            <linearGradient id={`car-glass-${uid}`} x1="0" y1="24" x2="0" y2="44" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#bae6fd" stopOpacity="0.8" />
-              <stop offset="45%" stopColor="#0f172a" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#1e293b" stopOpacity="0.95" />
-            </linearGradient>
+              {/* Tinted Automotive Glass with Specular Glare */}
+              <linearGradient id={`car-glass-${uid}`} x1="0" y1="24" x2="0" y2="44" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#bae6fd" stopOpacity="0.8" />
+                <stop offset="45%" stopColor="#0f172a" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#1e293b" stopOpacity="0.95" />
+              </linearGradient>
 
-            {/* Chrome Trim Accent */}
-            <linearGradient id={`car-chrome-${uid}`} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#94a3b8" />
-              <stop offset="50%" stopColor="#f8fafc" />
-              <stop offset="100%" stopColor="#64748b" />
-            </linearGradient>
-          </defs>
+              {/* Chrome Trim Accent */}
+              <linearGradient id={`car-chrome-${uid}`} x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#94a3b8" />
+                <stop offset="50%" stopColor="#f8fafc" />
+                <stop offset="100%" stopColor="#64748b" />
+              </linearGradient>
+            </defs>
 
-          {/* Underbody Ground Shadow */}
-          <ellipse cx="100" cy="67" rx="84" ry="4" fill="currentColor" className="text-ink/15 dark:text-ink/30" />
+            {/* Underbody Ground Shadow */}
+            <ellipse cx="100" cy="67" rx="84" ry="4" fill="currentColor" className="text-ink/15 dark:text-ink/30" />
 
-          {/* Real Body Panels & Silhouette */}
-          {renderVehicleSilhouette(silhouette, `url(#car-paint-${uid})`, `url(#car-glass-${uid})`, isLightCar)}
+            {/* Real Body Panels & Silhouette */}
+            {renderVehicleSilhouette(silhouette, `url(#car-paint-${uid})`, `url(#car-glass-${uid})`, isLightCar)}
 
-          {/* Precision Wheels */}
-          {renderWheels(silhouette)}
-        </svg>
+            {/* Precision Wheels */}
+            {renderWheels(silhouette)}
+          </svg>
+        )}
       </div>
 
       {showBadge ? (
@@ -163,24 +187,32 @@ function renderVehicleSilhouette(
     case 'e_class_coupe':
       return (
         <g>
-          {/* Mercedes E-Class Coupe - Sleek pillarless fastback arch with frameless side glass */}
+          {/* Mercedes E-Class Coupe (C238) - Sleek Pillarless Fastback Arch */}
           <path
-            d="M 18 54 C 16 50 18 44 28 43 L 64 42 C 78 28 98 23 134 24 C 152 25 164 36 174 44 L 186 46 C 190 48 190 52 188 54 L 168 54 A 14 14 0 0 0 140 54 L 62 54 A 14 14 0 0 0 34 54 L 18 54 Z"
+            d="M 18 54 C 16 50 17 45 26 43 L 56 41 C 72 26 96 22 136 23 C 154 24 166 34 176 43 L 186 45 C 190 47 190 51 187 54 L 168 54 A 14 14 0 0 0 140 54 L 62 54 A 14 14 0 0 0 34 54 L 18 54 Z"
             fill={paintUrl}
             stroke={lineStroke}
             strokeWidth="0.75"
           />
-          {/* Sweeping Pillarless Side Glass */}
+          {/* Panoramic Gloss Black Roof Panel */}
+          <path d="M 74 24 C 92 22 120 22 136 23 C 142 27 146 32 150 37 L 70 37 C 71 31 72 27 74 24 Z" fill="#090d16" fillOpacity="0.85" />
+          {/* Unbroken Pillarless Side Glass with Chrome Trim */}
           <path
-            d="M 70 41 C 82 29 100 25 130 26 C 142 27 152 35 158 41 Z"
+            d="M 66 40 C 78 28 98 24 132 25 C 144 26 154 34 160 40 L 66 40 Z"
             fill={glassUrl}
+            stroke={lineStroke}
+            strokeWidth="0.8"
           />
-          {/* Characteristic Mercedes Shoulder Crease Line */}
-          <path d="M 40 45 C 80 43 130 43 180 46" stroke={lineStroke} strokeWidth="0.75" strokeOpacity="0.4" />
-          {/* LED Eyebrow Headlight */}
-          <path d="M 182 46 L 188 47 L 185 50 Z" fill="#38bdf8" />
-          {/* Horizontal Stardust OLED Taillight Strip */}
-          <path d="M 17 46 L 24 46 L 22 50 L 17 50 Z" fill="#ef4444" />
+          {/* Frameless Glass Division (Subtle Quarter Window Seam) */}
+          <line x1="116" y1="25" x2="116" y2="40" stroke={lineStroke} strokeWidth="0.8" strokeOpacity="0.6" />
+          {/* Mercedes Dropping Line / Beltline Crease */}
+          <path d="M 40 44 C 80 43 130 42 178 44" stroke={lineStroke} strokeWidth="0.75" strokeOpacity="0.35" fill="none" />
+          {/* Sport Rocker Panel Sill Accent */}
+          <line x1="64" y1="52" x2="138" y2="52" stroke={lineStroke} strokeWidth="1.2" strokeLinecap="round" />
+          {/* Multibeam LED Eyebrow Headlight */}
+          <path d="M 180 44 L 187 45 L 184 48 Z" fill="#38bdf8" />
+          {/* Slim Horizontal Stardust OLED Taillight Strip */}
+          <line x1="16" y1="44" x2="25" y2="44" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
         </g>
       )
 
@@ -501,6 +533,12 @@ function renderWheels(silhouette: VehicleSilhouette) {
       <circle cx={rearX} cy={cy} r={rimRadius - 2.5} fill="#0f172a" />
       <line x1={rearX - 3.5} y1={cy} x2={rearX + 3.5} y2={cy} stroke="#94a3b8" strokeWidth="1" />
       <line x1={rearX} y1={cy - 3.5} x2={rearX} y2={cy + 3.5} stroke="#94a3b8" strokeWidth="1" />
+      {silhouette === 'e_class_coupe' ? (
+        <>
+          <line x1={rearX - 3} y1={cy - 2.5} x2={rearX + 3} y2={cy + 2.5} stroke="#cbd5e1" strokeWidth="1" />
+          <line x1={rearX + 3} y1={cy - 2.5} x2={rearX - 3} y2={cy + 2.5} stroke="#cbd5e1" strokeWidth="1" />
+        </>
+      ) : null}
       <circle cx={rearX} cy={cy} r="1.8" fill="#e2e8f0" />
 
       {/* Front Wheel Tire & Rim */}
@@ -509,6 +547,12 @@ function renderWheels(silhouette: VehicleSilhouette) {
       <circle cx={frontX} cy={cy} r={rimRadius - 2.5} fill="#0f172a" />
       <line x1={frontX - 3.5} y1={cy} x2={frontX + 3.5} y2={cy} stroke="#94a3b8" strokeWidth="1" />
       <line x1={frontX} y1={cy - 3.5} x2={frontX} y2={cy + 3.5} stroke="#94a3b8" strokeWidth="1" />
+      {silhouette === 'e_class_coupe' ? (
+        <>
+          <line x1={frontX - 3} y1={cy - 2.5} x2={frontX + 3} y2={cy + 2.5} stroke="#cbd5e1" strokeWidth="1" />
+          <line x1={frontX + 3} y1={cy - 2.5} x2={frontX - 3} y2={cy + 2.5} stroke="#cbd5e1" strokeWidth="1" />
+        </>
+      ) : null}
       <circle cx={frontX} cy={cy} r="1.8" fill="#e2e8f0" />
     </g>
   )

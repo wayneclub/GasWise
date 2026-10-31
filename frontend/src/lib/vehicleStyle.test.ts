@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   inferVehicleArchetype,
   inferVehicleSilhouette,
+  resolveVehiclePhoto,
   VEHICLE_COLOR_PRESETS,
 } from './vehicleStyle'
 
@@ -68,5 +69,14 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
     expect(VEHICLE_COLOR_PRESETS.some((c) => c.id === 'obsidian')).toBe(true)
     expect(VEHICLE_COLOR_PRESETS.some((c) => c.id === 'red')).toBe(true)
     expect(VEHICLE_COLOR_PRESETS.some((c) => c.id === 'blue')).toBe(true)
+  })
+
+  it('resolves vehicle photo URLs accurately with priority for custom URLs', () => {
+    // Custom URL priority
+    expect(resolveVehiclePhoto('2018 Mercedes-Benz E400 Coupe', 'https://example.com/mycar.jpg')).toBe('https://example.com/mycar.jpg')
+    // Default mapped photo for Mercedes E-Class Coupe
+    expect(resolveVehiclePhoto('2018 Mercedes-Benz E400 Coupe')).toBe('/vehicles/2018_mercedes_benz_e400_coupe_cropped.png')
+    // Unmapped vehicle returns null
+    expect(resolveVehiclePhoto('2019 Honda Civic EX')).toBe(null)
   })
 })

@@ -1,4 +1,5 @@
 import {
+  CameraIcon,
   CarIcon,
   CheckCircleIcon,
   PaletteIcon,
@@ -15,7 +16,7 @@ import type { Prefs, SavedVehicle } from '../../lib/prefs'
 import { useVehicleIdentity } from '../../lib/vehicleIdentity'
 import { VehicleThumbnail } from './VehicleThumbnail'
 import { VehiclePicker } from '../setup/VehiclePicker'
-import { VEHICLE_COLOR_PRESETS } from '../../lib/vehicleStyle'
+import { resolveVehiclePhoto, VEHICLE_COLOR_PRESETS } from '../../lib/vehicleStyle'
 
 interface GarageSectionProps {
   prefs: Prefs
@@ -28,6 +29,8 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
   const [showAddModal, setShowAddModal] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [editingColorId, setEditingColorId] = useState<number | null>(null)
+  const [editingPhotoId, setEditingPhotoId] = useState<number | null>(null)
+  const [photoInputUrl, setPhotoInputUrl] = useState<string>('')
   const [newCarColor, setNewCarColor] = useState<string>('#1e293b')
 
   // Ensure garage list has at least prefs.vehicle if garage is empty
@@ -92,6 +95,45 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
       garage: updatedGarage,
       vehicle: nextActive,
     })
+  }
+
+  const handlePhotoChange = (carId: number, imageUrl?: string) => {
+    const updatedGarage = garageList.map((v) =>
+      v.id === carId ? { ...v, imageUrl } : v,
+    )
+    const nextActive =
+      activeId === carId && prefs.vehicle
+        ? { ...prefs.vehicle, imageUrl }
+        : prefs.vehicle
+
+    update({
+      garage: updatedGarage,
+      vehicle: nextActive,
+    })
+    setEditingPhotoId(null)
+    setPhotoInputUrl('')
+  }
+
+  const handleFileUpload = (carId: number, file: File) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const src = e.target?.result as string
+      if (!src) return
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const maxW = 400
+        const scale = Math.min(1, maxW / img.width)
+        canvas.width = Math.round(img.width * scale)
+        canvas.height = Math.round(img.height * scale)
+        const ctx = canvas.getContext('2d')
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height)
+        const compressed = canvas.toDataURL('image/webp', 0.85)
+        handlePhotoChange(carId, compressed)
+      }
+      img.src = src
+    }
+    reader.readAsDataURL(file)
   }
 
   return (
@@ -184,11 +226,12 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
 
                 {/* Car Thumbnail & Spec Section */}
                 <div className="my-2 flex items-center gap-4">
-                  {/* Clean Vector Silhouette Thumbnail with Dynamic Color */}
+                  {/* Clean Vector Silhouette Thumbnail or Authentic Photo */}
                   <VehicleThumbnail
                     label={car.label}
                     bodyStyle={car.bodyStyle}
                     color={currentColor}
+                    imageUrl={car.imageUrl}
                     size="md"
                     showBadge
                     active={isActive}
@@ -220,22 +263,46 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                   </div>
                 </div>
 
-                {/* Color Customization Swatch Bar */}
+                {/* Appearance Customization Bar: Color & Authentic Photo */}
                 <div className="my-1 flex flex-col gap-1.5 rounded-xl bg-sunken/40 p-2 text-xs">
                   <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setEditingColorId(editingColorId === car.id ? null : car.id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-0.5 text-[11px] font-medium text-muted transition hover:bg-surface hover:text-ink"
-                      aria-label={t('garage.color')}
-                    >
-                      <span
-                        className="size-3.5 rounded-full border border-line shadow-2xs shrink-0"
-                        style={{ backgroundColor: currentColor }}
-                      />
-                      <PaletteIcon size={13} className="text-muted" />
-                      <span>{t('garage.color')}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingColorId(editingColorId === car.id ? null : car.id)
+                          setEditingPhotoId(null)
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-0.5 text-[11px] font-medium text-muted transition hover:bg-surface hover:text-ink"
+                        aria-label={t('garage.color')}
+                      >
+                        <span
+                          className="size-3.5 rounded-full border border-line shadow-2xs shrink-0"
+                          style={{ backgroundColor: currentColor }}
+                        />
+                        <PaletteIcon size={13} className="text-muted" />
+                        <span>{t('garage.color')}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingPhotoId(editingPhotoId === car.id ? null : car.id)
+                          setEditingColorId(null)
+                          setPhotoInputUrl(car.imageUrl || '')
+                        }}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-1.5 py-0.5 text-[11px] font-medium transition ${
+                          car.imageUrl
+                            ? 'bg-accent/10 text-accent font-semibold'
+                            : 'text-muted hover:bg-surface hover:text-ink'
+                        }`}
+                        aria-label={t('garage.photo')}
+                      >
+                        <CameraIcon size={13} />
+                        <span>{t('garage.photo')}</span>
+                        {car.imageUrl ? <span className="size-1.5 rounded-full bg-accent" /> : null}
+                      </button>
+                    </div>
 
                     <label className="relative flex cursor-pointer items-center gap-1 text-[11px] font-mono text-muted hover:text-ink">
                       <span>{currentColor}</span>
@@ -248,6 +315,67 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                       />
                     </label>
                   </div>
+
+                  {/* Photo Customization Panel */}
+                  {editingPhotoId === car.id ? (
+                    <div className="flex flex-col gap-2 pt-2 border-t border-line/40">
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="url"
+                          value={photoInputUrl}
+                          onChange={(e) => setPhotoInputUrl(e.target.value)}
+                          placeholder={t('garage.photoUrlPlaceholder')}
+                          className="flex-1 min-w-0 rounded-lg border border-line bg-surface px-2 py-1 text-xs text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none"
+                        />
+                        <Button
+                          variant="secondary"
+                          onClick={() => handlePhotoChange(car.id, photoInputUrl.trim() || undefined)}
+                          className="min-h-7 text-xs px-2.5 shrink-0"
+                        >
+                          {t('garage.savePhoto')}
+                        </Button>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                        {/* File Upload Trigger */}
+                        <label className="inline-flex cursor-pointer items-center gap-1 rounded-md bg-surface px-2 py-1 text-muted border border-line hover:text-ink hover:border-ink/40 transition">
+                          <PlusIcon size={11} />
+                          <span>{t('garage.uploadPhoto')}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0]
+                              if (f) handleFileUpload(car.id, f)
+                            }}
+                            className="sr-only"
+                          />
+                        </label>
+
+                        {/* Built-in Studio Photo Shortcut */}
+                        {resolveVehiclePhoto(car.label) ? (
+                          <button
+                            type="button"
+                            onClick={() => handlePhotoChange(car.id, resolveVehiclePhoto(car.label)!)}
+                            className="inline-flex items-center gap-1 rounded-md bg-accent-soft/40 px-2 py-1 text-accent hover:bg-accent-soft transition font-medium"
+                          >
+                            <span>✓ {t('garage.useStudioPhoto')}</span>
+                          </button>
+                        ) : null}
+
+                        {/* Clear Photo / Revert to Vector */}
+                        {car.imageUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => handlePhotoChange(car.id, undefined)}
+                            className="inline-flex items-center gap-1 text-rose-500 hover:underline ml-auto"
+                          >
+                            <span>{t('garage.clearPhoto')}</span>
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
 
                   {editingColorId === car.id ? (
                     <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-line/40">
