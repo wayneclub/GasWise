@@ -3,12 +3,14 @@ import { CopyAddress } from '../../components/CopyAddress'
 import { PriceHistory } from './PriceHistory'
 import {googleStationUrl,stationSourceUrl} from '../../lib/stationLinks'
 import { SourcePill, StationSources } from './SourcePill'
-import { StarIcon, ShieldCheckIcon } from '@phosphor-icons/react'
+import { StarIcon, ShieldCheckIcon, CheckCircleIcon } from '@phosphor-icons/react'
 import type { RankedStation, Station } from '../../api/types'
+import { useState } from 'react'
 import { Button, LinkButton, Sheet } from '../../components/ui'
 import { useI18n } from '../../i18n'
 import { comparisonPrice, age, fuelKey, perGallon, usd, miles, minutes } from '../../lib/format'
 import { navigationUrl } from '../../lib/navigation'
+import { recordStationRefuel } from '../../lib/fuelAssistant'
 import type { NavApp } from '../../lib/prefs'
 import { WatchStation } from './WatchStation'
 import { FavoriteButton } from '../../components/FavoriteButton'
@@ -40,6 +42,7 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
   station: StationSummary; row?: RankedStation | null; open: boolean; onClose: () => void; navApp: NavApp; status?: string; tripMode?: 'round_trip' | 'on_route'
 }) {
   const { t, locale } = useI18n()
+  const [recorded, setRecorded] = useState(false)
   const canonical = station.canonical_id?.startsWith('google_places:') ? station.canonical_id.slice(14) : null
   const maps = new URL('https://www.google.com/maps/search/')
   maps.searchParams.set('api', '1')
@@ -119,7 +122,31 @@ export function StationDetails({ station, row, open, onClose, navApp, status, tr
         {hours.map((h, i) => <p key={i} className="mt-1 text-muted">{(h.days ?? []).map((d) => new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 0, 4 + d)))).join(', ')} · {h.is_24_hours ? t('station.allDay') : `${h.from}–${h.to}`}</p>)}
       </div> : null}
       {services.length ? <div><h4 className="text-sm font-medium">{t('station.amenities')}</h4><p className="mt-1 text-sm text-muted">{services.map((s) => s.id && ['RESTROOMS', 'PARKING_FOR_CUSTOMERS', 'CREDIT_CARDS', 'WHEELCHAIR_ACCESSIBLE', 'AIR_CONDITIONING', 'DELIVERIES', 'WIFI', 'DRIVE_THROUGH'].includes(s.id) ? t(`amenity.${s.id}` as import('../../i18n').MessageKey) : s.label ?? s.id).filter(Boolean).join(' · ')}</p></div> : null}
-      <LinkButton href={navigationUrl(navApp, station.location.lat, station.location.lng)}>{t('pick.navigate')}</LinkButton>
+      <LinkButton
+        href={navigationUrl(navApp, station.location.lat, station.location.lng)}
+        onClick={() => {
+          void recordStationRefuel(station, {
+            fuelType: station.fuel_type,
+            note: t('refuel.navigatedNote'),
+          })
+        }}
+      >
+        {t('pick.navigate')}
+      </LinkButton>
+      <Button
+        variant="secondary"
+        onClick={async () => {
+          await recordStationRefuel(station, {
+            fuelType: station.fuel_type,
+          })
+          setRecorded(true)
+          setTimeout(() => setRecorded(false), 3000)
+        }}
+        className="gap-2"
+      >
+        <CheckCircleIcon size={16} weight={recorded ? 'fill' : 'regular'} className={recorded ? 'text-accent' : ''} />
+        <span>{recorded ? t('station.recorded') : t('station.recordFuel')}</span>
+      </Button>
       <Button variant="secondary" onClick={() => window.open(maps.toString(), '_blank', 'noopener,noreferrer')}>{t('station.maps')}</Button>
     </div>
   </Sheet>

@@ -9,6 +9,7 @@ import {Segmented} from '../../components/ui'
 import {useI18n} from '../../i18n'
 import {age, comparisonPrice, minutes, perGallon, usd} from '../../lib/format'
 import {navigationUrl} from '../../lib/navigation'
+import {recordStationRefuel} from '../../lib/fuelAssistant'
 import type {NavApp} from '../../lib/prefs'
 import {StationDetails, StationRating, TopTierBadge} from './StationDetails'
 import {RegionalPrice} from './RegionalPrice'
@@ -133,6 +134,12 @@ export function Leaderboards({result, primary, onStrategyChange, navApp, tripMod
                 href={navigationUrl(navApp, station.location.lat, station.location.lng)}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => {
+                  void recordStationRefuel(station, {
+                    fuelType: station.fuel_type,
+                    note: t('refuel.navigatedNote'),
+                  })
+                }}
                 aria-label={`${t('pick.navigate')} ${station.name}`}
                 className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-control bg-ink px-3 py-2 text-xs font-semibold text-surface shadow-2xs hover:opacity-90 active:scale-[0.98] transition focus-visible:ring-2 focus-visible:ring-accent"
               >

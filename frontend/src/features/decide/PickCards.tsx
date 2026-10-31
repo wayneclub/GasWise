@@ -22,6 +22,7 @@ import { LinkButton } from '../../components/ui'
 import { type MessageKey, type Translate, useI18n } from '../../i18n'
 import { comparisonPrice, age, gallons as gal, miles, minutes, perGallon, usd } from '../../lib/format'
 import { navigationUrl } from '../../lib/navigation'
+import { recordStationRefuel } from '../../lib/fuelAssistant'
 import type { NavApp } from '../../lib/prefs'
 import { FavoriteButton } from '../../components/FavoriteButton'
 import { type Assessment, breakdown, openingLabel, type Pick, type Tradeoff } from '../../lib/recommend'
@@ -153,6 +154,7 @@ export function HeroPick({
   const { t, locale } = useI18n()
   const [open, setOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
+  const [recorded, setRecorded] = useState(false)
   const { station, row } = pick
   const opening = openingLabel(station)
   const Icon = ICON[pick.keys[0]]
@@ -212,10 +214,37 @@ export function HeroPick({
       </div>
 
       <PaymentNotice station={station} />
-      <LinkButton href={navigationUrl(navApp, station.location.lat, station.location.lng)} className="mt-5 w-full">
-        <NavigationArrowIcon size={18} weight="fill" />
-        {t('pick.navigate')}
-      </LinkButton>
+      <div className="mt-5 flex flex-col gap-2">
+        <LinkButton
+          href={navigationUrl(navApp, station.location.lat, station.location.lng)}
+          onClick={() => {
+            void recordStationRefuel(station, {
+              fuelType: station.fuel_type,
+              gallons,
+              note: t('refuel.navigatedNote'),
+            })
+          }}
+          className="w-full"
+        >
+          <NavigationArrowIcon size={18} weight="fill" />
+          {t('pick.navigate')}
+        </LinkButton>
+        <button
+          type="button"
+          onClick={async () => {
+            await recordStationRefuel(station, {
+              fuelType: station.fuel_type,
+              gallons,
+            })
+            setRecorded(true)
+            setTimeout(() => setRecorded(false), 3000)
+          }}
+          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-control border border-line bg-surface px-4 py-2 text-xs font-semibold text-ink transition hover:bg-sunken active:scale-[0.98]"
+        >
+          <CheckCircleIcon size={16} weight={recorded ? 'fill' : 'regular'} className={recorded ? 'text-accent' : 'text-muted'} />
+          <span>{recorded ? t('station.recorded') : t('station.recordFuel')}</span>
+        </button>
+      </div>
       </div>
       <div className="px-5 pb-4 pt-3">
       {row ? <RegionalPrice row={row}/> : null}
@@ -295,6 +324,12 @@ export function AlternativePick({ pick, navApp, tripMode = 'round_trip' }: { pic
         href={navigationUrl(navApp, station.location.lat, station.location.lng)}
         target="_blank"
         rel="noreferrer"
+        onClick={() => {
+          void recordStationRefuel(station, {
+            fuelType: station.fuel_type,
+            note: t('refuel.navigatedNote'),
+          })
+        }}
         aria-label={t('pick.navigateTo', { name: station.name })}
         className="grid size-10 shrink-0 place-items-center rounded-control border border-line text-ink hover:bg-sunken"
       >

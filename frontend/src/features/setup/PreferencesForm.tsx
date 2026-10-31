@@ -12,9 +12,7 @@ import { TripForm } from './TripForm'
 import { VehiclePicker } from './VehiclePicker'
 import { PrivacyProfile } from './PrivacyProfile'
 import { SmartAlerts } from './SmartAlerts'
-import { FuelAssistant } from './FuelAssistant'
 import { LifeZones } from './LifeZones'
-import { FavoriteStationsSection } from './FavoriteStationsSection'
 
 function SettingsSection({
   id,
@@ -74,13 +72,11 @@ export function PreferencesForm({
   ]
 
   const navItems = [
-    { id: 'section-vehicle', label: t('prefs.car') },
-    { id: 'section-calculation', label: t('prefs.gallons') },
+    { id: 'section-general', label: t('prefs.general') },
     { id: 'section-priority', label: t('prefs.priority') },
-    { id: 'section-stations', label: t('prefs.costco') },
+    { id: 'section-calculation', label: t('prefs.gallons') },
     { id: 'section-route', label: t('route.mode') },
     { id: 'section-lifezones', label: t('lifezones.title') },
-    { id: 'section-assistant', label: t('assistant.title') },
     { id: 'smart-alerts', label: t('alerts.title') },
     { id: 'section-privacy', label: t('privacy.title') },
   ]
@@ -112,79 +108,176 @@ export function PreferencesForm({
         </nav>
       ) : null}
 
-      {/* 1. Vehicle & Language */}
-      <SettingsSection
-        id="section-vehicle"
-        title={t('prefs.car')}
-        description={t('prefs.carHint')}
-        aside={
-          <p className="text-xs text-muted">
-            {t(storageStatus === 'encrypted' ? 'vehicle.encryptedLocal' : 'vehicle.sessionLocal')}
-          </p>
-        }
-      >
-        <Field label={t('prefs.language')}>
-          <LanguagePicker value={prefs.locale} onChange={locale => update({ locale })} />
-        </Field>
-
-        <Field label={t('prefs.car')}>
-          <VehiclePicker key={identityReset} vehicle={prefs.vehicle} onChange={(vehicle) => update({ vehicle })} />
-          <p className="text-xs leading-relaxed text-muted">
-            {identity ? t('vehicle.sharedReady') : t('vehicle.sharedMissing')}
-          </p>
-          {identity ? (
-            <p className="num font-mono text-xs text-muted">
-              {identity.kind === 'vin'
-                ? `VIN · •••••••••••••${identity.value.vin.slice(-4)}`
-                : `${identity.value.state} · •••${identity.value.plate.slice(-2)}`}
+      {/* Onboarding only: Initial vehicle setup */}
+      {!advanced ? (
+        <SettingsSection
+          id="section-onboarding-vehicle"
+          title={t('prefs.car')}
+          description={t('prefs.carHint')}
+          aside={
+            <p className="text-xs text-muted">
+              {t(storageStatus === 'encrypted' ? 'vehicle.encryptedLocal' : 'vehicle.sessionLocal')}
             </p>
-          ) : null}
-          {identity || storageError ? (
-            <button
-              type="button"
-              onClick={() => {
-                setIdentity(null)
-                setIdentityReset((n) => n + 1)
-              }}
-              className="self-start text-xs text-accent underline hover:opacity-80"
-            >
-              {t('vehicle.clearIdentity')}
-            </button>
-          ) : null}
-          {storageError ? (
-            <p role="alert" className="text-xs text-caution">
-              {t('vehicle.storageError')}
-            </p>
-          ) : null}
-        </Field>
+          }
+        >
+          <Field label={t('prefs.language')}>
+            <LanguagePicker value={prefs.locale} onChange={(locale) => update({ locale })} />
+          </Field>
 
-        {prefs.vehicle ? null : (
-          <div className="grid gap-5 sm:grid-cols-[1fr_7rem]">
-            <Field label={t('prefs.fuel')}>
-              <Segmented
-                label={t('prefs.fuel')}
-                value={prefs.fuelType}
-                options={fuels}
-                onChange={(fuelType) => update({ fuelType })}
-              />
-            </Field>
-            <Field label={t('prefs.mpg')}>
-              <TextInput
-                inputMode="decimal"
-                aria-label={t('prefs.mpgLabel')}
-                value={prefs.mpg ?? ''}
-                onChange={(event) => {
-                  const value = event.target.value.replace(/[^\d.]/g, '')
-                  update({ mpg: value && Number(value) > 0 ? String(Math.min(Number(value), 200)) : null })
+          <Field label={t('prefs.car')}>
+            <VehiclePicker key={identityReset} vehicle={prefs.vehicle} onChange={(vehicle) => update({ vehicle })} />
+            <p className="text-xs leading-relaxed text-muted">
+              {identity ? t('vehicle.sharedReady') : t('vehicle.sharedMissing')}
+            </p>
+            {identity ? (
+              <p className="num font-mono text-xs text-muted">
+                {identity.kind === 'vin'
+                  ? `VIN · •••••••••••••${identity.value.vin.slice(-4)}`
+                  : `${identity.value.state} · •••${identity.value.plate.slice(-2)}`}
+              </p>
+            ) : null}
+            {identity || storageError ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentity(null)
+                  setIdentityReset((n) => n + 1)
                 }}
-                className="num max-w-32 sm:max-w-none"
-              />
-            </Field>
+                className="self-start text-xs text-accent underline hover:opacity-80"
+              >
+                {t('vehicle.clearIdentity')}
+              </button>
+            ) : null}
+            {storageError ? (
+              <p role="alert" className="text-xs text-caution">
+                {t('vehicle.storageError')}
+              </p>
+            ) : null}
+          </Field>
+
+          {prefs.vehicle ? null : (
+            <div className="grid gap-5 sm:grid-cols-[1fr_7rem]">
+              <Field label={t('prefs.fuel')}>
+                <Segmented
+                  label={t('prefs.fuel')}
+                  value={prefs.fuelType}
+                  options={fuels}
+                  onChange={(fuelType) => update({ fuelType })}
+                />
+              </Field>
+              <Field label={t('prefs.mpg')}>
+                <TextInput
+                  inputMode="decimal"
+                  aria-label={t('prefs.mpgLabel')}
+                  value={prefs.mpg ?? ''}
+                  onChange={(event) => {
+                    const value = event.target.value.replace(/[^\d.]/g, '')
+                    update({ mpg: value && Number(value) > 0 ? String(Math.min(Number(value), 200)) : null })
+                  }}
+                  className="num max-w-32 sm:max-w-none"
+                />
+              </Field>
+            </div>
+          )}
+        </SettingsSection>
+      ) : null}
+
+      {/* 1. Language & Navigation */}
+      {advanced ? (
+        <SettingsSection
+          id="section-general"
+          title={t('prefs.general')}
+          description={t('prefs.generalHint')}
+        >
+          <Field label={t('prefs.language')}>
+            <LanguagePicker value={prefs.locale} onChange={(locale) => update({ locale })} />
+          </Field>
+
+          <Field label={t('prefs.navApp')}>
+            <Segmented
+              label={t('prefs.navApp')}
+              value={prefs.navApp}
+              options={NAV_APPS}
+              onChange={(navApp) => update({ navApp })}
+            />
+          </Field>
+        </SettingsSection>
+      ) : null}
+
+      {/* 2. Ranking Priority & Stations */}
+      <SettingsSection
+        id="section-priority"
+        title={t('prefs.priority')}
+        description={t('prefs.priorityHint', { value: prefs.timeValuePerHour ?? 15 })}
+      >
+        <Field label={t('prefs.priority')}>
+          <Segmented
+            label={t('prefs.priority')}
+            value={prefs.preference}
+            options={[
+              { value: 'money', label: t('prefs.money') },
+              { value: 'balanced', label: t('prefs.balanced') },
+              { value: 'time', label: t('prefs.time') },
+            ]}
+            onChange={(preference) => update({ preference })}
+          />
+        </Field>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label={t('board.value')}>
+            <TextInput
+              type="number"
+              min={0}
+              max={500}
+              step={5}
+              aria-label={t('board.value')}
+              value={prefs.timeValuePerHour ?? 15}
+              onChange={(e) =>
+                update({
+                  timeValuePerHour: Math.min(500, Math.max(0, Number(e.target.value))),
+                })
+              }
+            />
+          </Field>
+          <Field label={t('board.radius')}>
+            <Select
+              label={t('board.radius')}
+              value={String(prefs.searchRadiusMiles ?? 5)}
+              onChange={(value) => update({ searchRadiusMiles: Number(value) })}
+              options={[2, 5, 10, 20].map((value) => ({ value: String(value), label: `${value} mi` }))}
+            />
+          </Field>
+        </div>
+
+        <div className="flex flex-col gap-5 border-t border-line pt-5">
+          <Toggle
+            label={t('prefs.costco')}
+            description={t('prefs.costcoHint')}
+            checked={prefs.costco}
+            onChange={(costco) => update({ costco })}
+          />
+          <div className="border-t border-line pt-5">
+            <Toggle
+              label={t('prefs.preferTopTier')}
+              description={t('prefs.preferTopTierHint')}
+              checked={prefs.preferTopTier}
+              onChange={(preferTopTier) => update({ preferTopTier })}
+            />
           </div>
-        )}
+          {advanced ? (
+            <div className="border-t border-line pt-5">
+              <Toggle
+                label={t('prefs.unconfirmed')}
+                description={t('prefs.unconfirmedHint')}
+                checked={prefs.allowUnknownPayment}
+                onChange={(allowUnknownPayment) => update({ allowUnknownPayment })}
+              />
+            </div>
+          ) : null}
+        </div>
       </SettingsSection>
 
-      {/* 2. Fuel & Calculation */}
+      {/* 3. Fuel & Calculation */}
       <SettingsSection
         id="section-calculation"
         title={t('prefs.gallons')}
@@ -268,6 +361,32 @@ export function PreferencesForm({
           ) : null}
         </Field>
 
+        {/* Fallback Fuel Type and MPG if no vehicle selected */}
+        {!prefs.vehicle ? (
+          <div className="grid gap-5 sm:grid-cols-[1fr_7rem] border-t border-line pt-5">
+            <Field label={t('prefs.fuel')}>
+              <Segmented
+                label={t('prefs.fuel')}
+                value={prefs.fuelType}
+                options={fuels}
+                onChange={(fuelType) => update({ fuelType })}
+              />
+            </Field>
+            <Field label={t('prefs.mpg')}>
+              <TextInput
+                inputMode="decimal"
+                aria-label={t('prefs.mpgLabel')}
+                value={prefs.mpg ?? ''}
+                onChange={(event) => {
+                  const value = event.target.value.replace(/[^\d.]/g, '')
+                  update({ mpg: value && Number(value) > 0 ? String(Math.min(Number(value), 200)) : null })
+                }}
+                className="num max-w-32 sm:max-w-none"
+              />
+            </Field>
+          </div>
+        ) : null}
+
         <details className="rounded-control border border-line p-3 text-xs text-muted">
           <summary className="cursor-pointer font-medium text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent">
             {t('prefs.cardFees')}
@@ -295,83 +414,7 @@ export function PreferencesForm({
         </details>
       </SettingsSection>
 
-      {/* 3. Ranking Priority & Radius */}
-      <SettingsSection
-        id="section-priority"
-        title={t('prefs.priority')}
-        description={t('prefs.priorityHint', { value: prefs.timeValuePerHour ?? 15 })}
-      >
-        <Field label={t('prefs.priority')}>
-          <Segmented
-            label={t('prefs.priority')}
-            value={prefs.preference}
-            options={[
-              { value: 'money', label: t('prefs.money') },
-              { value: 'balanced', label: t('prefs.balanced') },
-              { value: 'time', label: t('prefs.time') },
-            ]}
-            onChange={(preference) => update({ preference })}
-          />
-        </Field>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label={t('board.value')}>
-            <TextInput
-              type="number"
-              min={0}
-              max={500}
-              step={5}
-              aria-label={t('board.value')}
-              value={prefs.timeValuePerHour ?? 15}
-              onChange={(e) =>
-                update({
-                  timeValuePerHour: Math.min(500, Math.max(0, Number(e.target.value))),
-                })
-              }
-            />
-          </Field>
-          <Field label={t('board.radius')}>
-            <Select label={t('board.radius')} value={String(prefs.searchRadiusMiles ?? 5)}
-              onChange={value => update({ searchRadiusMiles: Number(value) })}
-              options={[2, 5, 10, 20].map(value => ({ value: String(value), label: `${value} mi` }))} />
-          </Field>
-        </div>
-      </SettingsSection>
-
-      {/* 4. Station Preferences */}
-      <SettingsSection
-        id="section-stations"
-        title={t('prefs.costco')}
-      >
-        <div className="flex flex-col gap-5">
-          <Toggle
-            label={t('prefs.costco')}
-            description={t('prefs.costcoHint')}
-            checked={prefs.costco}
-            onChange={(costco) => update({ costco })}
-          />
-          <div className="border-t border-line pt-5">
-            <Toggle
-              label={t('prefs.preferTopTier')}
-              description={t('prefs.preferTopTierHint')}
-              checked={prefs.preferTopTier}
-              onChange={(preferTopTier) => update({ preferTopTier })}
-            />
-          </div>
-          {advanced ? (
-            <div className="border-t border-line pt-5">
-              <Toggle
-                label={t('prefs.unconfirmed')}
-                description={t('prefs.unconfirmedHint')}
-                checked={prefs.allowUnknownPayment}
-                onChange={(allowUnknownPayment) => update({ allowUnknownPayment })}
-              />
-            </div>
-          ) : null}
-        </div>
-      </SettingsSection>
-
-      {/* 5. Route & Navigation (Advanced) */}
+      {/* 4. Route & Navigation (Advanced) */}
       {advanced ? (
         <SettingsSection
           id="section-route"
@@ -379,32 +422,16 @@ export function PreferencesForm({
           description={t('route.hint')}
         >
           <TripForm prefs={prefs} update={update} />
-          <div className="border-t border-line pt-5">
-            <Field label={t('prefs.navApp')}>
-              <Segmented
-                label={t('prefs.navApp')}
-                value={prefs.navApp}
-                options={NAV_APPS}
-                onChange={(navApp) => update({ navApp })}
-              />
-            </Field>
-          </div>
         </SettingsSection>
       ) : null}
 
-      {/* 6. Life Zones (Advanced) */}
+      {/* 5. Life Zones (Advanced) */}
       {advanced ? <LifeZones prefs={prefs} /> : null}
 
-      {/* 7. Fuel Timing Assistant (Advanced) */}
-      {advanced ? <FuelAssistant prefs={prefs} /> : null}
-
-      {/* 8. Smart Fuel Alerts (Advanced) */}
+      {/* 6. Smart Fuel Alerts (Advanced) */}
       {advanced ? <SmartAlerts /> : null}
 
-      {/* 9. Favorite Stations (Advanced) */}
-      {advanced ? <FavoriteStationsSection navApp={prefs.navApp} /> : null}
-
-      {/* 10. Privacy Profile & Danger Zone (Advanced & replace) */}
+      {/* 7. Privacy Profile & Backup (Advanced & replace) */}
       {advanced && replace ? <PrivacyProfile prefs={prefs} replace={replace} /> : null}
     </div>
   )

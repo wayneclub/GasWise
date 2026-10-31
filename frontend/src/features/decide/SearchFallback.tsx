@@ -4,6 +4,7 @@ import { Button, LinkButton } from '../../components/ui'
 import { useI18n } from '../../i18n'
 import { age, fuelKey, perGallon, sourceLabel } from '../../lib/format'
 import { navigationUrl } from '../../lib/navigation'
+import { recordStationRefuel } from '../../lib/fuelAssistant'
 import type { NavApp } from '../../lib/prefs'
 import type { StationSummary } from './StationDetails'
 
@@ -64,7 +65,19 @@ export function SearchFallback({ result, completing, radius, navApp, onRadius, o
         {station.price_per_gallon ? <p className="mt-1 text-xs text-muted">{t('age.updated', { age: age(station.price_updated_at, t) })}</p> : null}
         <p className="mt-1 text-xs text-muted">{sourceLabel(station.source ?? 'google_maps_web')} · {t(station.open_now === true ? 'hours.open' : station.open_now === false ? 'hours.closed' : 'hours.unknown')}</p>
         </div>
-        <LinkButton variant="secondary" href={navigationUrl(navApp, station.location.lat, station.location.lng)} className="mt-2 self-center">{t('pick.navigate')}</LinkButton>
+        <LinkButton
+          variant="secondary"
+          href={navigationUrl(navApp, station.location.lat, station.location.lng)}
+          onClick={() => {
+            void recordStationRefuel(station, {
+              fuelType: station.fuel_type,
+              note: t('refuel.navigatedNote'),
+            })
+          }}
+          className="mt-2 self-center"
+        >
+          {t('pick.navigate')}
+        </LinkButton>
       </article>)}
     </div>{records.length > visible ? <Button className="mt-2 w-full whitespace-normal" variant="ghost" onClick={() => setVisible(n => n + 10)}>{t('station.more', { count: records.length - visible })}</Button> : null}</> : null}
   </section>

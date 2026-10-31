@@ -1,7 +1,9 @@
 import { StrictMode } from 'react'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { IDBFactory } from 'fake-indexeddb'
 import type { SmartResult } from '../../api/types'
+import { loadFuelAssistant } from '../../lib/fuelAssistant'
 import App from '../../App'
 import fixture from '../../test/fixtures/demo-search.json'
 
@@ -12,6 +14,7 @@ function respond(body: unknown, status = 200, headers: Record<string, string> = 
 }
 
 beforeEach(() => {
+  vi.stubGlobal('indexedDB', new IDBFactory())
   localStorage.setItem('gaswise.prefs.v1', JSON.stringify({ onboarded: true, fuelType: 'premium', mpg: '22', locale: 'en' }))
   Object.defineProperty(window, 'isSecureContext', { configurable: true, value: true })
   Object.defineProperty(navigator, 'geolocation', {
@@ -313,8 +316,33 @@ it('recovers a remounted page without locating or searching again', async () => 
   expect(locate).toHaveBeenCalledTimes(1)
   first.unmount()
   render(<App />)
-  expect(screen.getByRole('heading', { name: 'Chevron', level: 2 })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'Chevron', level: 2 })).toBeInTheDocument()
   await waitFor(() => expect(screen.queryByText('Finding your location')).not.toBeInTheDocument())
   expect(fetch).toHaveBeenCalledTimes(1)
   expect(locate).toHaveBeenCalledTimes(1)
+})
+
+it('clicking navigate or record button records refuel and shows toast notification', async () => {
+  const data = structuredClone(demo)
+  vi.spyOn(globalThis, 'fetch').mockImplementation(() => respond(data))
+  render(<App />)
+  await screen.findByRole('heading', { name: 'Chevron', level: 2 })
+
+  // Click explicit record refuel button on HeroPick
+  const recordBtn = screen.getByRole('button', { name: 'Record refuel here' })
+  fireEvent.click(recordBtn)
+
+  // Shows toast notification
+  expect(await screen.findByRole('status')).toHaveTextContent('Recorded fueling at Chevron')
+
+  // Check storage has this refuel event
+  const assistant = await loadFuelAssistant()
+  expect(assistant.events.some((e) => e.stationName === 'Chevron')).toBe(true)
+
+  // Clicking "View in My Profile" switches to My tab
+  const viewBtn = screen.getByRole('button', { name: 'View in My Profile' })
+  fireEvent.click(viewBtn)
+
+  expect(await screen.findByText('Refueling Records (1)')).toBeInTheDocument()
+  expect(screen.getAllByText('Chevron').length).toBeGreaterThanOrEqual(1)
 })

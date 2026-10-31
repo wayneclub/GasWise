@@ -124,4 +124,148 @@ describe('MyPage', () => {
       expect(screen.queryByText('Chevron Express')).not.toBeInTheDocument()
     })
   })
+
+  it('allows user to add, edit and delete refuel records in MyPage', async () => {
+    vi.spyOn(window, 'confirm').mockImplementation(() => true)
+
+    render(
+      <MyPage
+        prefs={{ ...DEFAULT_PREFS, vehicle: { id: 1, label: '2020 Honda Civic', fuelType: 'regular', combinedMpg: '32' } }}
+        onNavigateToFuel={() => {}}
+      />,
+    )
+
+    // Check Assistant card is present
+    expect(await screen.findByText('Fuel timing assistant')).toBeInTheDocument()
+    expect(screen.getByText('Refueling Records (0)')).toBeInTheDocument()
+
+    // 1. Quick refuel button
+    const quickBtn = screen.getByRole('button', { name: 'I just refuelled' })
+    fireEvent.click(quickBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText('Refueling Records (1)')).toBeInTheDocument()
+    })
+
+    // 2. Add detailed refuel record
+    const addBtns = screen.getAllByRole('button', { name: 'Add Refuel Record' })
+    fireEvent.click(addBtns[0])
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    // Fill form
+    const stationInput = screen.getByPlaceholderText('Costco, Chevron, Shell...')
+    fireEvent.change(stationInput, { target: { value: 'Shell Pasadena' } })
+
+    const priceInput = screen.getByPlaceholderText('3.899')
+    fireEvent.change(priceInput, { target: { value: '4.50' } })
+
+    const gallonsInput = screen.getByPlaceholderText('10')
+    fireEvent.change(gallonsInput, { target: { value: '12' } })
+
+    const saveBtn = screen.getByRole('button', { name: 'Save' })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(screen.getByText('Refueling Records (2)')).toBeInTheDocument()
+      expect(screen.getByText('Shell Pasadena')).toBeInTheDocument()
+      expect(screen.getByText('$4.50/gal')).toBeInTheDocument()
+      expect(screen.getByText('12 gal')).toBeInTheDocument()
+      expect(screen.getByText('$54.00')).toBeInTheDocument()
+    })
+
+    // 3. Edit record
+    const editBtn = screen.getByRole('button', { name: /Edit Shell Pasadena/i })
+    fireEvent.click(editBtn)
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    const editStationInput = screen.getByDisplayValue('Shell Pasadena')
+    fireEvent.change(editStationInput, { target: { value: 'Shell Pasadena North' } })
+    const editGallonsInput = screen.getByDisplayValue('12')
+    fireEvent.change(editGallonsInput, { target: { value: '14' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(screen.getByText('Shell Pasadena North')).toBeInTheDocument()
+      expect(screen.getByText('14 gal')).toBeInTheDocument()
+    })
+
+    // 4. Delete record
+    const deleteBtn = screen.getByRole('button', { name: /Delete Shell Pasadena North/i })
+    fireEvent.click(deleteBtn)
+
+    await waitFor(() => {
+      expect(screen.queryByText('Shell Pasadena North')).not.toBeInTheDocument()
+      expect(screen.getByText('Refueling Records (1)')).toBeInTheDocument()
+    })
+  })
+
+  it('renders garage management, displays clean archetype thumbnails, and switches active car', async () => {
+    const update = vi.fn()
+    const car1 = {
+      id: 101,
+      label: '2018 Mercedes-Benz E400 Coupe',
+      fuelType: 'premium' as const,
+      combinedMpg: '22',
+    }
+    const car2 = {
+      id: 102,
+      label: '2021 Toyota RAV4 Hybrid',
+      fuelType: 'regular' as const,
+      combinedMpg: '40',
+    }
+
+    render(
+      <MyPage
+        prefs={{
+          ...DEFAULT_PREFS,
+          vehicle: car1,
+          garage: [car1, car2],
+        }}
+        update={update}
+        onNavigateToFuel={() => {}}
+      />,
+    )
+
+    // Garage header
+    expect(screen.getByText('My Garage')).toBeInTheDocument()
+
+    // Both cars rendered with labels
+    expect(screen.getByText('2018 Mercedes-Benz E400 Coupe')).toBeInTheDocument()
+    expect(screen.getByText('2021 Toyota RAV4 Hybrid')).toBeInTheDocument()
+
+    // Clean thumbnails infer archetypes: Coupe and SUV
+    expect(screen.getByText('Coupe')).toBeInTheDocument()
+    expect(screen.getByText('SUV')).toBeInTheDocument()
+
+    // Car 1 is active, Car 2 has switch button
+    expect(screen.getByText('Currently Active')).toBeInTheDocument()
+    const switchBtn = screen.getByRole('button', { name: 'Switch to this car' })
+    fireEvent.click(switchBtn)
+
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        vehicle: car2,
+        fuelType: 'regular',
+        mpg: '40',
+      }),
+    )
+
+    // Remove car
+    const removeBtns = screen.getAllByRole('button', { name: 'Remove vehicle' })
+    fireEvent.click(removeBtns[1]) // click remove on car2
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('Are you sure you want to remove this vehicle from your garage?')).toBeInTheDocument()
+    const confirmRemoveBtn = screen.getAllByRole('button', { name: 'Remove vehicle' })
+    fireEvent.click(confirmRemoveBtn[confirmRemoveBtn.length - 1])
+
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        garage: [car1],
+      }),
+    )
+  })
 })

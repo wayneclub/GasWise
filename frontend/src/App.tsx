@@ -1,4 +1,4 @@
-import { BellIcon, GasPumpIcon, GearSixIcon, UserIcon, WrenchIcon } from '@phosphor-icons/react'
+import { BellIcon, CheckCircleIcon, GasPumpIcon, GearSixIcon, UserIcon, WrenchIcon } from '@phosphor-icons/react'
 import { LanguagePicker } from './components/LanguagePicker'
 import { PreferencesForm } from './features/setup/PreferencesForm'
 import { useEffect, useState } from 'react'
@@ -11,12 +11,22 @@ import { I18nProvider } from './i18n/I18nProvider'
 import { usePrefs, type Prefs } from './lib/prefs'
 import { VehicleIdentityContext, useEncryptedVehicleIdentity } from './lib/vehicleIdentity'
 import { getLocalProfile } from './lib/localProfile'
+import { onRefuelRecorded } from './lib/fuelAssistant'
 
 function ServiceTabs({ prefs, update, replace }: { prefs: Prefs; update: (change: Partial<Prefs>) => void; replace: (prefs: Prefs) => void }) {
   const { t } = useI18n()
   const [settingsView, setSettingsView] = useState<'all' | 'alerts' | null>(null)
   const settingsOpen = settingsView !== null
   const [tab, setTab] = useState<'fuel' | 'parts' | 'my'>('fuel')
+  const [toast, setToast] = useState<{ stationName: string } | null>(null)
+
+  useEffect(() => {
+    return onRefuelRecorded((detail) => {
+      setToast(detail)
+      const timer = setTimeout(() => setToast(null), 4500)
+      return () => clearTimeout(timer)
+    })
+  }, [])
   useEffect(() => {
     if (settingsView !== 'alerts') return
     const frame = requestAnimationFrame(() => {
@@ -57,8 +67,8 @@ function ServiceTabs({ prefs, update, replace }: { prefs: Prefs; update: (change
       </div>
     </header>
     <div role="tabpanel" id="panel-fuel" aria-labelledby="tab-fuel" hidden={settingsOpen || tab !== 'fuel'}><Decide active={!settingsOpen && tab === 'fuel'} prefs={prefs} update={update} onSettings={() => setSettingsView('all')} /></div>
-    <div role="tabpanel" id="panel-parts" aria-labelledby="tab-parts" hidden={settingsOpen || tab !== 'parts'}><Parts key={prefs.vehicle?.id ?? 'manual'} vehicle={prefs.vehicle} onChooseCar={() => setSettingsView('all')} /></div>
-    <div role="tabpanel" id="panel-my" aria-labelledby="tab-my" hidden={settingsOpen || tab !== 'my'}><MyPage prefs={prefs} onNavigateToFuel={() => { setTab('fuel'); setSettingsView(null) }} /></div>
+    <div role="tabpanel" id="panel-parts" aria-labelledby="tab-parts" hidden={settingsOpen || tab !== 'parts'}><Parts key={prefs.vehicle?.id ?? 'manual'} vehicle={prefs.vehicle} onChooseCar={() => { setTab('my'); setSettingsView(null) }} /></div>
+    <div role="tabpanel" id="panel-my" aria-labelledby="tab-my" hidden={settingsOpen || tab !== 'my'}><MyPage prefs={prefs} update={update} onNavigateToFuel={() => { setTab('fuel'); setSettingsView(null) }} /></div>
     {settingsOpen ? (
       <main aria-label={t('decide.settings')} className="mx-auto max-w-5xl px-4 py-6 sm:py-8 lg:py-10">
         <div className="mb-6 flex items-center justify-between border-b border-line pb-5">
@@ -75,6 +85,37 @@ function ServiceTabs({ prefs, update, replace }: { prefs: Prefs; update: (change
         </div>
         <PreferencesForm prefs={prefs} update={update} replace={replace} advanced />
       </main>
+    ) : null}
+    {toast ? (
+      <div
+        role="status"
+        aria-live="polite"
+        className="fixed bottom-6 left-1/2 z-50 flex max-w-[90vw] -translate-x-1/2 items-center gap-3 rounded-2xl border border-accent/40 bg-surface/95 px-4 py-3 text-xs shadow-xl backdrop-blur-md"
+      >
+        <CheckCircleIcon size={18} weight="fill" className="text-accent shrink-0" />
+        <span className="font-medium text-ink truncate">
+          {t('station.recordSuccessToast', { name: toast.stationName })}
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            setToast(null)
+            setTab('my')
+            setSettingsView(null)
+          }}
+          className="ml-1 shrink-0 rounded bg-accent/10 px-2 py-1 font-semibold text-accent hover:bg-accent/20"
+        >
+          {t('station.recordToastView')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setToast(null)}
+          className="ml-1 shrink-0 text-muted hover:text-ink text-sm font-bold"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
     ) : null}
   </>
 }

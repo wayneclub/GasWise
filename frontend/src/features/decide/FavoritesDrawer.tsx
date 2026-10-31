@@ -5,6 +5,7 @@ import { Button, Sheet, TextInput } from '../../components/ui'
 import { useI18n } from '../../i18n'
 import { fuelKey, perGallon } from '../../lib/format'
 import { navigationUrl } from '../../lib/navigation'
+import { recordStationRefuel } from '../../lib/fuelAssistant'
 import type { NavApp } from '../../lib/prefs'
 import { useFavorites, type FavoriteStation } from '../../lib/favorites'
 import { TopTierBadge } from './StationDetails'
@@ -108,6 +109,12 @@ function FavoriteItem({
           href={navUrl}
           target="_blank"
           rel="noreferrer"
+          onClick={() => {
+            void recordStationRefuel(station, {
+              fuelType: station.fuelType,
+              note: t('refuel.navigatedNote'),
+            })
+          }}
           className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-control min-h-8 border border-line px-3 text-xs font-medium text-ink hover:bg-sunken transition active:scale-[0.98]"
         >
           <NavigationArrowIcon size={14} weight="fill" className="text-accent" />

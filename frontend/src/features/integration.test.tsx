@@ -117,7 +117,7 @@ describe('service integration', () => {
     render(<App />)
     await screen.findByRole('heading', { name: 'Chevron', level: 2 })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'My Space' }))
 
     expect(await screen.findByText('Automatic basis · 2003 Honda Accord EPA combined estimate (25 MPG)')).toBeInTheDocument()
     expect(screen.getByText('Fine-tune assumptions (optional)').closest('details')).not.toHaveAttribute('open')
@@ -296,16 +296,16 @@ it('uses a chosen ZIP location after a device location timeout', async () => {
   expect(localStorage.getItem('gaswise.prefs.v1')).not.toContain('90015')
 })
 
-it('sets one shared vehicle in settings and uses it in the parts tab', async () => {
+it('sets one shared vehicle in my space garage and uses it in the parts tab', async () => {
   const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation((url) => response(String(url).includes('vehicles/vin') ? { status: 'resolved', decoded, choices: [], vehicle: car } : String(url).includes('parts/search') ? { keyword: 'oil filter', vehicle: decoded, source_status: 'ok', items: [] } : fixture))
   render(<App />)
   await screen.findByRole('heading', { name: 'Chevron', level: 2 })
-  fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
+  fireEvent.click(screen.getByRole('tab', { name: 'My Space' }))
+  fireEvent.click(screen.getAllByRole('button', { name: 'Add Vehicle' })[0])
   fireEvent.click(screen.getByRole('radio', { name: 'VIN' }))
   fireEvent.change(screen.getByRole('textbox', { name: '17-character VIN' }), { target: { value: vin } })
   fireEvent.click(screen.getByRole('button', { name: 'Find' }))
-  await within(screen.getByRole('main', { name: 'Settings' })).findByText('2003 Honda Accord')
-  fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+  await screen.findByText('2003 Honda Accord')
   fireEvent.click(screen.getByRole('tab', { name: 'Car parts' }))
   expect(screen.queryByRole('textbox', { name: '17-character VIN' })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Find suitable parts' }))

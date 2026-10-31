@@ -1,6 +1,5 @@
 import {
   CaretDownIcon,
-  CarIcon,
   CoinsIcon,
   GasPumpIcon,
   HeartIcon,
@@ -24,14 +23,19 @@ import { PriceHistory } from '../decide/PriceHistory'
 import { TopTierBadge } from '../decide/StationDetails'
 import { MultiStationPriceChart, type TrendAnalysisSummary } from './MultiStationPriceChart'
 import { SmartFuelAdvisor } from './SmartFuelAdvisor'
+import { RefuelLog } from './RefuelLog'
+import { GarageSection } from './GarageSection'
+import { recordStationRefuel } from '../../lib/fuelAssistant'
 
 type SortOption = 'price' | 'recent' | 'name'
 
 export function MyPage({
   prefs,
+  update = () => {},
   onNavigateToFuel,
 }: {
   prefs: Prefs
+  update?: (change: Partial<Prefs>) => void
   onNavigateToFuel: () => void
 }) {
   const { t } = useI18n()
@@ -132,54 +136,15 @@ export function MyPage({
       aria-label={t('favorites.myTitle')}
       className="mx-auto w-full max-w-md px-4 pb-20 pt-6 sm:max-w-2xl sm:px-6 lg:max-w-5xl"
     >
-      {/* 1. Driver & Fuel Command Hub Banner */}
-      <section
-        aria-label={t('favorites.driverProfile')}
-        className="mb-8 rounded-box border border-line bg-gradient-to-br from-surface via-surface to-sunken/40 p-5 sm:p-6 shadow-sm"
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3.5">
-            <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent text-white shadow-sm">
-              <CarIcon size={24} weight="duotone" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold text-ink sm:text-xl truncate">
-                  {prefs.vehicle ? prefs.vehicle.label : t('favorites.noVehicle')}
-                </h1>
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent">
-                  <ShieldCheckIcon size={12} weight="fill" />
-                  <span>{t('favorites.privateStorage')}</span>
-                </span>
-              </div>
-              <p className="mt-0.5 text-xs text-muted flex flex-wrap items-center gap-x-2">
-                <span>{t(fuelKey(prefs.fuelType))}</span>
-                <span>·</span>
-                <span>{prefs.gallons} gal ({t('favorites.tankCapacity')})</span>
-                {prefs.vehicle?.combinedMpg ? (
-                  <>
-                    <span>·</span>
-                    <span>{prefs.vehicle.combinedMpg} MPG</span>
-                  </>
-                ) : null}
-              </p>
-            </div>
-          </div>
+      {/* 1. Vehicle Garage Command Hub */}
+      <div className="mb-8">
+        <GarageSection prefs={prefs} update={update} />
+      </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="rounded-control bg-surface border border-line px-3 py-1.5 text-center">
-              <span className="block text-[10px] text-muted uppercase font-medium">{t('favorites.title')}</span>
-              <span className="block text-sm font-bold num text-ink">{favorites.length}</span>
-            </div>
-            {analytics ? (
-              <div className="rounded-control bg-accent-soft border border-accent/30 px-3 py-1.5 text-center">
-                <span className="block text-[10px] text-accent font-medium uppercase">{t('favorites.lowestPrice')}</span>
-                <span className="block text-sm font-bold num text-accent">{perGallon(String(analytics.minPrice))}</span>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </section>
+      {/* 2. Intelligent Fuel Timing & Refuel Records */}
+      <div className="mb-8">
+        <RefuelLog prefs={prefs} />
+      </div>
 
       {favorites.length === 0 ? (
         /* Empty State */
@@ -656,6 +621,13 @@ export function MyPage({
                         href={navUrl}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={() => {
+                          void recordStationRefuel(station, {
+                            fuelType: station.fuelType,
+                            gallons: prefs.gallons,
+                            note: t('refuel.navigatedNote'),
+                          })
+                        }}
                         className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-control min-h-9 border border-line px-4 text-xs font-semibold text-ink hover:bg-sunken transition active:scale-[0.98] shadow-xs"
                       >
                         <NavigationArrowIcon size={14} weight="fill" className="text-accent" />

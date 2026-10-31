@@ -31,17 +31,20 @@ export function LinkButton({
   children,
   className = '',
   variant = 'primary',
+  onClick,
 }: {
   href: string
   children: ReactNode
   className?: string
   variant?: 'primary' | 'secondary'
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
+      onClick={onClick}
       className={`inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-control py-2.5 text-[15px] font-semibold ${variant === 'primary' ? 'min-h-12 bg-ink px-5 text-surface hover:opacity-90' : 'min-h-11 border border-line px-4 text-ink hover:bg-sunken'} ${press} ${focus} ${className}`}
     >
       {children}

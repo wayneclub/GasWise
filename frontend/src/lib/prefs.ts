@@ -11,11 +11,18 @@ export interface SavedVehicle {
   label: string
   fuelType: FuelType
   combinedMpg: string
+  year?: number
+  make?: string
+  model?: string
+  bodyStyle?: string
+  tankGallons?: number
+  nickname?: string
 }
 
 export interface Prefs {
   onboarded: boolean
   vehicle: SavedVehicle | null
+  garage: SavedVehicle[]
   /** Used only without a vehicle; a vehicle supplies its EPA grade. */
   fuelType: FuelType
   /** Manual MPG without a vehicle. Null lets the backend use EPA combined MPG. */
@@ -42,6 +49,7 @@ export interface Prefs {
 export const DEFAULT_PREFS: Prefs = {
   onboarded: false,
   vehicle: null,
+  garage: [],
   fuelType: 'regular',
   mpg: '25',
   gallons: 10,
@@ -76,7 +84,30 @@ export function normalizePrefs(value: unknown, restoreFuelSession = false): Pref
   const restoreTrip = trip?.trip_mode === 'on_route' && destination &&
     Number.isFinite(destination.lat) && Math.abs(destination.lat) <= 90 &&
     Number.isFinite(destination.lng) && Math.abs(destination.lng) <= 180
-  return { ...DEFAULT_PREFS, ...saved, locale: LOCALES.some((item) => item.value === saved.locale) ? saved.locale! : null, allowUnknownPayment: saved.paymentPolicyVersion === 2 ? saved.allowUnknownPayment ?? true : true, paymentPolicyVersion: 2, navApp: saved.navDefaultVersion === 2 ? saved.navApp ?? 'google' : 'google', navDefaultVersion: 2, tripMode: restoreTrip ? 'on_route' : 'round_trip', destination: restoreTrip ? destination : null }
+  const rawGarage = Array.isArray(saved.garage) ? saved.garage : []
+  let garage: SavedVehicle[] = rawGarage.filter(
+    (v): v is SavedVehicle => Boolean(v && typeof v === 'object' && typeof v.id === 'number' && typeof v.label === 'string')
+  )
+  let activeVehicle = saved.vehicle ?? null
+  if (activeVehicle && !garage.some((v) => v.id === activeVehicle?.id)) {
+    garage = [activeVehicle, ...garage]
+  } else if (!activeVehicle && garage.length > 0) {
+    activeVehicle = garage[0]
+  }
+
+  return {
+    ...DEFAULT_PREFS,
+    ...saved,
+    garage,
+    vehicle: activeVehicle,
+    locale: LOCALES.some((item) => item.value === saved.locale) ? saved.locale! : null,
+    allowUnknownPayment: saved.paymentPolicyVersion === 2 ? saved.allowUnknownPayment ?? true : true,
+    paymentPolicyVersion: 2,
+    navApp: saved.navDefaultVersion === 2 ? saved.navApp ?? 'google' : 'google',
+    navDefaultVersion: 2,
+    tripMode: restoreTrip ? 'on_route' : 'round_trip',
+    destination: restoreTrip ? destination : null,
+  }
 }
 
 export function loadPrefs(): Prefs {
