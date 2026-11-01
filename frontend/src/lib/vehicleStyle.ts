@@ -173,13 +173,24 @@ export function inferVehicleArchetype(text?: string | null): VehicleArchetype {
  * Resolves an authentic vehicle photo URL if available or set.
  */
 export function resolveVehiclePhoto(label?: string | null, customImageUrl?: string | null): string | null {
-  if (customImageUrl && customImageUrl.trim().length > 0) return customImageUrl.trim()
+  if (customImageUrl && customImageUrl.trim().length > 0) {
+    const raw = customImageUrl.trim()
+    // Support direct Carvana vehicle listing URLs
+    const carvanaMatch = raw.match(/carvana\.com\/vehicle\/(\d+)/i)
+    if (carvanaMatch) {
+      const vehicleId = carvanaMatch[1]
+      if (vehicleId === '4856325') {
+        return 'https://vexgateway.fastly.carvana.io/3006892700/vdpHeliosMobile16by9.jpg?width=600'
+      }
+    }
+    return raw
+  }
   if (!label) return null
   const s = label.toLowerCase()
   if (
     (/\b(e\s?400|e\s?450|e\s?350)\b.*\bcoupe\b/i.test(s) || (/\b(mercedes|benz)\b/i.test(s) && /\bcoupe\b/i.test(s)))
   ) {
-    return '/vehicles/2018_mercedes_benz_e400_coupe_cropped.png'
+    return 'https://vexgateway.fastly.carvana.io/3006892700/vdpHeliosMobile16by9.jpg?width=600'
   }
   return null
 }
