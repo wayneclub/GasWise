@@ -3,11 +3,11 @@ import {
   inferVehicleArchetype,
   inferVehicleSilhouette,
   resolveVehiclePhoto,
-  resolveVehiclePaintMask,
   SILHOUETTE_TO_ARCHETYPE,
   type VehicleArchetype,
   type VehicleSilhouette,
 } from '../../lib/vehicleStyle'
+import { E_CLASS_COUPE_PATHS } from './vehiclePaths'
 import { useI18n } from '../../i18n'
 
 interface VehicleThumbnailProps {
@@ -91,14 +91,14 @@ export function VehicleThumbnail({
     return resolveVehiclePhoto(label, imageUrl)
   }, [label, imageUrl])
 
-  const paintMask = useMemo(() => resolveVehiclePaintMask(resolvedPhoto), [resolvedPhoto])
-  const isRecolored = Boolean(
+  const isCustomRecolored = Boolean(
     color &&
       color.toLowerCase() !== '#ffffff' &&
       color.toLowerCase() !== '#f8fafc' &&
       color.toLowerCase() !== '#fff'
   )
-  const showPhoto = Boolean(resolvedPhoto && !imgError && !preferVector)
+  const isUserCustomUpload = Boolean(imageUrl && imageUrl.trim().length > 0 && !imageUrl.startsWith('/vehicles/'))
+  const showPhoto = Boolean(isUserCustomUpload && !isCustomRecolored && !imgError && !preferVector)
 
   const dimensions = {
     sm: 'w-20 h-10',
@@ -124,23 +124,6 @@ export function VehicleThumbnail({
               className="h-full w-full object-contain select-none filter drop-shadow-sm transition-transform duration-200 hover:scale-105"
               loading="lazy"
             />
-            {isRecolored ? (
-              <div
-                className="absolute inset-0 pointer-events-none transition-colors duration-200"
-                style={{
-                  backgroundColor: color ?? undefined,
-                  mixBlendMode: 'multiply',
-                  WebkitMaskImage: `url(${paintMask || resolvedPhoto})`,
-                  WebkitMaskSize: 'contain',
-                  WebkitMaskPosition: 'center',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskImage: `url(${paintMask || resolvedPhoto})`,
-                  maskSize: 'contain',
-                  maskPosition: 'center',
-                  maskRepeat: 'no-repeat',
-                }}
-              />
-            ) : null}
           </div>
         ) : (
           <svg
@@ -151,18 +134,18 @@ export function VehicleThumbnail({
             aria-hidden="true"
           >
             <defs>
-              {/* Metallic Automotive Finish Gradient */}
-              <linearGradient id={`car-paint-${uid}`} x1="0" y1="20" x2="0" y2="65" gradientUnits="userSpaceOnUse">
+              {/* Metallic Automotive Finish Gradient (objectBoundingBox for precision scaling) */}
+              <linearGradient id={`car-paint-${uid}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={highlightColor} />
                 <stop offset="40%" stopColor={baseColor} />
                 <stop offset="100%" stopColor={shadowColor} />
               </linearGradient>
 
               {/* Tinted Automotive Glass with Specular Glare */}
-              <linearGradient id={`car-glass-${uid}`} x1="0" y1="24" x2="0" y2="44" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#bae6fd" stopOpacity="0.8" />
-                <stop offset="45%" stopColor="#0f172a" stopOpacity="0.85" />
-                <stop offset="100%" stopColor="#1e293b" stopOpacity="0.95" />
+              <linearGradient id={`car-glass-${uid}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#7dd3fc" stopOpacity="0.8" />
+                <stop offset="35%" stopColor="#0f172a" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="#020617" stopOpacity="0.98" />
               </linearGradient>
 
               {/* Chrome Trim Accent */}
@@ -174,10 +157,10 @@ export function VehicleThumbnail({
             </defs>
 
             {/* Underbody Ground Shadow */}
-            <ellipse cx="100" cy="67" rx="84" ry="4" fill="currentColor" className="text-ink/15 dark:text-ink/30" />
+            <ellipse cx="100" cy="67" rx="80" ry="4" fill="currentColor" className="text-ink/15 dark:text-ink/30" />
 
             {/* Real Body Panels & Silhouette */}
-            {renderVehicleSilhouette(silhouette, `url(#car-paint-${uid})`, `url(#car-glass-${uid})`, isLightCar)}
+            {renderVehicleSilhouette(silhouette, `url(#car-paint-${uid})`, `url(#car-glass-${uid})`, isLightCar, uid)}
 
             {/* Precision Wheels */}
             {renderWheels(silhouette)}
@@ -205,6 +188,7 @@ function renderVehicleSilhouette(
   paintUrl: string,
   glassUrl: string,
   isLightCar: boolean,
+  uid: string,
 ) {
   const lineStroke = isLightCar ? '#475569' : '#0f172a'
 
@@ -212,32 +196,64 @@ function renderVehicleSilhouette(
     case 'e_class_coupe':
       return (
         <g>
-          {/* Mercedes E-Class Coupe (C238) - Sleek Pillarless Fastback Arch */}
-          <path
-            d="M 18 54 C 16 50 18 44 26 42 C 34 41 42 41 50 39 C 68 31 88 23 112 23 C 128 23 138 29 146 39 L 178 44 C 185 45 188 49 186 54 L 168 54 A 14 14 0 0 0 140 54 L 62 54 A 14 14 0 0 0 34 54 L 18 54 Z"
-            fill={paintUrl}
-            stroke={lineStroke}
-            strokeWidth="0.75"
-          />
-          {/* Panoramic Glass Roof */}
-          <path d="M 85 23 C 98 22 116 22 128 24 L 126 36 L 82 36 Z" fill="#090d16" fillOpacity="0.85" />
-          {/* Frameless Continuous Greenhouse Glass */}
-          <path
-            d="M 54 39 C 72 30 92 24 116 24 C 128 24 138 30 144 39 L 54 39 Z"
-            fill={glassUrl}
-            stroke={lineStroke}
-            strokeWidth="0.75"
-          />
-          {/* Pillarless Divider Line */}
-          <line x1="98" y1="24" x2="98" y2="39" stroke={lineStroke} strokeWidth="0.75" strokeOpacity="0.5" />
-          {/* Mercedes Dropping Beltline */}
-          <path d="M 28 43 C 70 42 120 42 176 45" stroke={lineStroke} strokeWidth="0.6" strokeOpacity="0.3" fill="none" />
-          {/* Sport Rocker Panel Sill Accent */}
-          <line x1="64" y1="52" x2="138" y2="52" stroke={lineStroke} strokeWidth="1.2" strokeLinecap="round" />
-          {/* Multibeam Headlight */}
-          <path d="M 178 45 L 185 47 L 182 50 Z" fill="#38bdf8" />
-          {/* Stardust OLED Taillight Strip */}
-          <line x1="17" y1="43" x2="26" y2="43" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+          {/* Mercedes E-Class Coupe (C238) - Traced directly from authentic vehicle photography */}
+          <g transform="translate(12, 69.03) scale(0.012265, -0.012265)">
+            {/* 1. Real Car Body Sheet Metal & Automotive Paint */}
+            <path
+              d={E_CLASS_COUPE_PATHS.body}
+              fill={paintUrl}
+              stroke={lineStroke}
+              strokeWidth="24"
+            />
+            {/* 2. Authentic Frameless Pillarless Coupe Greenhouse Windows */}
+            <path d={E_CLASS_COUPE_PATHS.glass} fill={glassUrl} />
+            {/* 3. Multibeam LED Crystalline Headlight Unit */}
+            <path d={E_CLASS_COUPE_PATHS.headlight} fill="#38bdf8" />
+            {/* 4. Stardust Red LED Taillight Strip */}
+            <path d={E_CLASS_COUPE_PATHS.taillight} fill="#ef4444" />
+          </g>
+
+          {/* Precision AMG 5-Twin-Spoke Alloy Wheels in 200x80 coordinate space */}
+          {/* Rear Wheel (cx=34.1, cy=53.5, r=13.2) */}
+          <g id={`rear-wheel-${uid}`}>
+            <circle cx="34.1" cy="53.5" r="13.2" fill="#090d16" stroke="#1e293b" strokeWidth="1.5" />
+            <circle cx="34.1" cy="53.5" r="10" fill="#020617" />
+            <circle cx="34.1" cy="53.5" r="8" fill="#475569" stroke="#334155" strokeWidth="0.5" />
+            <rect x="26" y="49.5" width="2.2" height="5.5" rx="0.5" fill="#94a3b8" />
+            <circle cx="34.1" cy="53.5" r="10" fill="none" stroke={`url(#car-chrome-${uid})`} strokeWidth="1" />
+            <g stroke={`url(#car-chrome-${uid})`} strokeWidth="0.8" strokeLinecap="round">
+              <line x1="34.1" y1="53.5" x2="34.1" y2="43.8" />
+              <line x1="34.1" y1="53.5" x2="43.3" y2="50.5" />
+              <line x1="34.1" y1="53.5" x2="39.8" y2="61.2" />
+              <line x1="34.1" y1="53.5" x2="28.4" y2="61.2" />
+              <line x1="34.1" y1="53.5" x2="24.9" y2="50.5" />
+            </g>
+            <circle cx="34.1" cy="53.5" r="2.4" fill="#090d16" stroke="#cbd5e1" strokeWidth="0.5" />
+            <circle cx="34.1" cy="53.5" r="1.2" fill="#f8fafc" />
+          </g>
+
+          {/* Front Wheel (cx=169.6, cy=54.5, r=13.2) */}
+          <g id={`front-wheel-${uid}`}>
+            <circle cx="169.6" cy="54.5" r="13.2" fill="#090d16" stroke="#1e293b" strokeWidth="1.5" />
+            <circle cx="169.6" cy="54.5" r="10" fill="#020617" />
+            <circle cx="169.6" cy="54.5" r="8" fill="#475569" stroke="#334155" strokeWidth="0.5" />
+            <rect x="161.5" y="50.5" width="2.2" height="5.5" rx="0.5" fill="#94a3b8" />
+            <circle cx="169.6" cy="54.5" r="10" fill="none" stroke={`url(#car-chrome-${uid})`} strokeWidth="1" />
+            <g stroke={`url(#car-chrome-${uid})`} strokeWidth="0.8" strokeLinecap="round">
+              <line x1="169.6" y1="54.5" x2="169.6" y2="44.8" />
+              <line x1="169.6" y1="54.5" x2="178.8" y2="51.5" />
+              <line x1="169.6" y1="54.5" x2="175.3" y2="62.2" />
+              <line x1="169.6" y1="54.5" x2="163.9" y2="62.2" />
+              <line x1="169.6" y1="54.5" x2="160.4" y2="51.5" />
+            </g>
+            <circle cx="169.6" cy="54.5" r="2.4" fill="#090d16" stroke="#cbd5e1" strokeWidth="0.5" />
+            <circle cx="169.6" cy="54.5" r="1.2" fill="#f8fafc" />
+          </g>
+
+          {/* Mercedes Dropping Beltline & Pillarless Door Seam */}
+          <path d="M 36 41 C 73 40 116 39 165 42" stroke={lineStroke} strokeWidth="0.6" strokeOpacity="0.4" fill="none" />
+          <path d="M 103 26 L 99 41 L 100 58" stroke={lineStroke} strokeWidth="0.5" strokeOpacity="0.4" fill="none" />
+          <line x1="67" y1="62" x2="141" y2="62" stroke={lineStroke} strokeWidth="0.8" strokeOpacity="0.5" strokeLinecap="round" />
         </g>
       )
 
@@ -540,6 +556,9 @@ function renderVehicleSilhouette(
 }
 
 function renderWheels(silhouette: VehicleSilhouette) {
+  if (silhouette === 'e_class_coupe') {
+    return null
+  }
   const rearX = 48
   const frontX = 154
   const cy = 54
@@ -558,12 +577,6 @@ function renderWheels(silhouette: VehicleSilhouette) {
       <circle cx={rearX} cy={cy} r={rimRadius - 2.5} fill="#0f172a" />
       <line x1={rearX - 3.5} y1={cy} x2={rearX + 3.5} y2={cy} stroke="#94a3b8" strokeWidth="1" />
       <line x1={rearX} y1={cy - 3.5} x2={rearX} y2={cy + 3.5} stroke="#94a3b8" strokeWidth="1" />
-      {silhouette === 'e_class_coupe' ? (
-        <>
-          <line x1={rearX - 3} y1={cy - 2.5} x2={rearX + 3} y2={cy + 2.5} stroke="#cbd5e1" strokeWidth="1" />
-          <line x1={rearX + 3} y1={cy - 2.5} x2={rearX - 3} y2={cy + 2.5} stroke="#cbd5e1" strokeWidth="1" />
-        </>
-      ) : null}
       <circle cx={rearX} cy={cy} r="1.8" fill="#e2e8f0" />
 
       {/* Front Wheel Tire & Rim */}
@@ -572,12 +585,6 @@ function renderWheels(silhouette: VehicleSilhouette) {
       <circle cx={frontX} cy={cy} r={rimRadius - 2.5} fill="#0f172a" />
       <line x1={frontX - 3.5} y1={cy} x2={frontX + 3.5} y2={cy} stroke="#94a3b8" strokeWidth="1" />
       <line x1={frontX} y1={cy - 3.5} x2={frontX} y2={cy + 3.5} stroke="#94a3b8" strokeWidth="1" />
-      {silhouette === 'e_class_coupe' ? (
-        <>
-          <line x1={frontX - 3} y1={cy - 2.5} x2={frontX + 3} y2={cy + 2.5} stroke="#cbd5e1" strokeWidth="1" />
-          <line x1={frontX + 3} y1={cy - 2.5} x2={frontX - 3} y2={cy + 2.5} stroke="#cbd5e1" strokeWidth="1" />
-        </>
-      ) : null}
       <circle cx={frontX} cy={cy} r="1.8" fill="#e2e8f0" />
     </g>
   )
