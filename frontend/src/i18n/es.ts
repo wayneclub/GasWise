@@ -713,6 +713,8 @@ export const es: Record<MessageKey, string> = {
   "garage.archetype.van": "Monovolumen",
   "garage.color": "Color del vehiculo",
   "garage.customColor": "Color personalizado",
+  "garage.colorPicker": "Paleta de colores",
+  "garage.resetColor": "Restablecer color",
   "garage.photo": "Foto del vehiculo",
   "garage.photoUrlPlaceholder": "Pegar URL de la imagen (ej. Carvana)",
   "garage.uploadPhoto": "Subir",

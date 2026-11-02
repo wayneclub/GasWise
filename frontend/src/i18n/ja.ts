@@ -692,6 +692,8 @@ export const ja: Record<MessageKey, string> = {
   "garage.archetype.van": "ミニバン",
   "garage.color": "ボディカラー変更",
   "garage.customColor": "カスタムカラー",
+  "garage.colorPicker": "カラーパレット",
+  "garage.resetColor": "純正色に戻す",
   "garage.photo": "車両写真",
   "garage.photoUrlPlaceholder": "画像URLを貼り付け（Carvana等の写真）",
   "garage.uploadPhoto": "アップロード",

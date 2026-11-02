@@ -3,6 +3,7 @@ import {
   inferVehicleArchetype,
   inferVehicleSilhouette,
   resolveVehiclePhoto,
+  resolveVehiclePaintMask,
   VEHICLE_COLOR_PRESETS,
 } from './vehicleStyle'
 
@@ -75,9 +76,11 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
     // Custom URL priority
     expect(resolveVehiclePhoto('2018 Mercedes-Benz E400 Coupe', 'https://example.com/mycar.jpg')).toBe('https://example.com/mycar.jpg')
     // Carvana listing URL translation
-    expect(resolveVehiclePhoto('Any Car', 'https://www.carvana.com/vehicle/4856325?store=Carvla3')).toBe('https://vexgateway.fastly.carvana.io/3006892700/vdpHeliosMobile16by9.jpg?width=600')
+    expect(resolveVehiclePhoto('Any Car', 'https://www.carvana.com/vehicle/4856325?store=Carvla3')).toBe('/vehicles/2018_mercedes_benz_e400_coupe_transparent.png')
     // Default mapped photo for Mercedes E-Class Coupe
-    expect(resolveVehiclePhoto('2018 Mercedes-Benz E400 Coupe')).toBe('https://vexgateway.fastly.carvana.io/3006892700/vdpHeliosMobile16by9.jpg?width=600')
+    expect(resolveVehiclePhoto('2018 Mercedes-Benz E400 Coupe')).toBe('/vehicles/2018_mercedes_benz_e400_coupe_transparent.png')
+    // Paint mask resolution
+    expect(resolveVehiclePaintMask('/vehicles/2018_mercedes_benz_e400_coupe_transparent.png')).toBe('/vehicles/2018_mercedes_benz_e400_coupe_paint_mask.png')
     // Unmapped vehicle returns null
     expect(resolveVehiclePhoto('2019 Honda Civic EX')).toBe(null)
   })

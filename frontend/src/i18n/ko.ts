@@ -692,6 +692,8 @@ export const ko: Record<MessageKey, string> = {
   "garage.archetype.van": "미니밴",
   "garage.color": "차량 색상 설정",
   "garage.customColor": "커스텀 색상",
+  "garage.colorPicker": "컬러 팔레트",
+  "garage.resetColor": "순정 색상 복원",
   "garage.photo": "차량 사진",
   "garage.photoUrlPlaceholder": "이미지 URL 붙여넣기 (예: Carvana 사진)",
   "garage.uploadPhoto": "업로드",

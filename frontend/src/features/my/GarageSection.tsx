@@ -304,13 +304,20 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                       </button>
                     </div>
 
-                    <label className="relative flex cursor-pointer items-center gap-1 text-[11px] font-mono text-muted hover:text-ink">
+                    <label
+                      title={t('garage.colorPicker')}
+                      className="relative flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-mono text-muted hover:bg-surface hover:text-ink transition"
+                    >
+                      <span
+                        className="size-2.5 rounded-full border border-line shrink-0"
+                        style={{ backgroundColor: currentColor }}
+                      />
                       <span>{currentColor}</span>
                       <input
                         type="color"
                         value={currentColor}
                         onChange={(e) => handleColorChange(car.id, e.target.value)}
-                        className="sr-only"
+                        className="absolute inset-0 cursor-pointer opacity-0"
                         aria-label={t('garage.customColor')}
                       />
                     </label>
@@ -378,37 +385,57 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                   ) : null}
 
                   {editingColorId === car.id ? (
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-line/40">
-                      {VEHICLE_COLOR_PRESETS.map((preset) => {
-                        const isSelected = currentColor.toLowerCase() === preset.hex.toLowerCase()
-                        return (
-                          <button
-                            key={preset.id}
-                            type="button"
-                            onClick={() => handleColorChange(car.id, preset.hex)}
-                            title={preset.name}
-                            aria-label={preset.name}
-                            className={`size-5 rounded-full border transition-transform hover:scale-115 ${
-                              isSelected ? 'ring-2 ring-accent ring-offset-1 scale-110 border-transparent' : 'border-line/70'
-                            }`}
-                            style={{ backgroundColor: preset.hex }}
-                          />
-                        )
-                      })}
-                      {/* Native Custom Color Input Button */}
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-line/40">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {VEHICLE_COLOR_PRESETS.map((preset) => {
+                          const isSelected = currentColor.toLowerCase() === preset.hex.toLowerCase()
+                          return (
+                            <button
+                              key={preset.id}
+                              type="button"
+                              onClick={() => handleColorChange(car.id, preset.hex)}
+                              title={preset.name}
+                              aria-label={preset.name}
+                              className={`size-5 rounded-full border transition-transform hover:scale-115 ${
+                                isSelected ? 'ring-2 ring-accent ring-offset-1 scale-110 border-transparent' : 'border-line/70'
+                              }`}
+                              style={{ backgroundColor: preset.hex }}
+                            />
+                          )
+                        })}
+                      </div>
+
+                      {/* Prominent Native Color Palette Picker Button */}
                       <label
-                        title={t('garage.customColor')}
-                        className="grid size-5 cursor-pointer place-items-center rounded-full border border-dashed border-line hover:border-ink hover:scale-115 transition-transform"
+                        title={t('garage.colorPicker')}
+                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-surface px-2 py-0.5 text-[11px] font-medium text-ink shadow-2xs transition hover:border-accent hover:bg-sunken/40"
                       >
-                        <PlusIcon size={10} className="text-muted" />
-                        <input
-                          type="color"
-                          value={currentColor}
-                          onChange={(e) => handleColorChange(car.id, e.target.value)}
-                          className="sr-only"
-                          aria-label={t('garage.customColor')}
-                        />
+                        <div className="relative size-3.5 overflow-hidden rounded-full border border-line shadow-2xs shrink-0">
+                          <input
+                            type="color"
+                            value={currentColor}
+                            onChange={(e) => handleColorChange(car.id, e.target.value)}
+                            className="absolute -inset-2 size-8 cursor-pointer opacity-0"
+                            aria-label={t('garage.colorPicker')}
+                          />
+                          <span
+                            className="block size-full rounded-full"
+                            style={{ backgroundColor: currentColor }}
+                          />
+                        </div>
+                        <span>{t('garage.colorPicker')}</span>
                       </label>
+
+                      {/* Reset to Default Color Shortcut */}
+                      {currentColor.toLowerCase() !== '#ffffff' && currentColor.toLowerCase() !== '#f8fafc' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleColorChange(car.id, '#ffffff')}
+                          className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted hover:text-ink hover:underline"
+                        >
+                          <span>{t('garage.resetColor')}</span>
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>

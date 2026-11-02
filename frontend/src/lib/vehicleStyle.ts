@@ -180,7 +180,7 @@ export function resolveVehiclePhoto(label?: string | null, customImageUrl?: stri
     if (carvanaMatch) {
       const vehicleId = carvanaMatch[1]
       if (vehicleId === '4856325') {
-        return 'https://vexgateway.fastly.carvana.io/3006892700/vdpHeliosMobile16by9.jpg?width=600'
+        return '/vehicles/2018_mercedes_benz_e400_coupe_transparent.png'
       }
     }
     return raw
@@ -190,7 +190,18 @@ export function resolveVehiclePhoto(label?: string | null, customImageUrl?: stri
   if (
     (/\b(e\s?400|e\s?450|e\s?350)\b.*\bcoupe\b/i.test(s) || (/\b(mercedes|benz)\b/i.test(s) && /\bcoupe\b/i.test(s)))
   ) {
-    return 'https://vexgateway.fastly.carvana.io/3006892700/vdpHeliosMobile16by9.jpg?width=600'
+    return '/vehicles/2018_mercedes_benz_e400_coupe_transparent.png'
+  }
+  return null
+}
+
+/**
+ * Resolves a transparent paint mask if the vehicle photo supports dynamic recoloring.
+ */
+export function resolveVehiclePaintMask(photoUrl?: string | null): string | null {
+  if (!photoUrl) return null
+  if (photoUrl.includes('2018_mercedes_benz_e400_coupe') || photoUrl.includes('4856325')) {
+    return '/vehicles/2018_mercedes_benz_e400_coupe_paint_mask.png'
   }
   return null
 }

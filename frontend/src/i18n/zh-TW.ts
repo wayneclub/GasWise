@@ -713,6 +713,8 @@ export const zhTW: Record<MessageKey, string> = {
   "garage.archetype.van": "廂型休旅",
   "garage.color": "車色客製化",
   "garage.customColor": "自訂車色",
+  "garage.colorPicker": "調色盤選色",
+  "garage.resetColor": "還原原廠色",
   "garage.photo": "車輛相片",
   "garage.photoUrlPlaceholder": "貼上圖片網址（如 Carvana / 賣車網站相片）",
   "garage.uploadPhoto": "上傳相片",

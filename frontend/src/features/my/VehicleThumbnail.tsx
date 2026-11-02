@@ -3,6 +3,7 @@ import {
   inferVehicleArchetype,
   inferVehicleSilhouette,
   resolveVehiclePhoto,
+  resolveVehiclePaintMask,
   SILHOUETTE_TO_ARCHETYPE,
   type VehicleArchetype,
   type VehicleSilhouette,
@@ -90,9 +91,14 @@ export function VehicleThumbnail({
     return resolveVehiclePhoto(label, imageUrl)
   }, [label, imageUrl])
 
-  // Show authentic photo if available and not custom-tinted to a non-default color
-  const isCustomColor = Boolean(color && color.toLowerCase() !== '#1e293b' && color.toLowerCase() !== '#ffffff')
-  const showPhoto = Boolean(resolvedPhoto && !imgError && !preferVector && !isCustomColor)
+  const paintMask = useMemo(() => resolveVehiclePaintMask(resolvedPhoto), [resolvedPhoto])
+  const isRecolored = Boolean(
+    color &&
+      color.toLowerCase() !== '#ffffff' &&
+      color.toLowerCase() !== '#f8fafc' &&
+      color.toLowerCase() !== '#fff'
+  )
+  const showPhoto = Boolean(resolvedPhoto && !imgError && !preferVector)
 
   const dimensions = {
     sm: 'w-20 h-10',
@@ -110,13 +116,32 @@ export function VehicleThumbnail({
         }`}
       >
         {showPhoto ? (
-          <img
-            src={resolvedPhoto!}
-            alt={label || 'Vehicle'}
-            onError={() => setImgError(true)}
-            className="h-full w-full object-contain p-1 select-none filter drop-shadow-sm transition-transform duration-200 hover:scale-105"
-            loading="lazy"
-          />
+          <div className="relative flex h-full w-full items-center justify-center p-1">
+            <img
+              src={resolvedPhoto!}
+              alt={label || 'Vehicle'}
+              onError={() => setImgError(true)}
+              className="h-full w-full object-contain select-none filter drop-shadow-sm transition-transform duration-200 hover:scale-105"
+              loading="lazy"
+            />
+            {isRecolored ? (
+              <div
+                className="absolute inset-0 pointer-events-none transition-colors duration-200"
+                style={{
+                  backgroundColor: color ?? undefined,
+                  mixBlendMode: 'multiply',
+                  WebkitMaskImage: `url(${paintMask || resolvedPhoto})`,
+                  WebkitMaskSize: 'contain',
+                  WebkitMaskPosition: 'center',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskImage: `url(${paintMask || resolvedPhoto})`,
+                  maskSize: 'contain',
+                  maskPosition: 'center',
+                  maskRepeat: 'no-repeat',
+                }}
+              />
+            ) : null}
+          </div>
         ) : (
           <svg
             viewBox="0 0 200 80"
@@ -189,30 +214,30 @@ function renderVehicleSilhouette(
         <g>
           {/* Mercedes E-Class Coupe (C238) - Sleek Pillarless Fastback Arch */}
           <path
-            d="M 18 54 C 16 50 17 45 26 43 L 56 41 C 72 26 96 22 136 23 C 154 24 166 34 176 43 L 186 45 C 190 47 190 51 187 54 L 168 54 A 14 14 0 0 0 140 54 L 62 54 A 14 14 0 0 0 34 54 L 18 54 Z"
+            d="M 18 54 C 16 50 18 44 26 42 C 34 41 42 41 50 39 C 68 31 88 23 112 23 C 128 23 138 29 146 39 L 178 44 C 185 45 188 49 186 54 L 168 54 A 14 14 0 0 0 140 54 L 62 54 A 14 14 0 0 0 34 54 L 18 54 Z"
             fill={paintUrl}
             stroke={lineStroke}
             strokeWidth="0.75"
           />
-          {/* Panoramic Gloss Black Roof Panel */}
-          <path d="M 74 24 C 92 22 120 22 136 23 C 142 27 146 32 150 37 L 70 37 C 71 31 72 27 74 24 Z" fill="#090d16" fillOpacity="0.85" />
-          {/* Unbroken Pillarless Side Glass with Chrome Trim */}
+          {/* Panoramic Glass Roof */}
+          <path d="M 85 23 C 98 22 116 22 128 24 L 126 36 L 82 36 Z" fill="#090d16" fillOpacity="0.85" />
+          {/* Frameless Continuous Greenhouse Glass */}
           <path
-            d="M 66 40 C 78 28 98 24 132 25 C 144 26 154 34 160 40 L 66 40 Z"
+            d="M 54 39 C 72 30 92 24 116 24 C 128 24 138 30 144 39 L 54 39 Z"
             fill={glassUrl}
             stroke={lineStroke}
-            strokeWidth="0.8"
+            strokeWidth="0.75"
           />
-          {/* Frameless Glass Division (Subtle Quarter Window Seam) */}
-          <line x1="116" y1="25" x2="116" y2="40" stroke={lineStroke} strokeWidth="0.8" strokeOpacity="0.6" />
-          {/* Mercedes Dropping Line / Beltline Crease */}
-          <path d="M 40 44 C 80 43 130 42 178 44" stroke={lineStroke} strokeWidth="0.75" strokeOpacity="0.35" fill="none" />
+          {/* Pillarless Divider Line */}
+          <line x1="98" y1="24" x2="98" y2="39" stroke={lineStroke} strokeWidth="0.75" strokeOpacity="0.5" />
+          {/* Mercedes Dropping Beltline */}
+          <path d="M 28 43 C 70 42 120 42 176 45" stroke={lineStroke} strokeWidth="0.6" strokeOpacity="0.3" fill="none" />
           {/* Sport Rocker Panel Sill Accent */}
           <line x1="64" y1="52" x2="138" y2="52" stroke={lineStroke} strokeWidth="1.2" strokeLinecap="round" />
-          {/* Multibeam LED Eyebrow Headlight */}
-          <path d="M 180 44 L 187 45 L 184 48 Z" fill="#38bdf8" />
-          {/* Slim Horizontal Stardust OLED Taillight Strip */}
-          <line x1="16" y1="44" x2="25" y2="44" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+          {/* Multibeam Headlight */}
+          <path d="M 178 45 L 185 47 L 182 50 Z" fill="#38bdf8" />
+          {/* Stardust OLED Taillight Strip */}
+          <line x1="17" y1="43" x2="26" y2="43" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
         </g>
       )
 

@@ -713,6 +713,8 @@ export const zhCN: Record<MessageKey, string> = {
   "garage.archetype.van": "厢型休旅",
   "garage.color": "车身颜色定制",
   "garage.customColor": "自定义车色",
+  "garage.colorPicker": "调色板选色",
+  "garage.resetColor": "恢复出厂色",
   "garage.photo": "车辆相片",
   "garage.photoUrlPlaceholder": "贴上图片网址（如 Carvana / 卖车网站相片）",
   "garage.uploadPhoto": "上传相片",

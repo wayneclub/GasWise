@@ -713,6 +713,8 @@ export const en = {
   "garage.archetype.van": "Minivan",
   "garage.color": "Vehicle Color",
   "garage.customColor": "Custom color",
+  "garage.colorPicker": "Color Palette",
+  "garage.resetColor": "Reset Color",
   "garage.photo": "Vehicle Photo",
   "garage.photoUrlPlaceholder": "Paste image URL (e.g. from Carvana)",
   "garage.uploadPhoto": "Upload",
