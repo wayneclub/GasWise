@@ -304,23 +304,29 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                       </button>
                     </div>
 
-                    <label
-                      title={t('garage.colorPicker')}
-                      className="relative flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-mono text-muted hover:bg-surface hover:text-ink transition"
-                    >
-                      <span
-                        className="size-2.5 rounded-full border border-line shrink-0"
-                        style={{ backgroundColor: currentColor }}
-                      />
-                      <span>{currentColor}</span>
-                      <input
-                        type="color"
-                        value={currentColor}
-                        onChange={(e) => handleColorChange(car.id, e.target.value)}
-                        className="absolute inset-0 cursor-pointer opacity-0"
-                        aria-label={t('garage.customColor')}
-                      />
-                    </label>
+                    {(() => {
+                      const matchedPreset = VEHICLE_COLOR_PRESETS.find(
+                        (p) => p.hex.toLowerCase() === currentColor.toLowerCase(),
+                      )
+                      const displayName = matchedPreset ? matchedPreset.labelZh : currentColor
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingColorId(editingColorId === car.id ? null : car.id)
+                            setEditingPhotoId(null)
+                          }}
+                          className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted hover:bg-surface hover:text-ink transition"
+                          title={displayName}
+                        >
+                          <span
+                            className="size-2.5 rounded-full border border-line shrink-0"
+                            style={{ backgroundColor: currentColor }}
+                          />
+                          <span>{displayName}</span>
+                        </button>
+                      )
+                    })()}
                   </div>
 
                   {/* Photo Customization Panel */}
@@ -405,32 +411,11 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                         })}
                       </div>
 
-                      {/* Prominent Native Color Palette Picker Button */}
-                      <label
-                        title={t('garage.colorPicker')}
-                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-surface px-2 py-0.5 text-[11px] font-medium text-ink shadow-2xs transition hover:border-accent hover:bg-sunken/40"
-                      >
-                        <div className="relative size-3.5 overflow-hidden rounded-full border border-line shadow-2xs shrink-0">
-                          <input
-                            type="color"
-                            value={currentColor}
-                            onChange={(e) => handleColorChange(car.id, e.target.value)}
-                            className="absolute -inset-2 size-8 cursor-pointer opacity-0"
-                            aria-label={t('garage.colorPicker')}
-                          />
-                          <span
-                            className="block size-full rounded-full"
-                            style={{ backgroundColor: currentColor }}
-                          />
-                        </div>
-                        <span>{t('garage.colorPicker')}</span>
-                      </label>
-
-                      {/* Reset to Default Color Shortcut */}
+                      {/* Reset to Factory Original Color */}
                       {currentColor.toLowerCase() !== '#ffffff' && currentColor.toLowerCase() !== '#f8fafc' ? (
                         <button
                           type="button"
-                          onClick={() => handleColorChange(car.id, '#ffffff')}
+                          onClick={() => handleColorChange(car.id, '#f8fafc')}
                           className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted hover:text-ink hover:underline"
                         >
                           <span>{t('garage.resetColor')}</span>
@@ -516,19 +501,6 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                     />
                   )
                 })}
-                <label
-                  title={t('garage.customColor')}
-                  className="grid size-6 cursor-pointer place-items-center rounded-full border border-dashed border-line hover:border-ink hover:scale-115 transition-transform"
-                >
-                  <PlusIcon size={12} className="text-muted" />
-                  <input
-                    type="color"
-                    value={newCarColor}
-                    onChange={(e) => setNewCarColor(e.target.value)}
-                    className="sr-only"
-                    aria-label={t('garage.customColor')}
-                  />
-                </label>
               </div>
             </div>
 

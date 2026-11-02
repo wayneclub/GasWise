@@ -33,13 +33,13 @@ export interface VehicleColorPreset {
 }
 
 export const VEHICLE_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'white', name: 'Polar White', hex: '#f8fafc', labelZh: '極地白 (原廠)', labelEn: 'Polar White' },
   { id: 'obsidian', name: 'Obsidian Black', hex: '#1e293b', labelZh: '曜石黑', labelEn: 'Obsidian Black' },
-  { id: 'white', name: 'Pearl White', hex: '#f8fafc', labelZh: '珍珠白', labelEn: 'Pearl White' },
-  { id: 'grey', name: 'Nardo Grey', hex: '#64748b', labelZh: '水泥灰', labelEn: 'Nardo Grey' },
-  { id: 'silver', name: 'Liquid Silver', hex: '#94a3b8', labelZh: '液態銀', labelEn: 'Liquid Silver' },
-  { id: 'blue', name: 'Deep Metallic Blue', hex: '#1d4ed8', labelZh: '金屬藍', labelEn: 'Deep Metallic Blue' },
-  { id: 'red', name: 'Soul Red', hex: '#dc2626', labelZh: '烈焰紅', labelEn: 'Soul Red' },
-  { id: 'green', name: 'Racing Green', hex: '#15803d', labelZh: '英倫綠', labelEn: 'Racing Green' },
+  { id: 'grey', name: 'Selenite Grey', hex: '#64748b', labelZh: '月光石灰', labelEn: 'Selenite Grey' },
+  { id: 'silver', name: 'Iridium Silver', hex: '#94a3b8', labelZh: '銥銀', labelEn: 'Iridium Silver' },
+  { id: 'blue', name: 'Lunar Blue', hex: '#1d4ed8', labelZh: '寶石藍', labelEn: 'Lunar Blue' },
+  { id: 'red', name: 'Cardinal Red', hex: '#dc2626', labelZh: '經典紅', labelEn: 'Cardinal Red' },
+  { id: 'green', name: 'Emerald Green', hex: '#15803d', labelZh: '祖母綠', labelEn: 'Emerald Green' },
   { id: 'gold', name: 'Champagne Gold', hex: '#d97706', labelZh: '香檳金', labelEn: 'Champagne Gold' },
   { id: 'orange', name: 'Sunset Orange', hex: '#ea580c', labelZh: '熔岩橘', labelEn: 'Sunset Orange' },
   { id: 'purple', name: 'Midnight Purple', hex: '#7e22ce', labelZh: '魅夜紫', labelEn: 'Midnight Purple' },

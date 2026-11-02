@@ -292,11 +292,11 @@ describe('MyPage', () => {
     )
 
     // Open color customization
-    const colorBtn = screen.getByRole('button', { name: 'Vehicle Color' })
+    const colorBtn = screen.getByRole('button', { name: /Color/i })
     fireEvent.click(colorBtn)
 
-    // Pick Soul Red
-    const redBtn = screen.getByRole('button', { name: 'Soul Red' })
+    // Pick Red preset
+    const redBtn = screen.getByRole('button', { name: /Red/i })
     fireEvent.click(redBtn)
 
     expect(update).toHaveBeenCalledWith(

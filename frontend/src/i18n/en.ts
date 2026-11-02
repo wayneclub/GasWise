@@ -711,7 +711,7 @@ export const en = {
   "garage.archetype.hatchback": "Hatchback",
   "garage.archetype.wagon": "Station Wagon",
   "garage.archetype.van": "Minivan",
-  "garage.color": "Vehicle Color",
+  "garage.color": "Factory Color",
   "garage.customColor": "Custom color",
   "garage.colorPicker": "Color Palette",
   "garage.resetColor": "Reset Color",

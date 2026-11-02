@@ -711,7 +711,7 @@ export const zhCN: Record<MessageKey, string> = {
   "garage.archetype.hatchback": "掀背车",
   "garage.archetype.wagon": "旅行车",
   "garage.archetype.van": "厢型休旅",
-  "garage.color": "车身颜色定制",
+  "garage.color": "原厂车色",
   "garage.customColor": "自定义车色",
   "garage.colorPicker": "调色板选色",
   "garage.resetColor": "恢复出厂色",

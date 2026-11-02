@@ -711,7 +711,7 @@ export const es: Record<MessageKey, string> = {
   "garage.archetype.hatchback": "Hatchback",
   "garage.archetype.wagon": "Familiar",
   "garage.archetype.van": "Monovolumen",
-  "garage.color": "Color del vehiculo",
+  "garage.color": "Color de fábrica",
   "garage.customColor": "Color personalizado",
   "garage.colorPicker": "Paleta de colores",
   "garage.resetColor": "Restablecer color",
