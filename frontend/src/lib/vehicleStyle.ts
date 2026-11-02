@@ -33,16 +33,12 @@ export interface VehicleColorPreset {
 }
 
 export const VEHICLE_COLOR_PRESETS: VehicleColorPreset[] = [
-  { id: 'white', name: 'Polar White', hex: '#f8fafc', labelZh: '極地白 (原廠)', labelEn: 'Polar White' },
-  { id: 'obsidian', name: 'Obsidian Black', hex: '#1e293b', labelZh: '曜石黑', labelEn: 'Obsidian Black' },
-  { id: 'grey', name: 'Selenite Grey', hex: '#64748b', labelZh: '月光石灰', labelEn: 'Selenite Grey' },
-  { id: 'silver', name: 'Iridium Silver', hex: '#94a3b8', labelZh: '銥銀', labelEn: 'Iridium Silver' },
-  { id: 'blue', name: 'Lunar Blue', hex: '#1d4ed8', labelZh: '寶石藍', labelEn: 'Lunar Blue' },
-  { id: 'red', name: 'Cardinal Red', hex: '#dc2626', labelZh: '經典紅', labelEn: 'Cardinal Red' },
-  { id: 'green', name: 'Emerald Green', hex: '#15803d', labelZh: '祖母綠', labelEn: 'Emerald Green' },
-  { id: 'gold', name: 'Champagne Gold', hex: '#d97706', labelZh: '香檳金', labelEn: 'Champagne Gold' },
-  { id: 'orange', name: 'Sunset Orange', hex: '#ea580c', labelZh: '熔岩橘', labelEn: 'Sunset Orange' },
-  { id: 'purple', name: 'Midnight Purple', hex: '#7e22ce', labelZh: '魅夜紫', labelEn: 'Midnight Purple' },
+  { id: 'white', name: 'Polar White (149)', hex: '#f8fafc', labelZh: '極地白 (149)', labelEn: 'Polar White (149)' },
+  { id: 'obsidian', name: 'Obsidian Black (197)', hex: '#1a1f2c', labelZh: '曜石黑 (197)', labelEn: 'Obsidian Black (197)' },
+  { id: 'grey', name: 'Selenite Grey (992)', hex: '#525a65', labelZh: '月光石灰 (992)', labelEn: 'Selenite Grey (992)' },
+  { id: 'silver', name: 'Iridium Silver (775)', hex: '#a8b0b8', labelZh: '銥銀 (775)', labelEn: 'Iridium Silver (775)' },
+  { id: 'blue', name: 'Lunar Blue (893)', hex: '#1b2a47', labelZh: '月藍 (893)', labelEn: 'Lunar Blue (893)' },
+  { id: 'red', name: 'designo Cardinal Red (996)', hex: '#7a1c27', labelZh: '風情紅 (996)', labelEn: 'Cardinal Red (996)' },
 ]
 
 export const SILHOUETTE_TO_ARCHETYPE: Record<VehicleSilhouette, VehicleArchetype> = {
@@ -198,17 +194,18 @@ export function resolveE400ColorPhoto(color?: string | null): string {
   const norm = color.toLowerCase().trim()
 
   const PRESET_FILES: Record<string, string> = {
-    '#1e293b': 'obsidian',
     '#f8fafc': 'white',
     '#ffffff': 'white',
+    '#1a1f2c': 'obsidian',
+    '#1e293b': 'obsidian',
+    '#525a65': 'grey',
     '#64748b': 'grey',
+    '#a8b0b8': 'silver',
     '#94a3b8': 'silver',
+    '#1b2a47': 'blue',
     '#1d4ed8': 'blue',
+    '#7a1c27': 'red',
     '#dc2626': 'red',
-    '#15803d': 'green',
-    '#d97706': 'gold',
-    '#ea580c': 'orange',
-    '#7e22ce': 'purple',
   }
 
   if (PRESET_FILES[norm]) {

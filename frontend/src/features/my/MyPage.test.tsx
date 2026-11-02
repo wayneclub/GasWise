@@ -301,8 +301,8 @@ describe('MyPage', () => {
 
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
-        garage: [expect.objectContaining({ color: '#dc2626' })],
-        vehicle: expect.objectContaining({ color: '#dc2626' }),
+        garage: [expect.objectContaining({ color: '#7a1c27' })],
+        vehicle: expect.objectContaining({ color: '#7a1c27' }),
       }),
     )
   })

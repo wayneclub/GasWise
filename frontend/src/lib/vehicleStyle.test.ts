@@ -65,7 +65,7 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
   })
 
   it('provides rich automotive color presets', () => {
-    expect(VEHICLE_COLOR_PRESETS.length).toBeGreaterThanOrEqual(8)
+    expect(VEHICLE_COLOR_PRESETS.length).toBeGreaterThanOrEqual(6)
     expect(VEHICLE_COLOR_PRESETS.some((c) => c.id === 'obsidian')).toBe(true)
     expect(VEHICLE_COLOR_PRESETS.some((c) => c.id === 'red')).toBe(true)
     expect(VEHICLE_COLOR_PRESETS.some((c) => c.id === 'blue')).toBe(true)
