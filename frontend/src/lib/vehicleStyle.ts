@@ -169,10 +169,80 @@ export function inferVehicleArchetype(text?: string | null): VehicleArchetype {
   return SILHOUETTE_TO_ARCHETYPE[silhouette]
 }
 
+function parseHexRgb(hex: string): [number, number, number] | null {
+  const clean = hex.replace('#', '').trim()
+  if (clean.length === 3) {
+    return [
+      parseInt(clean[0] + clean[0], 16),
+      parseInt(clean[1] + clean[1], 16),
+      parseInt(clean[2] + clean[2], 16),
+    ]
+  }
+  if (clean.length === 6) {
+    return [
+      parseInt(clean.slice(0, 2), 16),
+      parseInt(clean.slice(2, 4), 16),
+      parseInt(clean.slice(4, 6), 16),
+    ]
+  }
+  return null
+}
+
+/**
+ * Resolves color-accurate, transparent cut-out photograph for the 2018 Mercedes-Benz E400 Coupe.
+ */
+export function resolveE400ColorPhoto(color?: string | null): string {
+  if (!color || color === '#ffffff' || color === '#fff' || color === '#f8fafc') {
+    return '/vehicles/2018_mercedes_benz_e400_coupe_white.png'
+  }
+  const norm = color.toLowerCase().trim()
+
+  const PRESET_FILES: Record<string, string> = {
+    '#1e293b': 'obsidian',
+    '#f8fafc': 'white',
+    '#ffffff': 'white',
+    '#64748b': 'grey',
+    '#94a3b8': 'silver',
+    '#1d4ed8': 'blue',
+    '#dc2626': 'red',
+    '#15803d': 'green',
+    '#d97706': 'gold',
+    '#ea580c': 'orange',
+    '#7e22ce': 'purple',
+  }
+
+  if (PRESET_FILES[norm]) {
+    return `/vehicles/2018_mercedes_benz_e400_coupe_${PRESET_FILES[norm]}.png`
+  }
+
+  // Find closest preset match for custom color picker input
+  const rgb = parseHexRgb(norm)
+  if (!rgb) {
+    return '/vehicles/2018_mercedes_benz_e400_coupe_white.png'
+  }
+
+  let bestPreset = 'obsidian'
+  let minDistance = Infinity
+  for (const preset of VEHICLE_COLOR_PRESETS) {
+    const pRgb = parseHexRgb(preset.hex)
+    if (!pRgb) continue
+    const dist = (rgb[0] - pRgb[0]) ** 2 + (rgb[1] - pRgb[1]) ** 2 + (rgb[2] - pRgb[2]) ** 2
+    if (dist < minDistance) {
+      minDistance = dist
+      bestPreset = preset.id
+    }
+  }
+  return `/vehicles/2018_mercedes_benz_e400_coupe_${bestPreset}.png`
+}
+
 /**
  * Resolves an authentic vehicle photo URL if available or set.
  */
-export function resolveVehiclePhoto(label?: string | null, customImageUrl?: string | null): string | null {
+export function resolveVehiclePhoto(
+  label?: string | null,
+  customImageUrl?: string | null,
+  color?: string | null,
+): string | null {
   if (customImageUrl && customImageUrl.trim().length > 0) {
     const raw = customImageUrl.trim()
     // Support direct Carvana vehicle listing URLs
@@ -180,7 +250,7 @@ export function resolveVehiclePhoto(label?: string | null, customImageUrl?: stri
     if (carvanaMatch) {
       const vehicleId = carvanaMatch[1]
       if (vehicleId === '4856325') {
-        return '/vehicles/2018_mercedes_benz_e400_coupe_transparent.png'
+        return resolveE400ColorPhoto(color)
       }
     }
     return raw
@@ -190,18 +260,7 @@ export function resolveVehiclePhoto(label?: string | null, customImageUrl?: stri
   if (
     (/\b(e\s?400|e\s?450|e\s?350)\b.*\bcoupe\b/i.test(s) || (/\b(mercedes|benz)\b/i.test(s) && /\bcoupe\b/i.test(s)))
   ) {
-    return '/vehicles/2018_mercedes_benz_e400_coupe_transparent.png'
-  }
-  return null
-}
-
-/**
- * Resolves a transparent paint mask if the vehicle photo supports dynamic recoloring.
- */
-export function resolveVehiclePaintMask(photoUrl?: string | null): string | null {
-  if (!photoUrl) return null
-  if (photoUrl.includes('2018_mercedes_benz_e400_coupe') || photoUrl.includes('4856325')) {
-    return '/vehicles/2018_mercedes_benz_e400_coupe_paint_mask.png'
+    return resolveE400ColorPhoto(color)
   }
   return null
 }
