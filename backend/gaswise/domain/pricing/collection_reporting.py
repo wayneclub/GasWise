@@ -12,7 +12,17 @@ DEFERRALS = {'source_budget_deferred', 'configuration_changed', 'service_shutdow
         'request_budget_exhausted', 'background_wait_exhausted')}
 LABELS = {
     'google_maps_web_unavailable': 'Google Maps 連線或服務暫時不可用',
+    'google_maps_web_session_rejected': 'Google Maps 帳號工作階段被拒絕，需重新授權',
+    'google_maps_web_blocked_or_redirected': 'Google Maps 來源拒絕／重定向（IP 風控）',
+    'google_maps_web_unexpected_response': 'Google Maps 回應格式異常',
+    'google_maps_web_rate_limited': 'Google Maps 來源限流',
+    'google_maps_web_session_expired': 'Google Maps 帳號工作階段已過期',
+    'google_maps_web_private_session_invalid': 'Google Maps 憑證檔案格式無效',
     'waze_upstream_unavailable': 'Waze 連線不可用／逾時',
+    'waze_upstream_rejected_request': 'Waze 回傳非成功狀態',
+    'waze_invalid_response': 'Waze 回應格式異常',
+    'waze_rate_limited': 'Waze 來源限流',
+    'waze_reauthentication_required': 'Waze 需重新驗證',
     'gasbuddy_http_api_rejected': 'GasBuddy API 回傳非成功狀態',
     'gasbuddy_http_bootstrap_rejected': 'GasBuddy 首頁回傳非成功狀態',
     'gasbuddy_http_unavailable': 'GasBuddy 連線不可用／逾時',

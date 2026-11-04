@@ -480,3 +480,65 @@ async def test_combined_collection_reduces_http_calls_without_losing_grades(tmp_
         assert {(r.id, r.fuel_type, r.price_per_gallon) for r in captured} == expected
         assert cache.saved[0][4:6] == (6, 3)
         print(f'Google collection HTTP requests: {previous_http} -> {len(calls)}; preserved quotes: {len(captured)}')
+
+
+async def test_maps_web_sorry_redirect_classified_as_blocked_not_session_rejected(tmp_path):
+    def handler(request):
+        return httpx.Response(302, headers={"Location": "https://www.google.com/sorry/index?continue=..."})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        provider = MapsWebProvider(client, session_file(tmp_path))
+        with pytest.raises(ProviderError) as exc_info:
+            await provider.prices(query())
+        assert str(exc_info.value) == "google_maps_web_blocked_or_redirected"
+
+
+async def test_maps_web_accounts_redirect_classified_as_session_rejected(tmp_path):
+    def handler(request):
+        return httpx.Response(302, headers={"Location": "https://accounts.google.com/ServiceLogin?continue=..."})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        provider = MapsWebProvider(client, session_file(tmp_path))
+        with pytest.raises(ProviderError) as exc_info:
+            await provider.prices(query())
+        assert str(exc_info.value) == "google_maps_web_session_rejected"
+
+
+async def test_maps_web_pool_fails_over_on_challenge_and_succeeds(tmp_path):
+    from gaswise.domain.pricing.shared_cache import collection_egress_key
+    from gaswise.providers.http.egress_pool import PooledHTTPClient, lane_index
+
+    row = record()
+    calls = []
+
+    class MockExitClient:
+        def __init__(self, lane):
+            self.lane = lane
+
+        async def get(self, url, **kwargs):
+            calls.append(self.lane)
+            if self.lane == 0:
+                return httpx.Response(302, headers={"Location": "https://www.google.com/sorry/index?continue=..."},
+                                      request=httpx.Request("GET", url))
+            return httpx.Response(200, text=")]}'\n" + json.dumps([row]),
+                                  request=httpx.Request("GET", url))
+
+    pool = PooledHTTPClient(["http://node-0:8888", "http://node-1:8888"],
+                            client_factory=lambda proxy: MockExitClient(0 if "node-0" in str(proxy) else 1))
+
+    # Pick an egress key that hashes to lane 0:
+    for i in range(100):
+        token = collection_egress_key.set(str(i))
+        if lane_index(2) == 0:
+            break
+        collection_egress_key.reset(token)
+
+    try:
+        provider = MapsWebProvider(pool, session_file(tmp_path))
+        result = await provider.prices(query())
+        assert len(result.stations) == 1
+        assert calls == [0, 1]
+        assert 0 in pool.quarantine
+    finally:
+        collection_egress_key.reset(token)
+

@@ -10,6 +10,7 @@ import asyncio
 import json
 import math
 import re
+import time
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -21,8 +22,10 @@ from gaswise.contracts.common import Point, Station
 from gaswise.contracts.sources import MAPS_WEB_PAGE_SIZE, MapsWebPrices, MapsWebSearch, MapsWebStation
 from gaswise.domain.ports import ProviderError
 from gaswise.domain.pricing.identity import membership_for_name
+from gaswise.domain.pricing.shared_cache import collection_attempt
 from gaswise.providers.google.session_renewal import renew_session
 from gaswise.providers.http.batch_transport import source_request
+from gaswise.providers.http.egress_pool import quarantine_lane, _selection
 
 # Verified website numeric values and labels; do not infer pump octane from them.
 WEB_FUEL_TYPES = {1: "diesel", 3: "regular", 4: "midgrade", 5: "premium"}
@@ -152,39 +155,75 @@ class MapsWebProvider:
         # Both paths are fixed Google endpoints, never caller-controlled URLs.
         if path not in ("/search", "/maps/preview/place"):
             raise ProviderError("google_maps_web_invalid_endpoint")
-        try:
-            response = await source_request(
-                self.client, 'get',
-                "https://www.google.com" + path,
-                source='maps', budget=self.request_budget, read_only=True,
-                params=params,
-                headers=headers,
-                follow_redirects=False,
+        pool = self.client if hasattr(self.client, "clients") and len(getattr(self.client, "clients", [])) > 1 else None
+        max_attempts = len(pool.clients) if pool else 1
+        for attempt in range(max_attempts):
+            try:
+                response = await source_request(
+                    self.client, 'get',
+                    "https://www.google.com" + path,
+                    source='maps', budget=self.request_budget, read_only=True,
+                    params=params,
+                    headers=headers,
+                    follow_redirects=False,
+                )
+            except httpx.HTTPError:
+                raise ProviderError("google_maps_web_unavailable") from None
+            if self.request_budget:
+                await self.request_budget.after("maps", response)
+
+            location = response.headers.get("location", "")
+            is_sorry = "/sorry" in location or "consent.google.com" in location
+            is_auth_failure = (
+                response.status_code == 401
+                or "accounts.google.com" in location
+                or "ServiceLogin" in location
+                or "InteractiveLogin" in location
             )
-        except httpx.HTTPError:
-            raise ProviderError("google_maps_web_unavailable") from None
-        if self.request_budget:
-            await self.request_budget.after("maps", response)
-        if response.status_code in (401, 403) or response.is_redirect:
-            raise ProviderError(
-                "google_maps_web_session_rejected"
-                if "Cookie" in headers
-                else "google_maps_web_blocked_or_redirected"
-            )
-        if response.status_code == 429:
-            raise ProviderError("google_maps_web_rate_limited")
-        if response.status_code != 200:
-            raise ProviderError("google_maps_web_unavailable")
-        if not response.text.startswith(")]}'"):
-            raise ProviderError("google_maps_web_unexpected_response")
-        try:
-            renew_session(self.session_file, response.headers, request_cookie=headers.get("Cookie"))
-        except (OSError, ValueError, KeyError, TypeError):
-            raise ProviderError("google_maps_web_session_renewal_failed") from None
-        try:
-            return json.loads(response.text.split("\n", 1)[1])
-        except (ValueError, IndexError):
-            raise ProviderError("google_maps_web_unexpected_response") from None
+            is_challenge = is_sorry or response.status_code in (403, 429)
+
+            if is_challenge and pool is not None:
+                trace = collection_attempt.get() or {}
+                lane = trace.get("egress_lane")
+                if lane is None:
+                    sel = _selection.get()
+                    lane = sel[1] if sel is not None else None
+                if lane is not None:
+                    quarantine_lane(pool.quarantine, lane)
+                _selection.set(None)
+                now = time.monotonic()
+                quarantined = {l for l, until in pool.quarantine.items() if until > now}
+                if attempt + 1 < max_attempts and any(i not in quarantined for i in range(len(pool.clients))):
+                    continue
+
+            if is_auth_failure:
+                raise ProviderError(
+                    "google_maps_web_session_rejected"
+                    if "Cookie" in headers
+                    else "google_maps_web_blocked_or_redirected"
+                )
+            if response.status_code == 403:
+                raise ProviderError(
+                    "google_maps_web_session_rejected"
+                    if "Cookie" in headers and not is_sorry
+                    else "google_maps_web_blocked_or_redirected"
+                )
+            if response.is_redirect:
+                raise ProviderError("google_maps_web_blocked_or_redirected")
+            if response.status_code == 429:
+                raise ProviderError("google_maps_web_rate_limited")
+            if response.status_code != 200:
+                raise ProviderError("google_maps_web_unavailable")
+            if not response.text.startswith(")]}'"):
+                raise ProviderError("google_maps_web_unexpected_response")
+            try:
+                renew_session(self.session_file, response.headers, request_cookie=headers.get("Cookie"))
+            except (OSError, ValueError, KeyError, TypeError):
+                raise ProviderError("google_maps_web_session_renewal_failed") from None
+            try:
+                return json.loads(response.text.split("\n", 1)[1])
+            except (ValueError, IndexError):
+                raise ProviderError("google_maps_web_unexpected_response") from None
 
     async def prices(self, query: MapsWebSearch) -> MapsWebPrices:
         headers = self.headers()  # Validate credentials before making any request.

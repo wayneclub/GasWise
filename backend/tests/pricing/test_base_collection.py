@@ -198,6 +198,23 @@ async def test_transport_failure_retries_soon_when_another_exit_exists():
         assert cache.saved[0][6]["failure_code"] == "gasbuddy_http_unavailable"
 
 
+async def test_maps_blocked_redirect_retries_soon_when_another_exit_exists():
+    from gaswise.domain.ports import ProviderError
+    for lanes, delay in ((2, 60), (1, 3600)):
+        cache, provider = Cache(), Provider()
+        service = SimpleNamespace(shared_cache=cache, gasbuddy=provider, maps_web=provider, waze=None,
+                                  background_gasbuddy_slot=asyncio.Semaphore(1), source_slots={"maps": asyncio.Semaphore(1)})
+        collector = BaseCollection(service, ["la"], egress_lanes=lanes)
+        await collector.initialize()
+        async def blocked(*args, **kwargs):
+            raise ProviderError("google_maps_web_blocked_or_redirected")
+        cache.get = blocked
+        assert not await collector.step()
+        assert cache.saved[0][2:4] == (delay, "collection_failed")
+        assert cache.saved[0][6]["failure_code"] == "google_maps_web_blocked_or_redirected"
+
+
+
 async def test_pacing_pauses_optional_jobs_but_allows_due_mandatory_work():
     collector, cache, provider = setup()
     await collector.initialize()

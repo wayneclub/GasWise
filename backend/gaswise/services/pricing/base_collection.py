@@ -209,7 +209,15 @@ class BaseCollection:
                 attempt['failure_code'] = safe_failure_code(error)
             # The pool quarantined the failed exit, so a pooled deployment can
             # retry promptly on another lane; a single exit keeps the long backoff.
-            rerouted = reason == "gasbuddy_http_unavailable" and self.egress_lanes > 1
+            rerouted = (
+                reason in (
+                    "gasbuddy_http_unavailable",
+                    "google_maps_web_blocked_or_redirected",
+                    "google_maps_web_unavailable",
+                    "waze_upstream_unavailable",
+                )
+                and self.egress_lanes > 1
+            )
             await self.cache._db("finish_base_job", job.id, owner, 60 if deferred or rerouted else 3600,
                                  reason if deferred else "collection_failed", 0, 0, dict(attempt))
             completed = True

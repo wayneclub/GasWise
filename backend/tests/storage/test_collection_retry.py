@@ -20,6 +20,8 @@ class Scope:
 @pytest.mark.parametrize('source,code,failures,expected', [
     ('maps', 'google_maps_web_unavailable', 0, 60),
     ('maps', 'google_maps_web_unavailable', 1, 300),
+    ('maps', 'google_maps_web_blocked_or_redirected', 0, 60),
+    ('maps', 'google_maps_web_blocked_or_redirected', 1, 300),
     ('waze', 'waze_upstream_unavailable', 2, 900),
     ('waze', 'waze_upstream_unavailable', 100, 3600),
     ('maps', 'google_maps_web_rate_limited', 0, 3600),
