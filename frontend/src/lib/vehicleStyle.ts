@@ -339,6 +339,64 @@ export function resolveE400ColorPhoto(color?: string | null): string {
 }
 
 /**
+ * Resolves color-accurate, transparent cut-out photograph for Tesla Model 3 and Model Y.
+ */
+export function resolveTeslaColorPhoto(model: 'model_3' | 'model_y', color?: string | null): string {
+  const versionParam = `?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  if (!color || color === '#ffffff' || color === '#fff' || color === '#f8fafc') {
+    return `/vehicles/tesla_${model}_pearl_white.png${versionParam}`
+  }
+  const norm = color.toLowerCase().trim()
+
+  const PRESET_FILES: Record<string, string> = {
+    '#f8fafc': 'pearl_white',
+    '#ffffff': 'pearl_white',
+    '#0f172a': 'solid_black',
+    '#111827': 'solid_black',
+    '#1a1f2c': 'solid_black',
+    '#1e293b': 'solid_black',
+    '#1e3a8a': 'deep_blue',
+    '#1b2a47': 'deep_blue',
+    '#1d4ed8': 'deep_blue',
+    '#475569': 'stealth_grey',
+    '#525a65': 'stealth_grey',
+    '#64748b': 'stealth_grey',
+    '#4b5563': 'stealth_grey',
+    '#374151': 'stealth_grey',
+    '#991b1b': 'ultra_red',
+    '#7a1c27': 'ultra_red',
+    '#dc2626': 'ultra_red',
+    '#b91c1c': 'ultra_red',
+    '#94a3b8': model === 'model_y' ? 'quicksilver' : 'stealth_grey',
+    '#a8b0b8': model === 'model_y' ? 'quicksilver' : 'stealth_grey',
+    '#cbd5e1': model === 'model_y' ? 'quicksilver' : 'stealth_grey',
+  }
+
+  if (PRESET_FILES[norm]) {
+    return `/vehicles/tesla_${model}_${PRESET_FILES[norm]}.png${versionParam}`
+  }
+
+  const rgb = parseHexRgb(norm)
+  if (!rgb) {
+    return `/vehicles/tesla_${model}_pearl_white.png${versionParam}`
+  }
+
+  let bestPreset = 'pearl_white'
+  let minDistance = Infinity
+  for (const preset of TESLA_COLOR_PRESETS) {
+    if (model === 'model_3' && preset.id === 'quicksilver') continue
+    const pRgb = parseHexRgb(preset.hex)
+    if (!pRgb) continue
+    const dist = (rgb[0] - pRgb[0]) ** 2 + (rgb[1] - pRgb[1]) ** 2 + (rgb[2] - pRgb[2]) ** 2
+    if (dist < minDistance) {
+      minDistance = dist
+      bestPreset = preset.id
+    }
+  }
+  return `/vehicles/tesla_${model}_${bestPreset}.png${versionParam}`
+}
+
+/**
  * Resolves an authentic vehicle photo URL if available or set.
  */
 export function resolveVehiclePhoto(
@@ -364,6 +422,12 @@ export function resolveVehiclePhoto(
     (/\b(e\s?400|e\s?450|e\s?350)\b.*\bcoupe\b/i.test(s) || (/\b(mercedes|benz)\b/i.test(s) && /\bcoupe\b/i.test(s)))
   ) {
     return resolveE400ColorPhoto(color)
+  }
+  if ((/\btesla\b/i.test(s) && /\b(model\s*3|m3)\b/i.test(s)) || (/\bmodel\s*3\b/i.test(s) && !/\bmazda\b/i.test(s))) {
+    return resolveTeslaColorPhoto('model_3', color)
+  }
+  if ((/\btesla\b/i.test(s) && /\b(model\s*y|my)\b/i.test(s)) || /\bmodel\s*y\b/i.test(s)) {
+    return resolveTeslaColorPhoto('model_y', color)
   }
   return null
 }

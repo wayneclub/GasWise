@@ -407,10 +407,10 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                         </label>
 
                         {/* Built-in Studio Photo Shortcut */}
-                        {resolveVehiclePhoto(car.label) ? (
+                        {resolveVehiclePhoto(car.label, null, car.color) ? (
                           <button
                             type="button"
-                            onClick={() => handlePhotoChange(car.id, resolveVehiclePhoto(car.label)!)}
+                            onClick={() => handlePhotoChange(car.id, resolveVehiclePhoto(car.label, null, car.color)!)}
                             className="inline-flex items-center gap-1 rounded-md bg-accent-soft/40 px-2 py-1 text-accent hover:bg-accent-soft transition font-medium"
                           >
                             <span>✓ {t('garage.useStudioPhoto')}</span>

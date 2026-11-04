@@ -23,6 +23,7 @@ import type { SavedVehicle } from '../../lib/prefs'
 import { useVehicleIdentity, type VehicleIdentity } from '../../lib/vehicleIdentity'
 import { validIdentity } from '../../lib/identity'
 import { IdentityFields } from '../setup/IdentityFields'
+import { VehicleThumbnail } from '../my/VehicleThumbnail'
 
 import { safeProductLink, isAmazonProduct } from '../../lib/partsLinks'
 
@@ -109,8 +110,20 @@ export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; 
     <h1 className="text-2xl font-semibold tracking-tight">{t('parts.title')}</h1>
     {identity ? <p className="mt-2 text-sm leading-relaxed text-muted">{t(mode === 'search' ? 'parts.searchLead' : 'parts.productLead')}</p> : null}
     {!identity ? <section className="mt-6 rounded-box border border-line bg-surface p-6 sm:p-8">
-      <span className="grid size-14 place-items-center rounded-2xl bg-accent-soft text-accent"><CarIcon size={32} weight="duotone" /></span>
-      <h2 className="mt-5 text-xl font-semibold">{t('parts.startTitle')}</h2>
+      {vehicle ? (
+        <div className="mb-4">
+          <VehicleThumbnail
+            label={vehicle.label}
+            color={vehicle.color}
+            imageUrl={vehicle.imageUrl}
+            size="lg"
+            className="w-full max-w-xs"
+          />
+        </div>
+      ) : (
+        <span className="grid size-14 place-items-center rounded-2xl bg-accent-soft text-accent"><CarIcon size={32} weight="duotone" /></span>
+      )}
+      <h2 className="mt-4 text-xl font-semibold">{t('parts.startTitle')}</h2>
       {vehicle ? <p className="mt-2 text-base font-bold text-ink">{vehicle.label}</p> : null}
       <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">{t('parts.startLead')}</p>
       {vehicle ? (
@@ -165,7 +178,17 @@ export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; 
     <details open={!result && !searchResult} className="mt-5 rounded-box border border-line bg-surface p-5">
       <summary className="cursor-pointer text-sm font-medium">{t('parts.edit')}</summary>
       <div className="mt-4">
-      {vehicle ? <p className="text-sm font-medium">{t('parts.car', { name: vehicle.label })}</p> : null}
+      {vehicle ? (
+        <div className="flex items-center gap-3">
+          <VehicleThumbnail
+            label={vehicle.label}
+            color={vehicle.color}
+            imageUrl={vehicle.imageUrl}
+            size="sm"
+          />
+          <p className="text-sm font-medium">{t('parts.car', { name: vehicle.label })}</p>
+        </div>
+      ) : null}
       <p className="mt-2 text-xs leading-relaxed text-muted">{t('parts.identityNeeded')}</p>
       <form className="mt-5 flex flex-col gap-5" onSubmit={(event) => { event.preventDefault(); if ((identity && validIdentity(identity)) && (mode === 'search' ? keyword.trim().length >= 2 : isAmazonProduct(url.trim()))) void search() }}>
         <div className="rounded-control bg-sunken p-3 flex flex-wrap items-center justify-between gap-2">

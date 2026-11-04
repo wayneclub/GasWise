@@ -114,6 +114,14 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
     expect(resolveVehiclePhoto('2018 Mercedes-Benz E400 Coupe', null, '#1e293b')).toBe(`/vehicles/2018_mercedes_benz_e400_coupe_obsidian.png?v=${v}`)
     expect(resolveVehiclePhoto('2018 Mercedes-Benz E400 Coupe', null, '#dc2626')).toBe(`/vehicles/2018_mercedes_benz_e400_coupe_red.png?v=${v}`)
     expect(resolveVehiclePhoto('2018 Mercedes-Benz E400 Coupe', null, '#1d4ed8')).toBe(`/vehicles/2018_mercedes_benz_e400_coupe_blue.png?v=${v}`)
+
+    // Mapped photo for Tesla Model 3 & Model Y
+    expect(resolveVehiclePhoto('2024 Tesla Model 3')).toBe(`/vehicles/tesla_model_3_pearl_white.png?v=${v}`)
+    expect(resolveVehiclePhoto('Tesla Model 3', null, '#991b1b')).toBe(`/vehicles/tesla_model_3_ultra_red.png?v=${v}`)
+    expect(resolveVehiclePhoto('Tesla Model 3', null, '#1e3a8a')).toBe(`/vehicles/tesla_model_3_deep_blue.png?v=${v}`)
+    expect(resolveVehiclePhoto('2023 Tesla Model Y', null, '#0f172a')).toBe(`/vehicles/tesla_model_y_solid_black.png?v=${v}`)
+    expect(resolveVehiclePhoto('Tesla Model Y', null, '#94a3b8')).toBe(`/vehicles/tesla_model_y_quicksilver.png?v=${v}`)
+
     // Unmapped vehicle returns null
     expect(resolveVehiclePhoto('2019 Honda Civic EX')).toBe(null)
   })
