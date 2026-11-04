@@ -72,7 +72,8 @@ export function inferVehicleSilhouette(text?: string | null): VehicleSilhouette 
 
   // 2. Mercedes E-Class / C-Class Coupe (and German pillarless coupes)
   if (
-    /\b(e\s?400|e\s?450|e\s?350|c\s?300|c\s?400|c\s?43|c\s?63|e-?class|c-?class|c238|c205)\b.*\bcoupe\b/.test(s) ||
+    /\b(e\s?400|e\s?450|e\s?350|c\s?300|c\s?400|c\s?43|c\s?63|cle|e-?class|c-?class|c238|c205|4\s?series|8\s?series)\b.*\bcoupe\b/.test(s) ||
+    /\b(cle|4\s?series\s+coupe|m4\b|m8\b)\b/.test(s) ||
     /\bmercedes.*coupe\b/.test(s) ||
     /\bbenz.*coupe\b/.test(s)
   ) {
@@ -105,7 +106,7 @@ export function inferVehicleSilhouette(text?: string | null): VehicleSilhouette 
 
   // 7. Pickup Truck
   if (
-    /\b(truck|pickup|f-?150|f-?250|f-?350|silverado|ram\s+1500|ram\s+2500|sierra|tacoma|tundra|ranger|colorado|canyon|gladiator|titan|frontier|maverick|ridgeline)\b/.test(s)
+    /\b(truck|pickup|f-?150|f-?250|f-?350|f-series|silverado|ram\s+1500|ram\s+2500|sierra|tacoma|tundra|ranger|colorado|canyon|gladiator|titan|frontier|maverick|ridgeline)\b/.test(s)
   ) {
     return 'pickup_truck'
   }
@@ -148,7 +149,7 @@ export function inferVehicleSilhouette(text?: string | null): VehicleSilhouette 
 
   // 14. Crossover SUV (RAV4, CR-V, Model Y, GLC, etc.)
   if (
-    /\b(suv|crossover|sav|cuv|cr-?v|rav4|cx-?\d+|model\s+[yx]|rx\s?\d+|glc|gle|gls|gla|glb|x1|x3|x5|x7|q3|q5|q7|q8|cherokee|explorer|tahoe|suburban|yukon|escalade|highlander|telluride|palisade|sportage|sorento|tucson|santa\s+fe|forester|crosstrek|ascent|pilot|passport|hr-v|equinox|traverse|blazer|rogue|pathfinder|armada|durango|tiguan|atlas|macan|cayenne|urus)\b/.test(s)
+    /\b(suv|crossover|sav|cuv|cr-?v|rav4|cx-?\d+|model\s+[yx]|rx\s?\d+|glc|gle|gls|gla|glb|x1|x3|x5|x7|q3|q5|q7|q8|cherokee|explorer|tahoe|suburban|yukon|escalade|highlander|telluride|palisade|sportage|sorento|tucson|santa\s+fe|forester|crosstrek|ascent|pilot|passport|hr-v|equinox|traverse|blazer|rogue|pathfinder|armada|durango|tiguan|atlas|macan|cayenne|urus|kona|kicks|trax|terrain|acadia|compass|wagoneer)\b/.test(s)
   ) {
     return 'crossover_suv'
   }

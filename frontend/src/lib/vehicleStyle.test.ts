@@ -85,4 +85,26 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
     // Unmapped vehicle returns null
     expect(resolveVehiclePhoto('2019 Honda Civic EX')).toBe(null)
   })
+
+  it('accurately categorizes top popular vehicles from the validation dataset', () => {
+    // Trucks
+    expect(inferVehicleArchetype('Ford F-Series')).toBe('truck')
+    expect(inferVehicleArchetype('Chevrolet Silverado')).toBe('truck')
+    expect(inferVehicleArchetype('Toyota Tacoma')).toBe('truck')
+    expect(inferVehicleArchetype('GMC Sierra')).toBe('truck')
+
+    // SUVs
+    expect(inferVehicleArchetype('Toyota RAV4')).toBe('suv')
+    expect(inferVehicleArchetype('Honda CR-V')).toBe('suv')
+    expect(inferVehicleArchetype('Nissan Rogue')).toBe('suv')
+    expect(inferVehicleArchetype('Hyundai Tucson')).toBe('suv')
+    expect(inferVehicleArchetype('Hyundai Kona')).toBe('suv')
+    expect(inferVehicleArchetype('Jeep Wrangler')).toBe('suv')
+
+    // Sedans
+    expect(inferVehicleArchetype('Toyota Camry')).toBe('sedan')
+    expect(inferVehicleArchetype('Honda Accord')).toBe('sedan')
+    expect(inferVehicleArchetype('Nissan Altima')).toBe('sedan')
+    expect(inferVehicleArchetype('BMW 3 Series')).toBe('sedan')
+  })
 })
