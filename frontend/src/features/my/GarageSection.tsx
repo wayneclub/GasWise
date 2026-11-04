@@ -13,7 +13,9 @@ import { Button } from '../../components/ui'
 import { useI18n } from '../../i18n'
 import { fuelKey } from '../../lib/format'
 import type { Prefs, SavedVehicle } from '../../lib/prefs'
-import { useVehicleIdentity } from '../../lib/vehicleIdentity'
+import { useVehicleIdentity, type VehicleIdentity } from '../../lib/vehicleIdentity'
+import { IdentityFields } from '../setup/IdentityFields'
+import { validIdentity } from '../../lib/identity'
 import { VehicleThumbnail } from './VehicleThumbnail'
 import { VehiclePicker } from '../setup/VehiclePicker'
 import { resolveVehiclePhoto, getVehicleColorPresets } from '../../lib/vehicleStyle'
@@ -26,11 +28,13 @@ interface GarageSectionProps {
 export function GarageSection({ prefs, update }: GarageSectionProps) {
   const { t, locale } = useI18n()
   const isZh = locale?.startsWith('zh')
-  const { identity, storageStatus } = useVehicleIdentity()
+  const { identity, getVehicleIdentity, setVehicleIdentity, storageStatus } = useVehicleIdentity()
   const [showAddModal, setShowAddModal] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [editingColorId, setEditingColorId] = useState<number | null>(null)
   const [editingPhotoId, setEditingPhotoId] = useState<number | null>(null)
+  const [editingIdentityId, setEditingIdentityId] = useState<number | null>(null)
+  const [tempIdentity, setTempIdentity] = useState<VehicleIdentity>({ kind: 'vin', value: { vin: '' } })
   const [photoInputUrl, setPhotoInputUrl] = useState<string>('')
   const [newCarColor, setNewCarColor] = useState<string>('#1e293b')
 
@@ -66,6 +70,11 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
       fuelType: carWithColor.fuelType,
       mpg: carWithColor.combinedMpg,
     })
+
+    if (identity && validIdentity(identity)) {
+      setVehicleIdentity(carWithColor.id, identity)
+    }
+
     setShowAddModal(false)
   }
 
@@ -253,14 +262,44 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                       </span>
                     </div>
 
-                    {/* Shared Identity Badge if associated */}
-                    {isActive && identity ? (
-                      <p className="mt-2 font-mono text-[11px] text-muted truncate">
-                        {identity.kind === 'vin'
-                          ? `VIN · •••••••••••••${identity.value.vin.slice(-4)}`
-                          : `${identity.value.state} · •••${identity.value.plate.slice(-2)}`}
-                      </p>
-                    ) : null}
+                    {/* Per-Vehicle Identity Badge & Quick Trigger */}
+                    {(() => {
+                      const carIdentity = getVehicleIdentity(car.id)
+                      return (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          {carIdentity ? (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-accent-soft/30 px-2 py-0.5 font-mono text-[11px] font-medium text-accent">
+                              <ShieldCheckIcon size={12} weight="fill" />
+                              <span>
+                                {carIdentity.kind === 'vin'
+                                  ? `VIN · •••••••••••••${carIdentity.value.vin.slice(-4)}`
+                                  : `${carIdentity.value.state} · •••${carIdentity.value.plate.slice(-2)}`}
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-sunken px-2 py-0.5 text-[11px] text-muted">
+                              <span>{t('garage.noIdentity')}</span>
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (editingIdentityId === car.id) {
+                                setEditingIdentityId(null)
+                              } else {
+                                setEditingIdentityId(car.id)
+                                setEditingColorId(null)
+                                setEditingPhotoId(null)
+                                setTempIdentity(carIdentity ?? { kind: 'vin', value: { vin: '' } })
+                              }
+                            }}
+                            className="text-[11px] font-medium text-accent hover:underline ml-auto"
+                          >
+                            {carIdentity ? t('garage.editIdentity') : `+ ${t('garage.setIdentity')}`}
+                          </button>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
 
@@ -423,6 +462,64 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                           <span>{t('garage.resetColor')}</span>
                         </button>
                       ) : null}
+                    </div>
+                  ) : null}
+
+                  {/* Identity Configuration Panel */}
+                  {editingIdentityId === car.id ? (
+                    <div className="flex flex-col gap-2.5 pt-2 border-t border-line/40">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-ink flex items-center gap-1">
+                          <ShieldCheckIcon size={13} weight="fill" className="text-accent" />
+                          <span>{t('garage.identity')}</span>
+                        </span>
+                        <span className="text-[11px] text-muted">{t('vehicle.encryptedLocal')}</span>
+                      </div>
+                      <div className="rounded-lg bg-surface p-2.5 border border-line/70">
+                        <IdentityFields
+                          identity={tempIdentity}
+                          onChange={(val) => setTempIdentity(val)}
+                          showMode={true}
+                        />
+                        <div className="mt-3 flex items-center justify-between pt-2 border-t border-line/40">
+                          {getVehicleIdentity(car.id) ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setVehicleIdentity(car.id, null)
+                                setEditingIdentityId(null)
+                              }}
+                              className="text-xs text-rose-500 hover:underline"
+                            >
+                              {t('garage.clearIdentity')}
+                            </button>
+                          ) : (
+                            <span />
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              onClick={() => setEditingIdentityId(null)}
+                              className="min-h-7 text-xs px-2.5"
+                            >
+                              {t('garage.cancel')}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              disabled={!validIdentity(tempIdentity)}
+                              onClick={() => {
+                                if (validIdentity(tempIdentity)) {
+                                  setVehicleIdentity(car.id, tempIdentity)
+                                  setEditingIdentityId(null)
+                                }
+                              }}
+                              className="min-h-7 text-xs px-3 font-semibold text-accent border-accent/40 hover:bg-accent-soft"
+                            >
+                              {t('garage.saveIdentity')}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ) : null}
                 </div>

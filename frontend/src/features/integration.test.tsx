@@ -247,7 +247,7 @@ describe('service integration', () => {
     ['conflict', 'Sources disagree; do not install yet'],
   ])('renders a parts %s decision without promoting uncertainty', async (status, label) => {
     const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => response({ status, fitment_confirmed: status === 'compatible', vehicle: decoded, amazon_url: 'https://www.amazon.com/dp/B019IPTB0W', title: 'Sample filter', evidence: [], warnings: [], reasons: [] }))
-    render(english(<VehicleIdentityContext.Provider value={{ identity: { kind: 'vin', value: { vin } }, setIdentity: () => {} }}><Parts vehicle={null} onChooseCar={() => {}} /></VehicleIdentityContext.Provider>))
+    render(english(<VehicleIdentityContext.Provider value={{ identity: { kind: 'vin', value: { vin } }, setIdentity: () => {}, getVehicleIdentity: () => ({ kind: 'vin', value: { vin } }), setVehicleIdentity: () => {}, identities: {} }}><Parts vehicle={null} onChooseCar={() => {}} /></VehicleIdentityContext.Provider>))
     fireEvent.click(screen.getByRole('radio', { name: 'Check a product link' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'Amazon US product URL' }), { target: { value: 'https://www.amazon.com/dp/B019IPTB0W' } })
     expect(fetch).not.toHaveBeenCalled()
@@ -263,7 +263,7 @@ it('searches the car catalogue and shows only verified native fits as compatible
     { name: 'Sample verified filter', brand: 'Test', part_number: '123', product_url: 'https://www.autozone.com/p/test-filter/111', status: 'compatible', evidence: { status: 'matched', detail: 'Exact vehicle match' } },
     { name: 'Unresolved filter', brand: 'Test', part_number: '456', product_url: 'https://www.autozone.com/p/test-filter/222', status: 'needs_confirmation', evidence: { status: 'conditional', detail: 'Confirmation needed' } },
   ] }))
-  render(english(<VehicleIdentityContext.Provider value={{ identity: { kind: 'vin', value: { vin } }, setIdentity: () => {} }}><Parts vehicle={null} onChooseCar={() => {}} /></VehicleIdentityContext.Provider>))
+  render(english(<VehicleIdentityContext.Provider value={{ identity: { kind: 'vin', value: { vin } }, setIdentity: () => {}, getVehicleIdentity: () => ({ kind: 'vin', value: { vin } }), setVehicleIdentity: () => {}, identities: {} }}><Parts vehicle={null} onChooseCar={() => {}} /></VehicleIdentityContext.Provider>))
   fireEvent.click(screen.getByRole('button', { name: 'Find suitable parts' }))
   expect(await screen.findByRole('heading', { name: '1 verified fits among 2 checked candidates' })).toBeInTheDocument()
   expect(screen.getByText('Verified fit')).toBeInTheDocument()
@@ -430,7 +430,7 @@ it('does not restore a cleared identity from an outstanding vehicle lookup', asy
   const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(() => new Promise<Response>(resolve => { finish = resolve }))
   const save = vi.fn()
   const update = vi.fn()
-  const picker = render(english(<VehicleIdentityContext.Provider value={{identity:null,setIdentity:save}}><VehiclePicker vehicle={null} onChange={update} /></VehicleIdentityContext.Provider>))
+  const picker = render(english(<VehicleIdentityContext.Provider value={{ identity: null, setIdentity: save, getVehicleIdentity: () => null, setVehicleIdentity: () => {}, identities: {} }}><VehiclePicker vehicle={null} onChange={update} /></VehicleIdentityContext.Provider>))
   fireEvent.click(screen.getByRole('radio', { name: 'VIN' }))
   fireEvent.change(screen.getByRole('textbox', { name: '17-character VIN' }), { target: { value: vin } })
   fireEvent.click(screen.getByRole('button', { name: 'Find' }))
@@ -445,7 +445,7 @@ it('does not restore a cleared identity from an outstanding vehicle lookup', asy
 it('guides missing vehicle identity to settings before exposing the parts form', () => {
   const onChooseCar = vi.fn()
   const fetch = vi.spyOn(globalThis, 'fetch')
-  render(english(<VehicleIdentityContext.Provider value={{ identity: null, setIdentity: () => {} }}><Parts vehicle={null} onChooseCar={onChooseCar} /></VehicleIdentityContext.Provider>))
+  render(english(<VehicleIdentityContext.Provider value={{ identity: null, setIdentity: () => {}, getVehicleIdentity: () => null, setVehicleIdentity: () => {}, identities: {} }}><Parts vehicle={null} onChooseCar={onChooseCar} /></VehicleIdentityContext.Provider>))
   expect(screen.getByRole('heading', { name: 'Start with your car' })).toBeInTheDocument()
   expect(screen.queryByRole('textbox', { name: 'Part name or keyword' })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Add your car' }))

@@ -1,9 +1,15 @@
 /// <reference types="node" />
 import {webcrypto} from 'node:crypto'
 import {IDBFactory} from 'fake-indexeddb'
-import {afterEach,beforeEach,expect,it,vi} from 'vitest'
-import {loadIdentity,saveIdentity} from './identityVault'
-import type {VehicleIdentity} from './vehicleIdentity'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import {
+  loadIdentity,
+  saveIdentity,
+  loadAllIdentities,
+  saveVehicleIdentity,
+  saveAllIdentities,
+} from './identityVault'
+import type { VehicleIdentity } from './vehicleIdentity'
 
 const identity:VehicleIdentity={kind:'vin',value:{vin:'A'.repeat(17)}}
 beforeEach(()=>{vi.stubGlobal('indexedDB',new IDBFactory());vi.stubGlobal('crypto',webcrypto)})
@@ -63,4 +69,39 @@ it('never falls back to plaintext when storage is unavailable',async()=>{
   await expect(saveIdentity(identity)).rejects.toThrow('private_storage_unavailable')
   expect(await loadIdentity()).toBeNull()
   expect(localStorage.length).toBe(0)
+})
+
+it('supports saving, loading, and isolating identities for multiple distinct vehicles', async () => {
+  const vinCar1: VehicleIdentity = { kind: 'vin', value: { vin: '1HGCR2F83HA000001' } }
+  const plateCar2: VehicleIdentity = { kind: 'plate', value: { state: 'CA', plate: '7XYZ123' } }
+  const vinCar3: VehicleIdentity = { kind: 'vin', value: { vin: 'WP0AA2A94MS100003' } }
+
+  // Save identities for 3 distinct vehicles in the garage
+  await saveVehicleIdentity(101, vinCar1)
+  await saveVehicleIdentity(102, plateCar2)
+  await saveVehicleIdentity(103, vinCar3)
+
+  // Verify each vehicle's identity is isolated and accurate
+  expect(await loadIdentity(101)).toEqual(vinCar1)
+  expect(await loadIdentity(102)).toEqual(plateCar2)
+  expect(await loadIdentity(103)).toEqual(vinCar3)
+  expect(await loadIdentity(999)).toBeNull()
+
+  // Verify loadAllIdentities returns full map
+  const all = await loadAllIdentities()
+  expect(all[101]).toEqual(vinCar1)
+  expect(all[102]).toEqual(plateCar2)
+  expect(all[103]).toEqual(vinCar3)
+
+  // Clearing one vehicle does not affect other vehicles
+  await saveVehicleIdentity(102, null)
+  expect(await loadIdentity(102)).toBeNull()
+  expect(await loadIdentity(101)).toEqual(vinCar1)
+  expect(await loadIdentity(103)).toEqual(vinCar3)
+
+  // Batch saveAllIdentities
+  await saveAllIdentities({ 201: vinCar1, 202: plateCar2 }, vinCar1)
+  expect(await loadIdentity(201)).toEqual(vinCar1)
+  expect(await loadIdentity(202)).toEqual(plateCar2)
+  expect(await loadIdentity()).toEqual(vinCar1)
 })

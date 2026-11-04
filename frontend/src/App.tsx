@@ -131,7 +131,7 @@ function ServiceTabs({ prefs, update, replace }: { prefs: Prefs; update: (change
 export default function App() {
   const [prefs, update, replace] = usePrefs()
   const browserLocale = useBrowserLocale()
-  const identityState = useEncryptedVehicleIdentity()
+  const identityState = useEncryptedVehicleIdentity(prefs.vehicle?.id ?? null)
   useEffect(() => { void getLocalProfile().catch(() => {}) }, [])
   return <I18nProvider locale={prefs.locale ?? browserLocale}>
     <VehicleIdentityContext.Provider value={identityState}>

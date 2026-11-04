@@ -6,6 +6,7 @@ import {
   FunnelIcon,
   GaugeIcon,
   HeadlightsIcon,
+  IdentificationCardIcon,
   LightningIcon,
   SparkleIcon,
   ThermometerIcon,
@@ -19,8 +20,9 @@ import type { PartsResult, PartsSearchResult } from '../../api/types'
 import { Button, Field, TextInput, Segmented } from '../../components/ui'
 import { useI18n, type MessageKey } from '../../i18n'
 import type { SavedVehicle } from '../../lib/prefs'
-import { useVehicleIdentity } from '../../lib/vehicleIdentity'
+import { useVehicleIdentity, type VehicleIdentity } from '../../lib/vehicleIdentity'
 import { validIdentity } from '../../lib/identity'
+import { IdentityFields } from '../setup/IdentityFields'
 
 import { safeProductLink, isAmazonProduct } from '../../lib/partsLinks'
 
@@ -67,7 +69,9 @@ const CATEGORIES: readonly { id: PartCategory; label: MessageKey }[] = [
 
 export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; onChooseCar: () => void }) {
   const { t } = useI18n()
-  const { identity } = useVehicleIdentity()
+  const { identity, setIdentity, setVehicleIdentity } = useVehicleIdentity()
+  const [settingIdentity, setSettingIdentity] = useState(false)
+  const [inlineIdentity, setInlineIdentity] = useState<VehicleIdentity>({ kind: 'vin', value: { vin: '' } })
   const [mode, setMode] = useState<'search' | 'product'>('search')
   const [keyword, setKeyword] = useState('oil filter')
   const [partCategory, setPartCategory] = useState<PartCategory>('all')
@@ -107,9 +111,55 @@ export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; 
     {!identity ? <section className="mt-6 rounded-box border border-line bg-surface p-6 sm:p-8">
       <span className="grid size-14 place-items-center rounded-2xl bg-accent-soft text-accent"><CarIcon size={32} weight="duotone" /></span>
       <h2 className="mt-5 text-xl font-semibold">{t('parts.startTitle')}</h2>
-      {vehicle ? <p className="mt-2 text-sm font-medium">{vehicle.label}</p> : null}
+      {vehicle ? <p className="mt-2 text-base font-bold text-ink">{vehicle.label}</p> : null}
       <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">{t('parts.startLead')}</p>
-      <Button className="mt-6" onClick={onChooseCar}><CarIcon size={18} />{t('parts.addCar')}</Button>
+      {vehicle ? (
+        settingIdentity ? (
+          <div className="mt-5 rounded-xl border border-line bg-sunken/40 p-4">
+            <IdentityFields
+              identity={inlineIdentity}
+              onChange={(val) => setInlineIdentity(val)}
+              showMode={true}
+            />
+            <div className="mt-4 flex items-center justify-between pt-3 border-t border-line/40">
+              <Button variant="ghost" onClick={() => setSettingIdentity(false)} className="text-xs">
+                {t('garage.cancel')}
+              </Button>
+              <Button
+                disabled={!validIdentity(inlineIdentity)}
+                onClick={() => {
+                  if (validIdentity(inlineIdentity)) {
+                    setIdentity(inlineIdentity)
+                    if (vehicle.id) {
+                      setVehicleIdentity(vehicle.id, inlineIdentity)
+                    }
+                    setSettingIdentity(false)
+                  }
+                }}
+                className="text-xs"
+              >
+                {t('parts.saveAndSearch')}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Button onClick={() => setSettingIdentity(true)}>
+              <IdentificationCardIcon size={18} />
+              {t('parts.bindIdentity')}
+            </Button>
+            <Button variant="secondary" onClick={onChooseCar}>
+              <CarIcon size={18} />
+              {t('parts.manageGarage')}
+            </Button>
+          </div>
+        )
+      ) : (
+        <Button className="mt-6" onClick={onChooseCar}>
+          <CarIcon size={18} />
+          {t('parts.addCar')}
+        </Button>
+      )}
     </section> : <>
     <div className="mt-5"><Segmented label={t('parts.title')} value={mode} options={[{ value: 'search', label: t('parts.searchMode') }, { value: 'product', label: t('parts.checkMode') }]} onChange={(value) => { invalidate(); setMode(value) }} /></div>
     <details open={!result && !searchResult} className="mt-5 rounded-box border border-line bg-surface p-5">
@@ -118,7 +168,21 @@ export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; 
       {vehicle ? <p className="text-sm font-medium">{t('parts.car', { name: vehicle.label })}</p> : null}
       <p className="mt-2 text-xs leading-relaxed text-muted">{t('parts.identityNeeded')}</p>
       <form className="mt-5 flex flex-col gap-5" onSubmit={(event) => { event.preventDefault(); if ((identity && validIdentity(identity)) && (mode === 'search' ? keyword.trim().length >= 2 : isAmazonProduct(url.trim()))) void search() }}>
-        <div className="rounded-control bg-sunken p-3"><p className="text-sm">{identity ? t('vehicle.sharedReady') : t('vehicle.sharedMissing')}</p><Button variant="ghost" onClick={onChooseCar}>{t('vehicle.openSettings')}</Button></div>
+        <div className="rounded-control bg-sunken p-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-sm font-medium">{identity ? t('vehicle.sharedReady') : t('vehicle.sharedMissing')}</p>
+            {identity ? (
+              <p className="font-mono text-xs text-muted mt-0.5">
+                {identity.kind === 'vin'
+                  ? `VIN · •••••••••••••${identity.value.vin.slice(-4)}`
+                  : `${identity.value.state} · •••${identity.value.plate.slice(-2)}`}
+              </p>
+            ) : null}
+          </div>
+          <Button variant="ghost" onClick={onChooseCar} className="text-xs">
+            {t('parts.manageGarage')}
+          </Button>
+        </div>
         {mode === 'search' ? <Field label={t('parts.keyword')}>
           <TextInput aria-label={t('parts.keyword')} value={keyword} maxLength={100} onChange={(e) => { invalidate(); setKeyword(e.target.value) }} />
           <div className="flex flex-wrap gap-1.5 pt-1">

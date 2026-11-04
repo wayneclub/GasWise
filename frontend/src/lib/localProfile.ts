@@ -5,6 +5,7 @@ import type { VehicleIdentity } from './vehicleIdentity'
 import { loadFuelAssistant, type FuelAssistantSettings, type RefuelEvent } from './fuelAssistant'
 import { loadLifeZones, type LifeZone } from './lifeZones'
 import { loadFavorites, type FavoriteStation } from './favorites'
+import { loadAllIdentities, saveAllIdentities } from './identityVault'
 
 const DATABASE = 'gaswise-profile-v1'
 const STORE = 'profile'
@@ -30,6 +31,7 @@ interface BackupPayload {
   profile: LocalProfile
   prefs: Prefs
   identity: VehicleIdentity | null
+  vehicleIdentities?: Record<number, VehicleIdentity>
   exportedAt: string
   assistant?: { settings: FuelAssistantSettings; events: RefuelEvent[] }
   lifeZones?: LifeZone[]
@@ -111,7 +113,17 @@ export async function exportPrivateBackup(prefs: Prefs, identity: VehicleIdentit
   const assistant = await loadFuelAssistant()
   const lifeZones = await loadLifeZones()
   const favorites = await loadFavorites()
-  const payload: BackupPayload = { profile, prefs: normalizePrefs(prefs), identity, assistant, lifeZones, favorites, exportedAt: new Date().toISOString() }
+  const vehicleIdentities = await loadAllIdentities().catch(() => ({}))
+  const payload: BackupPayload = {
+    profile,
+    prefs: normalizePrefs(prefs),
+    identity,
+    vehicleIdentities,
+    assistant,
+    lifeZones,
+    favorites,
+    exportedAt: new Date().toISOString(),
+  }
   const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: encoder.encode('GasWise private backup v1') }, await key(passphrase, salt, ['encrypt']), encoder.encode(JSON.stringify(payload)))
   const envelope: BackupEnvelope = { format: 'gaswise-private-backup', version: 1, kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: ITERATIONS, salt: base64(salt) }, cipher: { name: 'AES-GCM', iv: base64(iv) }, ciphertext: base64(new Uint8Array(ciphertext)) }
   return JSON.stringify(envelope)
@@ -125,6 +137,12 @@ export async function importPrivateBackup(source: string, passphrase: string): P
     const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes(envelope.cipher.iv), additionalData: encoder.encode('GasWise private backup v1') }, await key(passphrase, bytes(envelope.kdf.salt), ['decrypt']), bytes(envelope.ciphertext))
     const payload = JSON.parse(decoder.decode(plaintext)) as BackupPayload
     if (!payload.profile || (payload.identity && !validIdentity(payload.identity))) throw new Error('invalid_backup')
+    if (payload.vehicleIdentities) {
+      for (const val of Object.values(payload.vehicleIdentities)) {
+        if (!validIdentity(val)) throw new Error('invalid_backup')
+      }
+      await saveAllIdentities(payload.vehicleIdentities, payload.identity).catch(() => {})
+    }
     await replaceLocalProfile(payload.profile)
     return { ...payload, prefs: normalizePrefs(payload.prefs) }
   } catch (error) {

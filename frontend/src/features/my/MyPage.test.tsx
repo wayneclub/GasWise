@@ -2,6 +2,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { IDBFactory } from 'fake-indexeddb'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { VehicleIdentityContext, type VehicleIdentity } from '../../lib/vehicleIdentity'
 import { MyPage } from './MyPage'
 import { saveFavorite, loadFavorites } from '../../lib/favorites'
 import { DEFAULT_PREFS } from '../../lib/prefs'
@@ -336,5 +337,98 @@ describe('MyPage', () => {
 
     // Privacy vault backup & reset section
     expect(screen.getByRole('button', { name: 'Export encrypted backup' })).toBeInTheDocument()
+  })
+
+  it('allows user to set and manage VIN and license plate per vehicle in garage', async () => {
+    const update = vi.fn()
+    const car1 = {
+      id: 301,
+      label: '2018 Mercedes-Benz E400 Coupe',
+      fuelType: 'premium' as const,
+      combinedMpg: '22',
+    }
+    const car2 = {
+      id: 302,
+      label: '2021 Toyota RAV4 Hybrid',
+      fuelType: 'regular' as const,
+      combinedMpg: '40',
+    }
+
+    let currentIdentities: Record<number, VehicleIdentity> = {}
+    const setVehicleIdentity = vi.fn((id: number, val: VehicleIdentity | null) => {
+      if (val) currentIdentities[id] = val
+      else delete currentIdentities[id]
+    })
+
+    const { rerender } = render(
+      <VehicleIdentityContext.Provider
+        value={{
+          identity: null,
+          setIdentity: vi.fn(),
+          getVehicleIdentity: (id?: number | null) => (typeof id === 'number' ? currentIdentities[id] ?? null : null),
+          setVehicleIdentity,
+          identities: currentIdentities,
+          storageStatus: 'encrypted',
+        }}
+      >
+        <MyPage
+          prefs={{
+            ...DEFAULT_PREFS,
+            vehicle: car1,
+            garage: [car1, car2],
+          }}
+          update={update}
+          onNavigateToFuel={() => {}}
+        />
+      </VehicleIdentityContext.Provider>,
+    )
+
+    // Initially both cars show "No VIN or plate linked"
+    const setBtns = screen.getAllByRole('button', { name: /\+ Set VIN \/ Plate/i })
+    expect(setBtns.length).toBe(2)
+
+    // Click to set identity on car1
+    fireEvent.click(setBtns[0])
+
+    // Identity editor panel is displayed
+    expect(screen.getByText('VIN / License Plate')).toBeInTheDocument()
+    const vinInput = screen.getByLabelText(/17-character VIN/i)
+    fireEvent.change(vinInput, { target: { value: 'WDDZF6GB9JA123456' } })
+
+    // Save button should be enabled
+    const saveBtn = screen.getByRole('button', { name: 'Save Identity' })
+    expect(saveBtn).not.toBeDisabled()
+    fireEvent.click(saveBtn)
+
+    expect(setVehicleIdentity).toHaveBeenCalledWith(
+      301,
+      expect.objectContaining({ kind: 'vin', value: expect.objectContaining({ vin: 'WDDZF6GB9JA123456' }) }),
+    )
+
+    // Rerender with updated context
+    rerender(
+      <VehicleIdentityContext.Provider
+        value={{
+          identity: currentIdentities[301] ?? null,
+          setIdentity: vi.fn(),
+          getVehicleIdentity: (id?: number | null) => (typeof id === 'number' ? currentIdentities[id] ?? null : null),
+          setVehicleIdentity,
+          identities: currentIdentities,
+          storageStatus: 'encrypted',
+        }}
+      >
+        <MyPage
+          prefs={{
+            ...DEFAULT_PREFS,
+            vehicle: car1,
+            garage: [car1, car2],
+          }}
+          update={update}
+          onNavigateToFuel={() => {}}
+        />
+      </VehicleIdentityContext.Provider>,
+    )
+
+    expect(screen.getByText(/3456/)).toBeInTheDocument()
   })
 })
