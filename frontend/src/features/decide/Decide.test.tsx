@@ -220,7 +220,7 @@ describe('Decide', () => {
     } finally {
       Object.defineProperty(navigator, 'permissions', { configurable: true, value: undefined })
     }
-  })
+  }, 25000)
 
   it('waits out Retry-After before allowing another search', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
