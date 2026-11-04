@@ -16,7 +16,7 @@ import type { Prefs, SavedVehicle } from '../../lib/prefs'
 import { useVehicleIdentity } from '../../lib/vehicleIdentity'
 import { VehicleThumbnail } from './VehicleThumbnail'
 import { VehiclePicker } from '../setup/VehiclePicker'
-import { resolveVehiclePhoto, VEHICLE_COLOR_PRESETS } from '../../lib/vehicleStyle'
+import { resolveVehiclePhoto, getVehicleColorPresets } from '../../lib/vehicleStyle'
 
 interface GarageSectionProps {
   prefs: Prefs
@@ -24,7 +24,8 @@ interface GarageSectionProps {
 }
 
 export function GarageSection({ prefs, update }: GarageSectionProps) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const isZh = locale?.startsWith('zh')
   const { identity, storageStatus } = useVehicleIdentity()
   const [showAddModal, setShowAddModal] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
@@ -305,10 +306,11 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                     </div>
 
                     {(() => {
-                      const matchedPreset = VEHICLE_COLOR_PRESETS.find(
+                      const carPresets = getVehicleColorPresets(car.label)
+                      const matchedPreset = carPresets.find(
                         (p) => p.hex.toLowerCase() === currentColor.toLowerCase(),
                       )
-                      const displayName = matchedPreset ? matchedPreset.labelZh : currentColor
+                      const displayName = matchedPreset ? (isZh ? matchedPreset.labelZh : matchedPreset.name) : currentColor
                       return (
                         <button
                           type="button"
@@ -393,15 +395,15 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                   {editingColorId === car.id ? (
                     <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-line/40">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        {VEHICLE_COLOR_PRESETS.map((preset) => {
+                        {getVehicleColorPresets(car.label).map((preset) => {
                           const isSelected = currentColor.toLowerCase() === preset.hex.toLowerCase()
                           return (
                             <button
                               key={preset.id}
                               type="button"
                               onClick={() => handleColorChange(car.id, preset.hex)}
-                              title={preset.name}
-                              aria-label={preset.name}
+                              title={isZh ? preset.labelZh : preset.name}
+                              aria-label={isZh ? preset.labelZh : preset.name}
                               className={`size-5 rounded-full border transition-transform hover:scale-115 ${
                                 isSelected ? 'ring-2 ring-accent ring-offset-1 scale-110 border-transparent' : 'border-line/70'
                               }`}
@@ -482,18 +484,25 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
             <div className="rounded-xl border border-line bg-sunken/30 p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-ink">{t('garage.color')}</span>
-                <span className="font-mono text-[11px] text-muted">{newCarColor}</span>
+                {(() => {
+                  const modalPresets = getVehicleColorPresets(null)
+                  const matched = modalPresets.find(
+                    (p) => p.hex.toLowerCase() === newCarColor.toLowerCase(),
+                  )
+                  const label = matched ? (isZh ? matched.labelZh : matched.name) : newCarColor
+                  return <span className="font-mono text-[11px] text-muted">{label}</span>
+                })()}
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                {VEHICLE_COLOR_PRESETS.map((preset) => {
+                {getVehicleColorPresets(null).map((preset) => {
                   const isSelected = newCarColor.toLowerCase() === preset.hex.toLowerCase()
                   return (
                     <button
                       key={preset.id}
                       type="button"
                       onClick={() => setNewCarColor(preset.hex)}
-                      title={preset.name}
-                      aria-label={preset.name}
+                      title={isZh ? preset.labelZh : preset.name}
+                      aria-label={isZh ? preset.labelZh : preset.name}
                       className={`size-6 rounded-full border transition-transform hover:scale-115 ${
                         isSelected ? 'ring-2 ring-accent ring-offset-1 scale-110 border-transparent' : 'border-line/70'
                       }`}
