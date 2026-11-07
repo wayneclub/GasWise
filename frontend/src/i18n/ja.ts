@@ -699,6 +699,7 @@ export const ja: Record<MessageKey, string> = {
   "garage.uploadPhoto": "アップロード",
   "garage.clearPhoto": "写真を削除",
   "garage.useStudioPhoto": "公式スタイルを使用",
+  "garage.autoFetchPhoto": "実車写真を自動取得",
   "garage.savePhoto": "保存",
   "garage.identity": "VIN / ナンバープレート設定",
   "garage.setIdentity": "VIN / ナンバーを設定",

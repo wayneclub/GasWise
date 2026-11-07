@@ -720,6 +720,7 @@ export const es: Record<MessageKey, string> = {
   "garage.uploadPhoto": "Subir",
   "garage.clearPhoto": "Eliminar foto",
   "garage.useStudioPhoto": "Usar foto de estudio",
+  "garage.autoFetchPhoto": "Buscar foto real",
   "garage.savePhoto": "Guardar",
   "garage.identity": "VIN / Matrícula",
   "garage.setIdentity": "Configurar VIN / Matrícula",

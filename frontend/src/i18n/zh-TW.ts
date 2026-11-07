@@ -720,6 +720,7 @@ export const zhTW: Record<MessageKey, string> = {
   "garage.uploadPhoto": "上傳相片",
   "garage.clearPhoto": "清除相片",
   "garage.useStudioPhoto": "使用原廠樣式",
+  "garage.autoFetchPhoto": "線上取得實車相片",
   "garage.savePhoto": "儲存",
   "garage.identity": "VIN / 車牌設定",
   "garage.setIdentity": "設定 VIN / 車牌",

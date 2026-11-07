@@ -9,6 +9,7 @@ import { Button, Segmented, TextInput } from '../../components/ui'
 import { type MessageKey, useI18n } from '../../i18n'
 import { fuelKey } from '../../lib/format'
 import type { SavedVehicle } from '../../lib/prefs'
+import { resolveVehiclePhoto } from '../../lib/vehicleStyle'
 
 const NUMERIC_FIELDS = new Set(['year', 'option_vehicle_id'])
 
@@ -30,9 +31,11 @@ function gradeOf(resolution: VehicleResolution): FuelType {
 export function VehiclePicker({
   vehicle,
   onChange,
+  onSelectionChange,
 }: {
   vehicle: SavedVehicle | null
   onChange: (vehicle: SavedVehicle | null) => void
+  onSelectionChange?: (draftText: string) => void
 }) {
   const { t } = useI18n()
   const active = useRef(true)
@@ -47,6 +50,11 @@ export function VehiclePicker({
   const [message, setMessage] = useState<string | null>(null)
   const [question, setQuestion] = useState<VehicleResolution | null>(null)
 
+  const handleTextChange = (val: string) => {
+    setText(val)
+    onSelectionChange?.(val)
+  }
+
   async function resolve(body: VehicleResolveRequest) {
     setPending(true)
     setMessage(null)
@@ -55,11 +63,14 @@ export function VehiclePicker({
       if (!active.current) return
       if (resolution.status === 'resolved' && resolution.vehicle) {
         const v = resolution.vehicle
+        const label = `${v.year} ${v.make} ${v.model}`
+        const initialPhoto = resolveVehiclePhoto(label, null, null)
         onChange({
           id: v.id,
-          label: `${v.year} ${v.make} ${v.model}`,
+          label,
           fuelType: gradeOf(resolution),
           combinedMpg: v.combined_mpg,
+          imageUrl: initialPhoto || undefined,
         })
         setIdentity(null)
         setEditing(false)
@@ -67,6 +78,9 @@ export function VehiclePicker({
         setText('')
       } else if (resolution.status === 'needs_input' && resolution.choices?.length) {
         setQuestion(resolution)
+        if (resolution.make) {
+          onSelectionChange?.(resolution.make)
+        }
       } else {
         setQuestion(null)
         setMessage(t('vehicle.noMatch'))
@@ -89,7 +103,15 @@ export function VehiclePicker({
       if (!active.current) return
       if (response.status === 'resolved' && response.vehicle) {
         const v = response.vehicle
-        onChange({ id: v.id, label: `${v.year} ${v.make} ${v.model}`, fuelType: gradeOf({ status: 'resolved', vehicle: v, fuel_recommendation: response.fuel_recommendation } as VehicleResolution), combinedMpg: v.combined_mpg })
+        const label = `${v.year} ${v.make} ${v.model}`
+        const initialPhoto = resolveVehiclePhoto(label, null, null)
+        onChange({
+          id: v.id,
+          label,
+          fuelType: gradeOf({ status: 'resolved', vehicle: v, fuel_recommendation: response.fuel_recommendation } as VehicleResolution),
+          combinedMpg: v.combined_mpg,
+          imageUrl: initialPhoto || undefined,
+        })
         setIdentity({ ...identity, value: { ...identity.value, vehicle_id: v.id } } as VehicleIdentity)
         setIdentityQuestion(null)
         setEditing(false)
@@ -145,7 +167,7 @@ export function VehiclePicker({
           disabled={pending}
           id="vehicle-text"
           value={text}
-          onChange={(event) => setText(event.target.value)}
+          onChange={(event) => handleTextChange(event.target.value)}
           placeholder={t('vehicle.placeholder')}
           autoComplete="off"
           enterKeyHint="search"

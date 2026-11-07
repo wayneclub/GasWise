@@ -720,6 +720,7 @@ export const en = {
   "garage.uploadPhoto": "Upload",
   "garage.clearPhoto": "Clear photo",
   "garage.useStudioPhoto": "Use studio photo",
+  "garage.autoFetchPhoto": "Auto-fetch real photo",
   "garage.savePhoto": "Save",
   "garage.identity": "VIN / License Plate",
   "garage.setIdentity": "Set VIN / Plate",

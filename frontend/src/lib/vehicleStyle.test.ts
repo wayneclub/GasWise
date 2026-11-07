@@ -97,6 +97,41 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
     expect(fordPresets.some((c) => c.id === 'oxford_white')).toBe(true)
     expect(fordPresets.some((c) => c.id === 'grabber_blue')).toBe(true)
 
+    // Chevrolet has Summit White and Cacti Green
+    const chevyPresets = getVehicleColorPresets('Chevrolet Corvette Stingray')
+    expect(chevyPresets.some((c) => c.id === 'summit_white')).toBe(true)
+    expect(chevyPresets.some((c) => c.id === 'cacti_green')).toBe(true)
+
+    // Hyundai has Atlas White and Amazon Gray
+    const hyundaiPresets = getVehicleColorPresets('Hyundai Tucson Limited')
+    expect(hyundaiPresets.some((c) => c.id === 'atlas_white')).toBe(true)
+    expect(hyundaiPresets.some((c) => c.id === 'amazon_gray')).toBe(true)
+
+    // Subaru has Crystal White and WR Blue
+    const subaruPresets = getVehicleColorPresets('Subaru Outback Wilderness')
+    expect(subaruPresets.some((c) => c.id === 'crystal_white')).toBe(true)
+    expect(subaruPresets.some((c) => c.id === 'wr_blue')).toBe(true)
+
+    // Mazda has Soul Red and Snowflake White
+    const mazdaPresets = getVehicleColorPresets('Mazda CX-30')
+    expect(mazdaPresets.some((c) => c.id === 'soul_red')).toBe(true)
+    expect(mazdaPresets.some((c) => c.id === 'snowflake_white')).toBe(true)
+
+    // Jeep has Sarge Green and Hydro Blue
+    const jeepPresets = getVehicleColorPresets('Jeep Wrangler Rubicon')
+    expect(jeepPresets.some((c) => c.id === 'sarge_green')).toBe(true)
+    expect(jeepPresets.some((c) => c.id === 'hydro_blue')).toBe(true)
+
+    // Audi has Nardo Gray and Daytona Gray
+    const audiPresets = getVehicleColorPresets('Audi A4 Quattro')
+    expect(audiPresets.some((c) => c.id === 'nardo_gray')).toBe(true)
+    expect(audiPresets.some((c) => c.id === 'daytona_gray')).toBe(true)
+
+    // Volvo has Crystal White and Denim Blue
+    const volvoPresets = getVehicleColorPresets('Volvo XC90')
+    expect(volvoPresets.some((c) => c.id === 'crystal_white')).toBe(true)
+    expect(volvoPresets.some((c) => c.id === 'denim_blue')).toBe(true)
+
     // Universal Fallback
     const fallbackPresets = getVehicleColorPresets('Unknown Brand Car')
     expect(fallbackPresets.some((c) => c.id === 'pearl_white')).toBe(true)

@@ -19,6 +19,7 @@ import { validIdentity } from '../../lib/identity'
 import { VehicleThumbnail } from './VehicleThumbnail'
 import { VehiclePicker } from '../setup/VehiclePicker'
 import { resolveVehiclePhoto, getVehicleColorPresets } from '../../lib/vehicleStyle'
+import { fetchDynamicVehiclePhoto } from '../../lib/dynamicVehiclePhoto'
 
 interface GarageSectionProps {
   prefs: Prefs
@@ -37,6 +38,8 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
   const [tempIdentity, setTempIdentity] = useState<VehicleIdentity>({ kind: 'vin', value: { vin: '' } })
   const [photoInputUrl, setPhotoInputUrl] = useState<string>('')
   const [newCarColor, setNewCarColor] = useState<string>('#1e293b')
+  const [addModalMake, setAddModalMake] = useState<string | null>(null)
+  const [isSearchingPhoto, setIsSearchingPhoto] = useState<number | null>(null)
 
   // Ensure garage list has at least prefs.vehicle if garage is empty
   const garageList: SavedVehicle[] =
@@ -56,9 +59,24 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
     })
   }
 
+  const handleAutoFetchPhoto = async (carId: number, carLabel: string) => {
+    setIsSearchingPhoto(carId)
+    try {
+      const photo = await fetchDynamicVehiclePhoto(carLabel)
+      if (photo) {
+        handlePhotoChange(carId, photo)
+      }
+    } finally {
+      setIsSearchingPhoto(null)
+    }
+  }
+
   const handleAddCar = (newCar: SavedVehicle | null) => {
     if (!newCar) return
-    const carWithColor = { ...newCar, color: newCar.color || newCarColor }
+    const brandPresets = getVehicleColorPresets(newCar.label)
+    const defaultColor = brandPresets[0]?.hex ?? '#f8fafc'
+    const chosenColor = newCar.color || (newCarColor !== '#1e293b' ? newCarColor : defaultColor)
+    const carWithColor = { ...newCar, color: chosenColor }
     const exists = garageList.some((v) => v.id === carWithColor.id)
     const updatedGarage = exists
       ? garageList.map((v) => (v.id === carWithColor.id ? carWithColor : v))
@@ -76,6 +94,7 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
     }
 
     setShowAddModal(false)
+    setAddModalMake(null)
   }
 
   const handleDeleteCar = (carId: number) => {
@@ -415,7 +434,16 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                           >
                             <span>✓ {t('garage.useStudioPhoto')}</span>
                           </button>
-                        ) : null}
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isSearchingPhoto === car.id}
+                            onClick={() => handleAutoFetchPhoto(car.id, car.label)}
+                            className="inline-flex items-center gap-1 rounded-md bg-accent-soft/40 px-2 py-1 text-accent hover:bg-accent-soft transition font-medium disabled:opacity-50"
+                          >
+                            <span>{isSearchingPhoto === car.id ? '...' : `🌐 ${t('garage.autoFetchPhoto')}`}</span>
+                          </button>
+                        )}
 
                         {/* Clear Photo / Revert to Vector */}
                         {car.imageUrl ? (
@@ -582,7 +610,7 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-ink">{t('garage.color')}</span>
                 {(() => {
-                  const modalPresets = getVehicleColorPresets(null)
+                  const modalPresets = getVehicleColorPresets(addModalMake)
                   const matched = modalPresets.find(
                     (p) => p.hex.toLowerCase() === newCarColor.toLowerCase(),
                   )
@@ -591,7 +619,7 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                 })()}
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                {getVehicleColorPresets(null).map((preset) => {
+                {getVehicleColorPresets(addModalMake).map((preset) => {
                   const isSelected = newCarColor.toLowerCase() === preset.hex.toLowerCase()
                   return (
                     <button
@@ -613,6 +641,13 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
             <div className="py-2">
               <VehiclePicker
                 vehicle={null}
+                onSelectionChange={(draft) => {
+                  setAddModalMake(draft)
+                  const presets = getVehicleColorPresets(draft)
+                  if (presets.length > 0 && (newCarColor === '#1e293b' || newCarColor === '#f8fafc')) {
+                    setNewCarColor(presets[0].hex)
+                  }
+                }}
                 onChange={(car) => {
                   if (car) {
                     handleAddCar(car)

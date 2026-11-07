@@ -2,11 +2,11 @@ import { useId, useMemo, useState } from 'react'
 import {
   inferVehicleArchetype,
   inferVehicleSilhouette,
-  resolveVehiclePhoto,
   SILHOUETTE_TO_ARCHETYPE,
   type VehicleArchetype,
   type VehicleSilhouette,
 } from '../../lib/vehicleStyle'
+import { useDynamicVehiclePhoto } from '../../lib/dynamicVehiclePhoto'
 import { useI18n } from '../../i18n'
 
 interface VehicleThumbnailProps {
@@ -86,11 +86,8 @@ export function VehicleThumbnail({
     return (r * 299 + g * 587 + b * 114) / 1000 > 165
   }, [baseColor])
 
-  const resolvedPhoto = useMemo(() => {
-    return resolveVehiclePhoto(label, imageUrl, color)
-  }, [label, imageUrl, color])
-
-  const showPhoto = Boolean(resolvedPhoto && !imgError && !preferVector)
+  const { photoUrl, isStudio } = useDynamicVehiclePhoto(label, imageUrl, color)
+  const showPhoto = Boolean(photoUrl && !imgError && !preferVector)
 
   const dimensions = {
     sm: 'w-20 h-10',
@@ -110,10 +107,12 @@ export function VehicleThumbnail({
         {showPhoto ? (
           <div className="relative flex h-full w-full items-center justify-center p-1">
             <img
-              src={resolvedPhoto!}
+              src={photoUrl!}
               alt={label || 'Vehicle'}
               onError={() => setImgError(true)}
-              className="h-full w-full object-contain select-none filter drop-shadow-sm transition-transform duration-200 hover:scale-105"
+              className={`h-full w-full object-contain select-none filter drop-shadow-sm transition-transform duration-200 hover:scale-105 ${
+                isStudio ? '' : 'rounded-lg max-h-[92%]'
+              }`}
               loading="lazy"
             />
           </div>

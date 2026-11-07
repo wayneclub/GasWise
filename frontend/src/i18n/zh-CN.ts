@@ -720,6 +720,7 @@ export const zhCN: Record<MessageKey, string> = {
   "garage.uploadPhoto": "上传相片",
   "garage.clearPhoto": "清除相片",
   "garage.useStudioPhoto": "使用原厂样式",
+  "garage.autoFetchPhoto": "在线获取实车相片",
   "garage.savePhoto": "保存",
   "garage.identity": "VIN / 车牌设置",
   "garage.setIdentity": "设置 VIN / 车牌",

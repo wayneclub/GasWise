@@ -699,6 +699,7 @@ export const ko: Record<MessageKey, string> = {
   "garage.uploadPhoto": "업로드",
   "garage.clearPhoto": "사진 지우기",
   "garage.useStudioPhoto": "공식 스타일 사용",
+  "garage.autoFetchPhoto": "실차 사진 자동 조회",
   "garage.savePhoto": "저장",
   "garage.identity": "VIN / 번호판 설정",
   "garage.setIdentity": "VIN / 번호판 설정",

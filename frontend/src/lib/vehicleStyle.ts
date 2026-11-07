@@ -101,6 +101,110 @@ export const HONDA_COLOR_PRESETS: VehicleColorPreset[] = [
   { id: 'sonic_gray', name: 'Sonic Gray Pearl (NH-877P)', hex: '#64748b', labelZh: '音速灰 (NH-877P)', labelEn: 'Sonic Gray Pearl' },
 ]
 
+export const CHEVROLET_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'summit_white', name: 'Summit White (GAZ)', hex: '#f8fafc', labelZh: '高峰白 (GAZ)', labelEn: 'Summit White (GAZ)' },
+  { id: 'black', name: 'Black (GBA)', hex: '#0f172a', labelZh: '極致黑 (GBA)', labelEn: 'Black (GBA)' },
+  { id: 'sterling_gray', name: 'Sterling Gray Metallic (GXD)', hex: '#4b5563', labelZh: '斯特林灰 (GXD)', labelEn: 'Sterling Gray Metallic' },
+  { id: 'radiant_red', name: 'Radiant Red Tintcoat (GNT)', hex: '#991b1b', labelZh: '耀石紅 (GNT)', labelEn: 'Radiant Red Tintcoat' },
+  { id: 'riptide_blue', name: 'Riptide Blue Metallic (GJV)', hex: '#1d4ed8', labelZh: '激流藍 (GJV)', labelEn: 'Riptide Blue Metallic' },
+  { id: 'cacti_green', name: 'Cacti Green (GNS)', hex: '#5b6f5d', labelZh: '仙人掌綠 (GNS)', labelEn: 'Cacti Green (GNS)' },
+  { id: 'nitro_yellow', name: 'Nitro Yellow Metallic (GCP)', hex: '#eab308', labelZh: '硝基黃 (GCP)', labelEn: 'Nitro Yellow Metallic' },
+]
+
+export const HYUNDAI_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'atlas_white', name: 'Atlas White (SAW)', hex: '#f8fafc', labelZh: '阿特拉斯白 (SAW)', labelEn: 'Atlas White (SAW)' },
+  { id: 'phantom_black', name: 'Phantom Black (NKA)', hex: '#0f172a', labelZh: '幻影黑 (NKA)', labelEn: 'Phantom Black (NKA)' },
+  { id: 'portofino_gray', name: 'Portofino Gray (T2G)', hex: '#475569', labelZh: '波托菲諾灰 (T2G)', labelEn: 'Portofino Gray (T2G)' },
+  { id: 'shimmering_silver', name: 'Shimmering Silver (R2T)', hex: '#cbd5e1', labelZh: '閃耀銀 (R2T)', labelEn: 'Shimmering Silver (R2T)' },
+  { id: 'intense_blue', name: 'Intense Blue (YP5)', hex: '#1d4ed8', labelZh: '極致藍 (YP5)', labelEn: 'Intense Blue (YP5)' },
+  { id: 'ultimate_red', name: 'Ultimate Red (R2P)', hex: '#991b1b', labelZh: '終極紅 (R2P)', labelEn: 'Ultimate Red (R2P)' },
+  { id: 'amazon_gray', name: 'Amazon Gray (A2G)', hex: '#3f4f3e', labelZh: '亞馬遜綠灰 (A2G)', labelEn: 'Amazon Gray (A2G)' },
+]
+
+export const KIA_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'glacial_white', name: 'Glacial White Pearl (GWP)', hex: '#f8fafc', labelZh: '冰川白珍珠 (GWP)', labelEn: 'Glacial White Pearl' },
+  { id: 'ebony_black', name: 'Ebony Black (EB)', hex: '#0f172a', labelZh: '烏木黑 (EB)', labelEn: 'Ebony Black (EB)' },
+  { id: 'gravity_gray', name: 'Gravity Gray (KDG)', hex: '#475569', labelZh: '引力灰 (KDG)', labelEn: 'Gravity Gray (KDG)' },
+  { id: 'everlasting_silver', name: 'Everlasting Silver (4SS)', hex: '#cbd5e1', labelZh: '恆久銀 (4SS)', labelEn: 'Everlasting Silver' },
+  { id: 'sapphire_blue', name: 'Sapphire Blue (B3L)', hex: '#1e3a8a', labelZh: '藍寶石藍 (B3L)', labelEn: 'Sapphire Blue' },
+  { id: 'dawning_red', name: 'Dawning Red (DRD)', hex: '#991b1b', labelZh: '黎明紅 (DRD)', labelEn: 'Dawning Red (DRD)' },
+  { id: 'jungle_green', name: 'Jungle Green (JUG)', hex: '#2d4739', labelZh: '叢林綠 (JUG)', labelEn: 'Jungle Green (JUG)' },
+  { id: 'wolf_gray', name: 'Wolf Gray (DWG)', hex: '#94a3b8', labelZh: '灰狼色 (DWG)', labelEn: 'Wolf Gray (DWG)' },
+]
+
+export const SUBARU_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'crystal_white', name: 'Crystal White Pearl (K1X)', hex: '#f8fafc', labelZh: '水晶白珍珠 (K1X)', labelEn: 'Crystal White Pearl' },
+  { id: 'crystal_black', name: 'Crystal Black Silica (D4S)', hex: '#0f172a', labelZh: '水晶黑矽 (D4S)', labelEn: 'Crystal Black Silica' },
+  { id: 'magnetite_gray', name: 'Magnetite Gray Metallic (P8Y)', hex: '#4b5563', labelZh: '磁鐵礦灰 (P8Y)', labelEn: 'Magnetite Gray Metallic' },
+  { id: 'ice_silver', name: 'Ice Silver Metallic (G1U)', hex: '#cbd5e1', labelZh: '冰銀金屬漆 (G1U)', labelEn: 'Ice Silver Metallic' },
+  { id: 'sapphire_blue', name: 'Sapphire Blue Pearl (WCH)', hex: '#1e3a8a', labelZh: '藍寶石藍 (WCH)', labelEn: 'Sapphire Blue Pearl' },
+  { id: 'crimson_red', name: 'Crimson Red Pearl (M1Y)', hex: '#991b1b', labelZh: '深紅珍珠 (M1Y)', labelEn: 'Crimson Red Pearl' },
+  { id: 'autumn_green', name: 'Autumn Green Metallic (G2U)', hex: '#3b4c3d', labelZh: '秋綠金屬漆 (G2U)', labelEn: 'Autumn Green Metallic' },
+  { id: 'wr_blue', name: 'WR Blue Pearl (K7X)', hex: '#0284c7', labelZh: '拉力藍 (K7X)', labelEn: 'WR Blue Pearl (K7X)' },
+]
+
+export const NISSAN_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'glacier_white', name: 'Glacier White (QAK)', hex: '#f8fafc', labelZh: '冰川白 (QAK)', labelEn: 'Glacier White (QAK)' },
+  { id: 'super_black', name: 'Super Black (KH3)', hex: '#0f172a', labelZh: '超級黑 (KH3)', labelEn: 'Super Black (KH3)' },
+  { id: 'gun_metallic', name: 'Gun Metallic (KAD)', hex: '#4b5563', labelZh: '槍灰色 (KAD)', labelEn: 'Gun Metallic (KAD)' },
+  { id: 'brilliant_silver', name: 'Brilliant Silver Metallic (K23)', hex: '#cbd5e1', labelZh: '璀璨銀 (K23)', labelEn: 'Brilliant Silver Metallic' },
+  { id: 'deep_blue', name: 'Deep Blue Pearl (RAY)', hex: '#1e3a8a', labelZh: '深藍珍珠 (RAY)', labelEn: 'Deep Blue Pearl' },
+  { id: 'scarlet_ember', name: 'Scarlet Ember Tintcoat (NBL)', hex: '#991b1b', labelZh: '緋紅 (NBL)', labelEn: 'Scarlet Ember Tintcoat' },
+  { id: 'boulder_gray', name: 'Boulder Gray Pearl (KBY)', hex: '#94a3b8', labelZh: '磐石灰 (KBY)', labelEn: 'Boulder Gray Pearl' },
+]
+
+export const MAZDA_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'snowflake_white', name: 'Snowflake White Pearl Mica (25D)', hex: '#f8fafc', labelZh: '雪花白珍珠 (25D)', labelEn: 'Snowflake White Pearl' },
+  { id: 'jet_black', name: 'Jet Black Mica (41W)', hex: '#0f172a', labelZh: '曜石黑 (41W)', labelEn: 'Jet Black Mica (41W)' },
+  { id: 'machine_gray', name: 'Machine Gray Metallic (46G)', hex: '#4b5563', labelZh: '鋼鐵灰 (46G)', labelEn: 'Machine Gray Metallic' },
+  { id: 'soul_red', name: 'Soul Red Crystal Metallic (46V)', hex: '#991b1b', labelZh: '魂動紅 (46V)', labelEn: 'Soul Red Crystal (46V)' },
+  { id: 'deep_crystal_blue', name: 'Deep Crystal Blue Mica (42M)', hex: '#1e293b', labelZh: '深晶藍 (42M)', labelEn: 'Deep Crystal Blue (42M)' },
+  { id: 'polymetal_gray', name: 'Polymetal Gray Metallic (47C)', hex: '#64748b', labelZh: '極境灰 (47C)', labelEn: 'Polymetal Gray (47C)' },
+  { id: 'zircon_sand', name: 'Zircon Sand Metallic (48T)', hex: '#927b5e', labelZh: '鋯石砂 (48T)', labelEn: 'Zircon Sand Metallic' },
+]
+
+export const JEEP_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'bright_white', name: 'Bright White (PW7)', hex: '#f8fafc', labelZh: '亮白 (PW7)', labelEn: 'Bright White (PW7)' },
+  { id: 'black_clearcoat', name: 'Diamond Black Crystal (PXJ)', hex: '#0f172a', labelZh: '鑽石黑 (PXJ)', labelEn: 'Diamond Black Crystal' },
+  { id: 'granite_crystal', name: 'Granite Crystal Metallic (PAU)', hex: '#4b5563', labelZh: '花崗岩灰 (PAU)', labelEn: 'Granite Crystal Metallic' },
+  { id: 'billet_silver', name: 'Billet Silver Metallic (PSC)', hex: '#cbd5e1', labelZh: '鋼胚銀 (PSC)', labelEn: 'Billet Silver Metallic' },
+  { id: 'hydro_blue', name: 'Hydro Blue Pearl-Coat (PBJ)', hex: '#0284c7', labelZh: '水藍珍珠 (PBJ)', labelEn: 'Hydro Blue Pearl' },
+  { id: 'firecracker_red', name: 'Firecracker Red (PRC)', hex: '#b91c1c', labelZh: '爆竹紅 (PRC)', labelEn: 'Firecracker Red (PRC)' },
+  { id: 'sarge_green', name: 'Sarge Green (PGG)', hex: '#3f4f3e', labelZh: '軍裝綠 (PGG)', labelEn: 'Sarge Green (PGG)' },
+  { id: 'high_velocity', name: 'High Velocity Yellow (PJF)', hex: '#eab308', labelZh: '高速黃 (PJF)', labelEn: 'High Velocity Yellow' },
+]
+
+export const AUDI_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'ibis_white', name: 'Ibis White (T9)', hex: '#f8fafc', labelZh: '朱鷺白 (T9)', labelEn: 'Ibis White (T9)' },
+  { id: 'mythos_black', name: 'Mythos Black Metallic (0E)', hex: '#0f172a', labelZh: '神話黑 (0E)', labelEn: 'Mythos Black Metallic' },
+  { id: 'daytona_gray', name: 'Daytona Gray Pearl (6Y)', hex: '#475569', labelZh: '迪通拿灰 (6Y)', labelEn: 'Daytona Gray Pearl' },
+  { id: 'florett_silver', name: 'Florett Silver Metallic (L5)', hex: '#cbd5e1', labelZh: '花劍銀 (L5)', labelEn: 'Florett Silver Metallic' },
+  { id: 'navarra_blue', name: 'Navarra Blue Metallic (2D)', hex: '#1e3a8a', labelZh: '納瓦拉藍 (2D)', labelEn: 'Navarra Blue Metallic' },
+  { id: 'tango_red', name: 'Tango Red Metallic (Y1)', hex: '#991b1b', labelZh: '探戈紅 (Y1)', labelEn: 'Tango Red Metallic' },
+  { id: 'nardo_gray', name: 'Nardo Gray (T3)', hex: '#94a3b8', labelZh: '納多灰 (T3)', labelEn: 'Nardo Gray (T3)' },
+  { id: 'district_green', name: 'District Green Metallic (M4)', hex: '#3f4f3e', labelZh: '郡區綠 (M4)', labelEn: 'District Green Metallic' },
+]
+
+export const LEXUS_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'eminent_white', name: 'Eminent White Pearl (085)', hex: '#f8fafc', labelZh: '卓越白珍珠 (085)', labelEn: 'Eminent White Pearl' },
+  { id: 'caviar', name: 'Caviar (223)', hex: '#0f172a', labelZh: '魚子醬黑 (223)', labelEn: 'Caviar (223)' },
+  { id: 'cloudburst_gray', name: 'Cloudburst Gray (1L1)', hex: '#4b5563', labelZh: '雲湧灰 (1L1)', labelEn: 'Cloudburst Gray (1L1)' },
+  { id: 'iridium', name: 'Iridium (1L2)', hex: '#cbd5e1', labelZh: '銥銀 (1L2)', labelEn: 'Iridium (1L2)' },
+  { id: 'grecian_water', name: 'Grecian Water (8Y6)', hex: '#0284c7', labelZh: '希臘水藍 (8Y6)', labelEn: 'Grecian Water (8Y6)' },
+  { id: 'matador_red', name: 'Matador Red Mica (3R1)', hex: '#991b1b', labelZh: '鬥牛士紅 (3R1)', labelEn: 'Matador Red Mica' },
+  { id: 'nori_green', name: 'Nori Green Pearl (6X4)', hex: '#2d4739', labelZh: '海苔綠 (6X4)', labelEn: 'Nori Green Pearl' },
+]
+
+export const VOLVO_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'crystal_white', name: 'Crystal White (707)', hex: '#f8fafc', labelZh: '水晶白 (707)', labelEn: 'Crystal White (707)' },
+  { id: 'onyx_black', name: 'Onyx Black (717)', hex: '#0f172a', labelZh: '瑪瑙黑 (717)', labelEn: 'Onyx Black (717)' },
+  { id: 'platinum_grey', name: 'Platinum Grey (731)', hex: '#4b5563', labelZh: '鉑金灰 (731)', labelEn: 'Platinum Grey (731)' },
+  { id: 'silver_dawn', name: 'Silver Dawn (735)', hex: '#cbd5e1', labelZh: '晨曦銀 (735)', labelEn: 'Silver Dawn (735)' },
+  { id: 'denim_blue', name: 'Denim Blue (723)', hex: '#1e3a8a', labelZh: '丹寧藍 (723)', labelEn: 'Denim Blue (723)' },
+  { id: 'fusion_red', name: 'Fusion Red (725)', hex: '#991b1b', labelZh: '熔岩紅 (725)', labelEn: 'Fusion Red (725)' },
+  { id: 'sage_green', name: 'Sage Green (733)', hex: '#475549', labelZh: '鼠尾草綠 (733)', labelEn: 'Sage Green (733)' },
+]
+
 export const UNIVERSAL_COLOR_PRESETS: VehicleColorPreset[] = [
   { id: 'pearl_white', name: 'Pearl White', hex: '#f8fafc', labelZh: '珍珠白', labelEn: 'Pearl White' },
   { id: 'tuxedo_black', name: 'Tuxedo Black', hex: '#0f172a', labelZh: '尊爵黑', labelEn: 'Tuxedo Black' },
@@ -124,11 +228,21 @@ export function getVehicleColorPresets(brandOrLabel?: string | null): VehicleCol
   const s = brandOrLabel.toLowerCase()
   if (/\b(mercedes|benz|amg|maybach)\b/.test(s)) return MERCEDES_COLOR_PRESETS
   if (/\btesla\b/.test(s)) return TESLA_COLOR_PRESETS
-  if (/\b(toyota|lexus|scion)\b/.test(s)) return TOYOTA_COLOR_PRESETS
+  if (/\b(lexus)\b/.test(s)) return LEXUS_COLOR_PRESETS
+  if (/\b(toyota|scion)\b/.test(s)) return TOYOTA_COLOR_PRESETS
   if (/\b(bmw|mini|rolls-royce)\b/.test(s)) return BMW_COLOR_PRESETS
   if (/\bporsche\b/.test(s)) return PORSCHE_COLOR_PRESETS
   if (/\b(ford|lincoln)\b/.test(s)) return FORD_COLOR_PRESETS
   if (/\b(honda|acura)\b/.test(s)) return HONDA_COLOR_PRESETS
+  if (/\b(chevy|chevrolet|gmc|cadillac|corvette|silverado)\b/.test(s)) return CHEVROLET_COLOR_PRESETS
+  if (/\b(hyundai|genesis)\b/.test(s)) return HYUNDAI_COLOR_PRESETS
+  if (/\bkia\b/.test(s)) return KIA_COLOR_PRESETS
+  if (/\bsubaru\b/.test(s)) return SUBARU_COLOR_PRESETS
+  if (/\b(nissan|infiniti)\b/.test(s)) return NISSAN_COLOR_PRESETS
+  if (/\bmazda\b/.test(s)) return MAZDA_COLOR_PRESETS
+  if (/\b(jeep|ram|dodge|chrysler)\b/.test(s)) return JEEP_COLOR_PRESETS
+  if (/\b(audi|vw|volkswagen)\b/.test(s)) return AUDI_COLOR_PRESETS
+  if (/\bvolvo\b/.test(s)) return VOLVO_COLOR_PRESETS
   return UNIVERSAL_COLOR_PRESETS
 }
 
