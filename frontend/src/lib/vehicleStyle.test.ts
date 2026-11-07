@@ -87,10 +87,18 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
     expect(porschePresets.some((c) => c.id === 'guards_red')).toBe(true)
     expect(porschePresets.some((c) => c.id === 'racing_yellow')).toBe(true)
 
-    // BMW has Isle of Man Green and Portimao Blue
+    // BMW has Isle of Man Green and Portimao Blue for generic lineup
     const bmwPresets = getVehicleColorPresets('BMW 4 Series')
     expect(bmwPresets.some((c) => c.id === 'isle_of_man_green')).toBe(true)
     expect(bmwPresets.some((c) => c.id === 'portimao_blue')).toBe(true)
+
+    // BMW M4 Coupe (F82) has authentic M4 factory palette
+    const m4Presets = getVehicleColorPresets('2019 BMW M4 Coupe')
+    expect(m4Presets.some((c) => c.id === 'austin_yellow')).toBe(true)
+    expect(m4Presets.some((c) => c.id === 'yas_marina_blue')).toBe(true)
+    expect(m4Presets.some((c) => c.id === 'sakhir_orange')).toBe(true)
+    expect(m4Presets.some((c) => c.id === 'san_marino_blue')).toBe(true)
+    expect(m4Presets.some((c) => c.id === 'black_sapphire')).toBe(true)
 
     // Ford has Oxford White and Grabber Blue
     const fordPresets = getVehicleColorPresets('Ford Mustang')
@@ -160,8 +168,11 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
     // Mapped photo for BMW M4 Coupe
     expect(resolveVehiclePhoto('2019 BMW M4 Coupe')).toBe(`/vehicles/bmw_m4_coupe_alpine_white.png?v=${v}`)
     expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#1e293b')).toBe(`/vehicles/bmw_m4_coupe_black_sapphire.png?v=${v}`)
-    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#1d4ed8')).toBe(`/vehicles/bmw_m4_coupe_portimao_blue.png?v=${v}`)
+    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#1d4ed8')).toBe(`/vehicles/bmw_m4_coupe_san_marino_blue.png?v=${v}`)
+    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#5c9dc0')).toBe(`/vehicles/bmw_m4_coupe_yas_marina_blue.png?v=${v}`)
     expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#eab308')).toBe(`/vehicles/bmw_m4_coupe_austin_yellow.png?v=${v}`)
+    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#a8322d')).toBe(`/vehicles/bmw_m4_coupe_sakhir_orange.png?v=${v}`)
+    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#484b50')).toBe(`/vehicles/bmw_m4_coupe_mineral_grey.png?v=${v}`)
 
     // Mapped photo for Toyota RAV4 and Crossover SUVs
     expect(resolveVehiclePhoto('2024 Toyota RAV4')).toBe(`/vehicles/toyota_rav4_wind_chill_pearl.png?v=${v}`)

@@ -60,9 +60,56 @@ export const TOYOTA_COLOR_PRESETS: VehicleColorPreset[] = [
   { id: 'army_green', name: 'Army Green', hex: '#3f4f3e', labelZh: '軍裝綠', labelEn: 'Army Green' },
 ]
 
+export const BMW_M4_F82_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'austin_yellow', name: 'Austin Yellow Metallic (B67)', hex: '#d2b134', labelZh: '奧斯汀黃 (B67)', labelEn: 'Austin Yellow Metallic' },
+  { id: 'yas_marina_blue', name: 'Yas Marina Blue Metallic (B68)', hex: '#5c9dc0', labelZh: '亞斯碼頭藍 (B68)', labelEn: 'Yas Marina Blue Metallic' },
+  { id: 'sakhir_orange', name: 'Sakhir Orange II Metallic (C1H)', hex: '#a8322d', labelZh: '薩基爾橙 (C1H)', labelEn: 'Sakhir Orange II Metallic' },
+  { id: 'san_marino_blue', name: 'San Marino Blue Metallic (B51)', hex: '#1c3b72', labelZh: '聖馬利諾藍 (B51)', labelEn: 'San Marino Blue Metallic' },
+  { id: 'mineral_grey', name: 'Mineral Grey Metallic (B39)', hex: '#484b50', labelZh: '礦石灰 (B39)', labelEn: 'Mineral Grey Metallic' },
+  { id: 'black_sapphire', name: 'Black Sapphire Metallic (475)', hex: '#121417', labelZh: '藍寶石黑 (475)', labelEn: 'Black Sapphire Metallic' },
+  { id: 'alpine_white', name: 'Alpine White (300)', hex: '#faf9fb', labelZh: '雪山白 (300)', labelEn: 'Alpine White' },
+  { id: 'silverstone', name: 'Silverstone II Metallic (A29)', hex: '#b8c3cc', labelZh: '銀石銀 (A29)', labelEn: 'Silverstone II Metallic' },
+  { id: 'mineral_white', name: 'Mineral White Metallic (A96)', hex: '#f0f0ee', labelZh: '礦石白 (A96)', labelEn: 'Mineral White Metallic' },
+]
+
+export const TOYOTA_RAV4_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'wind_chill_pearl', name: 'Wind Chill Pearl / Super White (089)', hex: '#f8fafc', labelZh: '極光珍珠白 (089)', labelEn: 'Wind Chill Pearl' },
+  { id: 'midnight_black', name: 'Midnight Black Metallic (218)', hex: '#111827', labelZh: '午夜黑 (218)', labelEn: 'Midnight Black Metallic' },
+  { id: 'magnetic_gray', name: 'Magnetic Gray Metallic (1G3)', hex: '#4b5563', labelZh: '磁性灰 (1G3)', labelEn: 'Magnetic Gray Metallic' },
+  { id: 'silver_sky', name: 'Silver Sky Metallic (1D6)', hex: '#cbd5e1', labelZh: '天空銀 (1D6)', labelEn: 'Silver Sky Metallic' },
+  { id: 'blueprint', name: 'Blueprint (8X8)', hex: '#1d4ed8', labelZh: '藍圖深藍 (8X8)', labelEn: 'Blueprint' },
+  { id: 'ruby_flare', name: 'Ruby Flare Pearl (3T3)', hex: '#991b1b', labelZh: '尊爵紅 (3T3)', labelEn: 'Ruby Flare Pearl' },
+  { id: 'lunar_rock', name: 'Lunar Rock (6X3)', hex: '#8b9788', labelZh: '岩石灰綠 / 月岩灰 (6X3)', labelEn: 'Lunar Rock' },
+  { id: 'army_green', name: 'Army Green (6V7)', hex: '#3f4f3e', labelZh: '軍裝綠 (6V7)', labelEn: 'Army Green' },
+  { id: 'cavalry_blue', name: 'Cavalry Blue (8W2)', hex: '#4b6b82', labelZh: '騎兵藍 (8W2)', labelEn: 'Cavalry Blue' },
+]
+
+export const FORD_MUSTANG_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'oxford_white', name: 'Oxford White (YZ)', hex: '#f8fafc', labelZh: '牛津白 (YZ)', labelEn: 'Oxford White' },
+  { id: 'shadow_black', name: 'Shadow Black (G1)', hex: '#111827', labelZh: '暗影黑 (G1)', labelEn: 'Shadow Black' },
+  { id: 'grabber_blue', name: 'Grabber Blue (AE)', hex: '#38bdf8', labelZh: '掠奪者藍 (AE)', labelEn: 'Grabber Blue' },
+  { id: 'race_red', name: 'Race Red (PQ)', hex: '#dc2626', labelZh: '競技紅 (PQ)', labelEn: 'Race Red' },
+  { id: 'twister_orange', name: 'Twister Orange (E3)', hex: '#ea580c', labelZh: '龍捲風橙 (E3)', labelEn: 'Twister Orange' },
+  { id: 'velocity_blue', name: 'Velocity Blue (E7)', hex: '#1d4ed8', labelZh: '疾速藍 (E7)', labelEn: 'Velocity Blue' },
+  { id: 'magnetic', name: 'Magnetic Metallic (J7)', hex: '#374151', labelZh: '磁石灰 (J7)', labelEn: 'Magnetic Metallic' },
+  { id: 'iconic_silver', name: 'Iconic Silver (JS)', hex: '#9ca3af', labelZh: '標誌銀 (JS)', labelEn: 'Iconic Silver' },
+]
+
+export const PORSCHE_911_COLOR_PRESETS: VehicleColorPreset[] = [
+  { id: 'guards_red', name: 'Guards Red (84A)', hex: '#b91c1c', labelZh: '衛紅 (84A)', labelEn: 'Guards Red' },
+  { id: 'racing_yellow', name: 'Racing Yellow (1S1)', hex: '#eab308', labelZh: '競速黃 (1S1)', labelEn: 'Racing Yellow' },
+  { id: 'gt_silver', name: 'GT Silver Metallic (M7Z)', hex: '#94a3b8', labelZh: 'GT銀 (M7Z)', labelEn: 'GT Silver Metallic' },
+  { id: 'gentian_blue', name: 'Gentian Blue Metallic (1A)', hex: '#1e3a8a', labelZh: '龍膽藍 (1A)', labelEn: 'Gentian Blue Metallic' },
+  { id: 'chalk', name: 'Chalk / Crayon (3H)', hex: '#d6d3d1', labelZh: '蠟灰 (3H)', labelEn: 'Chalk / Crayon' },
+  { id: 'white', name: 'White (0Q)', hex: '#ffffff', labelZh: '純白 (0Q)', labelEn: 'White' },
+  { id: 'black', name: 'Black (A1)', hex: '#0f172a', labelZh: '純黑 (A1)', labelEn: 'Black' },
+  { id: 'python_green', name: 'Python Green (3C)', hex: '#15803d', labelZh: '蟒蛇綠 (3C)', labelEn: 'Python Green' },
+  { id: 'shark_blue', name: 'Shark Blue (D5C)', hex: '#0284c7', labelZh: '鯊魚藍 (D5C)', labelEn: 'Shark Blue' },
+]
+
 export const BMW_COLOR_PRESETS: VehicleColorPreset[] = [
-  { id: 'alpine_white', name: 'Alpine White (300)', hex: '#f8fafc', labelZh: '高山白 (300)', labelEn: 'Alpine White (300)' },
-  { id: 'black_sapphire', name: 'Black Sapphire Metallic (475)', hex: '#0f172a', labelZh: '藍寶石黑 (475)', labelEn: 'Black Sapphire (475)' },
+  { id: 'alpine_white', name: 'Alpine White (300)', hex: '#faf9fb', labelZh: '高山白 (300)', labelEn: 'Alpine White (300)' },
+  { id: 'black_sapphire', name: 'Black Sapphire Metallic (475)', hex: '#121417', labelZh: '藍寶石黑 (475)', labelEn: 'Black Sapphire (475)' },
   { id: 'skyscraper_grey', name: 'Skyscraper Grey Metallic (C4W)', hex: '#4b5563', labelZh: '摩天樓灰 (C4W)', labelEn: 'Skyscraper Grey (C4W)' },
   { id: 'brooklyn_grey', name: 'Brooklyn Grey Metallic (C4P)', hex: '#94a3b8', labelZh: '布魯克林灰 (C4P)', labelEn: 'Brooklyn Grey (C4P)' },
   { id: 'portimao_blue', name: 'Portimao Blue Metallic (C31)', hex: '#1d4ed8', labelZh: '波爾蒂芒藍 (C31)', labelEn: 'Portimao Blue (C31)' },
@@ -222,10 +269,33 @@ export const VEHICLE_COLOR_PRESETS: VehicleColorPreset[] = MERCEDES_COLOR_PRESET
 
 /**
  * Returns authentic factory OEM color options matched to vehicle brand/label.
+ * Prioritizes model-specific OEM palettes before falling back to brand-level presets.
  */
 export function getVehicleColorPresets(brandOrLabel?: string | null): VehicleColorPreset[] {
   if (!brandOrLabel) return UNIVERSAL_COLOR_PRESETS
   const s = brandOrLabel.toLowerCase()
+
+  // 1. Model-specific OEM palettes
+  if (/\b(m4|f82|f83)\b/.test(s)) {
+    return BMW_M4_F82_COLOR_PRESETS
+  }
+  if (/\b(mustang|gt350|gt500)\b/.test(s)) {
+    return FORD_MUSTANG_COLOR_PRESETS
+  }
+  if (/\b(911|carrera|targa|gt3|gt2)\b/.test(s)) {
+    return PORSCHE_911_COLOR_PRESETS
+  }
+  if (/\brav4\b/.test(s)) {
+    return TOYOTA_RAV4_COLOR_PRESETS
+  }
+  if (/\b(model\s*3|model\s*y)\b/.test(s)) {
+    return TESLA_COLOR_PRESETS
+  }
+  if (/\b(e\s?400|e\s?450|e\s?350)\b.*\bcoupe\b/.test(s)) {
+    return MERCEDES_COLOR_PRESETS
+  }
+
+  // 2. Brand-level OEM palettes
   if (/\b(mercedes|benz|amg|maybach)\b/.test(s)) return MERCEDES_COLOR_PRESETS
   if (/\btesla\b/.test(s)) return TESLA_COLOR_PRESETS
   if (/\b(lexus)\b/.test(s)) return LEXUS_COLOR_PRESETS
@@ -390,7 +460,7 @@ function parseHexRgb(hex: string): [number, number, number] | null {
   return null
 }
 
-export const VEHICLE_IMAGE_CACHE_VERSION = '20261104v2'
+export const VEHICLE_IMAGE_CACHE_VERSION = '20261107v1'
 
 /**
  * Resolves color-accurate, transparent cut-out photograph for the 2018 Mercedes-Benz E400 Coupe.
@@ -515,36 +585,43 @@ export function resolveTeslaColorPhoto(model: 'model_3' | 'model_y', color?: str
  */
 export function resolveBmwM4ColorPhoto(color?: string | null): string {
   const versionParam = `?v=${VEHICLE_IMAGE_CACHE_VERSION}`
-  if (!color || color === '#ffffff' || color === '#fff' || color === '#f8fafc') {
+  if (!color || color === '#ffffff' || color === '#fff' || color === '#faf9fb' || color === '#f8fafc') {
     return `/vehicles/bmw_m4_coupe_alpine_white.png${versionParam}`
   }
   const norm = color.toLowerCase().trim()
 
   const PRESET_FILES: Record<string, string> = {
+    '#faf9fb': 'alpine_white',
     '#f8fafc': 'alpine_white',
     '#ffffff': 'alpine_white',
+    '#f0f0ee': 'mineral_white',
+    '#121417': 'black_sapphire',
     '#0f172a': 'black_sapphire',
     '#111827': 'black_sapphire',
     '#1a1f2c': 'black_sapphire',
     '#1e293b': 'black_sapphire',
-    '#4b5563': 'skyscraper_grey',
-    '#374151': 'skyscraper_grey',
-    '#525a65': 'skyscraper_grey',
-    '#475569': 'skyscraper_grey',
-    '#94a3b8': 'brooklyn_grey',
-    '#a8b0b8': 'brooklyn_grey',
-    '#cbd5e1': 'brooklyn_grey',
-    '#1d4ed8': 'portimao_blue',
-    '#1e3a8a': 'portimao_blue',
-    '#1b2a47': 'portimao_blue',
-    '#166534': 'isle_of_man_green',
-    '#15803d': 'isle_of_man_green',
-    '#3f4f3e': 'isle_of_man_green',
-    '#991b1b': 'melbourne_red',
-    '#7a1c27': 'melbourne_red',
-    '#dc2626': 'melbourne_red',
-    '#b91c1c': 'melbourne_red',
+    '#484b50': 'mineral_grey',
+    '#475569': 'mineral_grey',
+    '#4b5563': 'mineral_grey',
+    '#374151': 'mineral_grey',
+    '#525a65': 'mineral_grey',
+    '#b8c3cc': 'silverstone',
+    '#94a3b8': 'silverstone',
+    '#a8b0b8': 'silverstone',
+    '#cbd5e1': 'silverstone',
+    '#5c9dc0': 'yas_marina_blue',
+    '#38bdf8': 'yas_marina_blue',
+    '#1c3b72': 'san_marino_blue',
+    '#1e3a8a': 'san_marino_blue',
+    '#1d4ed8': 'san_marino_blue',
+    '#1b2a47': 'san_marino_blue',
+    '#d2b134': 'austin_yellow',
     '#eab308': 'austin_yellow',
+    '#a8322d': 'sakhir_orange',
+    '#991b1b': 'sakhir_orange',
+    '#dc2626': 'sakhir_orange',
+    '#b91c1c': 'sakhir_orange',
+    '#ea580c': 'sakhir_orange',
   }
 
   if (PRESET_FILES[norm]) {
@@ -556,9 +633,9 @@ export function resolveBmwM4ColorPhoto(color?: string | null): string {
     return `/vehicles/bmw_m4_coupe_alpine_white.png${versionParam}`
   }
 
-  let bestPreset = 'alpine_white'
+  let bestPreset = 'black_sapphire'
   let minDistance = Infinity
-  for (const preset of BMW_COLOR_PRESETS) {
+  for (const preset of BMW_M4_F82_COLOR_PRESETS) {
     const pRgb = parseHexRgb(preset.hex)
     if (!pRgb) continue
     const dist = (rgb[0] - pRgb[0]) ** 2 + (rgb[1] - pRgb[1]) ** 2 + (rgb[2] - pRgb[2]) ** 2
