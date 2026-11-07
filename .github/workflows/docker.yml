@@ -12,18 +12,18 @@ concurrency:
 jobs:
   deploy:
     runs-on: self-hosted
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - name: Host Diagnostics and Inspect Script
+      - name: Host Diagnostics and Resource Cleanup
         run: |
-          echo "=== HOST METRICS ==="
+          echo "=== HOST METRICS BEFORE CLEANUP ==="
           uptime
-          df -h
           free -m
-          echo "=== DOCKER CONTAINERS ==="
-          docker ps -a
-          echo "=== DEPLOY SCRIPT ==="
-          cat /home/ubuntu/apps/gaswise/deploy-local.sh
+          df -h
+          echo "=== CLEANING DANGLING BUILD CACHE ==="
+          docker builder prune -f --keep-storage 1GB || true
+          docker container prune -f || true
+          free -m
       - name: Deploy GasWise on Production Server
         run: |
           /home/ubuntu/apps/gaswise/deploy-local.sh

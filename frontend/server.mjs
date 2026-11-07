@@ -84,8 +84,12 @@ const server = createServer(async (request, response) => {
       response.setHeader('Cache-Control', 'no-store, max-age=0, must-revalidate')
       response.setHeader('CDN-Cache-Control', 'no-store')
       response.setHeader('Service-Worker-Allowed', '/')
+    } else if (file.includes(`${sep}assets${sep}`)) {
+      response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+    } else if (file.includes(`${sep}vehicles${sep}`)) {
+      response.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800')
     } else {
-      response.setHeader('Cache-Control', file.includes(`${sep}assets${sep}`) ? 'public, max-age=31536000, immutable' : 'no-cache')
+      response.setHeader('Cache-Control', 'no-cache')
     }
     response.end(request.method === 'HEAD' ? undefined : await readFile(file))
   } catch (error) {
