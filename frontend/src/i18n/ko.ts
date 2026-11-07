@@ -691,6 +691,7 @@ export const ko: Record<MessageKey, string> = {
   "garage.archetype.wagon": "왜건",
   "garage.archetype.van": "미니밴",
   "garage.color": "순정 차량 색상",
+  "garage.customPhotoActive": "커스텀 사진 표시 중",
   "garage.customColor": "커스텀 색상",
   "garage.colorPicker": "컬러 팔레트",
   "garage.resetColor": "순정 색상 복원",

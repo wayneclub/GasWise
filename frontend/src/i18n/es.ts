@@ -712,6 +712,7 @@ export const es: Record<MessageKey, string> = {
   "garage.archetype.wagon": "Familiar",
   "garage.archetype.van": "Monovolumen",
   "garage.color": "Color de fábrica",
+  "garage.customPhotoActive": "Foto personalizada activa",
   "garage.customColor": "Color personalizado",
   "garage.colorPicker": "Paleta de colores",
   "garage.resetColor": "Restablecer color",

@@ -460,7 +460,7 @@ function parseHexRgb(hex: string): [number, number, number] | null {
   return null
 }
 
-export const VEHICLE_IMAGE_CACHE_VERSION = '20261107v1'
+export const VEHICLE_IMAGE_CACHE_VERSION = '20261107v2'
 
 /**
  * Resolves color-accurate, transparent cut-out photograph for the 2018 Mercedes-Benz E400 Coupe.

@@ -235,7 +235,7 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     {isActive ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-white shadow-xs">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/20 shadow-xs">
                         <CheckCircleIcon size={13} weight="fill" />
                         <span>{t('garage.activeBadge')}</span>
                       </span>
@@ -323,23 +323,27 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                 </div>
 
                 {/* Appearance Customization Bar: Color & Authentic Photo */}
-                <div className="my-1 flex flex-col gap-1.5 rounded-xl bg-sunken/40 p-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                <div className="my-1.5 flex flex-col gap-2 rounded-xl bg-sunken/40 p-2.5 text-xs border border-line/40">
+                  <div className="flex items-center justify-between gap-2">
+                    {/* Display Mode Segmented Control */}
+                    <div className="inline-flex items-center rounded-lg bg-surface p-0.5 border border-line/60 shadow-2xs">
                       <button
                         type="button"
                         onClick={() => {
-                          setEditingColorId(editingColorId === car.id ? null : car.id)
+                          if (car.imageUrl) {
+                            handlePhotoChange(car.id, undefined)
+                          }
+                          setEditingColorId(car.id)
                           setEditingPhotoId(null)
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-0.5 text-[11px] font-medium text-muted transition hover:bg-surface hover:text-ink"
+                        className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition ${
+                          !car.imageUrl && editingPhotoId !== car.id
+                            ? 'bg-accent text-white shadow-2xs font-semibold'
+                            : 'text-muted hover:text-ink'
+                        }`}
                         aria-label={t('garage.color')}
                       >
-                        <span
-                          className="size-3.5 rounded-full border border-line shadow-2xs shrink-0"
-                          style={{ backgroundColor: currentColor }}
-                        />
-                        <PaletteIcon size={13} className="text-muted" />
+                        <PaletteIcon size={13} />
                         <span>{t('garage.color')}</span>
                       </button>
 
@@ -350,47 +354,51 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                           setEditingColorId(null)
                           setPhotoInputUrl(car.imageUrl || '')
                         }}
-                        className={`inline-flex items-center gap-1.5 rounded-lg px-1.5 py-0.5 text-[11px] font-medium transition ${
-                          car.imageUrl
-                            ? 'bg-accent/10 text-accent font-semibold'
-                            : 'text-muted hover:bg-surface hover:text-ink'
+                        className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition ${
+                          car.imageUrl || editingPhotoId === car.id
+                            ? 'bg-accent text-white shadow-2xs font-semibold'
+                            : 'text-muted hover:text-ink'
                         }`}
                         aria-label={t('garage.photo')}
                       >
                         <CameraIcon size={13} />
                         <span>{t('garage.photo')}</span>
-                        {car.imageUrl ? <span className="size-1.5 rounded-full bg-accent" /> : null}
+                        {car.imageUrl ? <span className="size-1.5 rounded-full bg-emerald-400" /> : null}
                       </button>
                     </div>
 
+                    {/* Active State / Color Name Pill */}
                     {(() => {
                       const carPresets = getVehicleColorPresets(car.label)
                       const matchedPreset = carPresets.find(
                         (p) => p.hex.toLowerCase() === currentColor.toLowerCase(),
                       )
                       const displayName = matchedPreset ? (isZh ? matchedPreset.labelZh : matchedPreset.name) : currentColor
+                      if (car.imageUrl) {
+                        return (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-accent-soft/40 px-2 py-0.5 text-[11px] font-medium text-accent">
+                            <CameraIcon size={12} />
+                            <span>{t('garage.customPhotoActive')}</span>
+                          </span>
+                        )
+                      }
                       return (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingColorId(editingColorId === car.id ? null : car.id)
-                            setEditingPhotoId(null)
-                          }}
-                          className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted hover:bg-surface hover:text-ink transition"
+                        <div
+                          className="flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium text-ink bg-surface/80 border border-line/40 shadow-2xs"
                           title={displayName}
                         >
                           <span
                             className="size-2.5 rounded-full border border-line shrink-0"
                             style={{ backgroundColor: currentColor }}
                           />
-                          <span>{displayName}</span>
-                        </button>
+                          <span className="truncate max-w-[140px]">{displayName}</span>
+                        </div>
                       )
                     })()}
                   </div>
 
                   {/* Photo Customization Panel */}
-                  {editingPhotoId === car.id ? (
+                  {editingPhotoId === car.id || (car.imageUrl && editingColorId !== car.id) ? (
                     <div className="flex flex-col gap-2 pt-2 border-t border-line/40">
                       <div className="flex items-center gap-1.5">
                         <input
@@ -398,7 +406,7 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                           value={photoInputUrl}
                           onChange={(e) => setPhotoInputUrl(e.target.value)}
                           placeholder={t('garage.photoUrlPlaceholder')}
-                          className="flex-1 min-w-0 rounded-lg border border-line bg-surface px-2 py-1 text-xs text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none"
+                          className="flex-1 min-w-0 rounded-lg border border-line bg-surface px-2.5 py-1 text-xs text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none"
                         />
                         <Button
                           variant="secondary"
@@ -411,8 +419,8 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
 
                       <div className="flex flex-wrap items-center gap-2 text-[11px]">
                         {/* File Upload Trigger */}
-                        <label className="inline-flex cursor-pointer items-center gap-1 rounded-md bg-surface px-2 py-1 text-muted border border-line hover:text-ink hover:border-ink/40 transition">
-                          <PlusIcon size={11} />
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-surface px-2.5 py-1 text-ink border border-line hover:border-accent hover:text-accent transition shadow-2xs font-medium">
+                          <PlusIcon size={12} />
                           <span>{t('garage.uploadPhoto')}</span>
                           <input
                             type="file"
@@ -429,8 +437,8 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                         {resolveVehiclePhoto(car.label, null, car.color) ? (
                           <button
                             type="button"
-                            onClick={() => handlePhotoChange(car.id, resolveVehiclePhoto(car.label, null, car.color)!)}
-                            className="inline-flex items-center gap-1 rounded-md bg-accent-soft/40 px-2 py-1 text-accent hover:bg-accent-soft transition font-medium"
+                            onClick={() => handlePhotoChange(car.id, undefined)}
+                            className="inline-flex items-center gap-1 rounded-md bg-accent-soft/40 px-2.5 py-1 text-accent hover:bg-accent-soft transition font-medium"
                           >
                             <span>✓ {t('garage.useStudioPhoto')}</span>
                           </button>
@@ -439,28 +447,29 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                             type="button"
                             disabled={isSearchingPhoto === car.id}
                             onClick={() => handleAutoFetchPhoto(car.id, car.label)}
-                            className="inline-flex items-center gap-1 rounded-md bg-accent-soft/40 px-2 py-1 text-accent hover:bg-accent-soft transition font-medium disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-accent-soft/40 px-2.5 py-1 text-accent hover:bg-accent-soft transition font-medium disabled:opacity-50"
                           >
                             <span>{isSearchingPhoto === car.id ? '...' : `🌐 ${t('garage.autoFetchPhoto')}`}</span>
                           </button>
                         )}
 
-                        {/* Clear Photo / Revert to Vector */}
+                        {/* Clear Photo / Revert to Studio */}
                         {car.imageUrl ? (
                           <button
                             type="button"
                             onClick={() => handlePhotoChange(car.id, undefined)}
                             className="inline-flex items-center gap-1 text-rose-500 hover:underline ml-auto"
                           >
-                            <span>{t('garage.clearPhoto')}</span>
+                            <span>✕ {t('garage.clearPhoto')}</span>
                           </button>
                         ) : null}
                       </div>
                     </div>
                   ) : null}
 
-                  {editingColorId === car.id ? (
-                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-line/40">
+                  {/* Factory Color Swatches */}
+                  {!car.imageUrl && (editingColorId === car.id || editingPhotoId !== car.id) ? (
+                    <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-line/40">
                       <div className="flex flex-wrap items-center gap-1.5">
                         {getVehicleColorPresets(car.label).map((preset) => {
                           const isSelected = currentColor.toLowerCase() === preset.hex.toLowerCase()
@@ -468,11 +477,18 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                             <button
                               key={preset.id}
                               type="button"
-                              onClick={() => handleColorChange(car.id, preset.hex)}
+                              onClick={() => {
+                                handleColorChange(car.id, preset.hex)
+                                if (car.imageUrl) {
+                                  handlePhotoChange(car.id, undefined)
+                                }
+                              }}
                               title={isZh ? preset.labelZh : preset.name}
                               aria-label={isZh ? preset.labelZh : preset.name}
-                              className={`size-5 rounded-full border transition-transform hover:scale-115 ${
-                                isSelected ? 'ring-2 ring-accent ring-offset-1 scale-110 border-transparent' : 'border-line/70'
+                              className={`size-5 rounded-full border transition-all hover:scale-120 ${
+                                isSelected
+                                  ? 'ring-2 ring-accent ring-offset-2 ring-offset-surface scale-110 border-transparent shadow-xs'
+                                  : 'border-line/70 hover:border-ink/60'
                               }`}
                               style={{ backgroundColor: preset.hex }}
                             />
@@ -481,10 +497,12 @@ export function GarageSection({ prefs, update }: GarageSectionProps) {
                       </div>
 
                       {/* Reset to Factory Original Color */}
-                      {currentColor.toLowerCase() !== '#ffffff' && currentColor.toLowerCase() !== '#f8fafc' ? (
+                      {currentColor.toLowerCase() !== '#ffffff' &&
+                       currentColor.toLowerCase() !== '#f8fafc' &&
+                       currentColor.toLowerCase() !== '#faf9fb' ? (
                         <button
                           type="button"
-                          onClick={() => handleColorChange(car.id, '#f8fafc')}
+                          onClick={() => handleColorChange(car.id, '#faf9fb')}
                           className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted hover:text-ink hover:underline"
                         >
                           <span>{t('garage.resetColor')}</span>

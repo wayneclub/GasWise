@@ -691,6 +691,7 @@ export const ja: Record<MessageKey, string> = {
   "garage.archetype.wagon": "ステーションワゴン",
   "garage.archetype.van": "ミニバン",
   "garage.color": "純正ボディカラー",
+  "garage.customPhotoActive": "カスタム写真表示中",
   "garage.customColor": "カスタムカラー",
   "garage.colorPicker": "カラーパレット",
   "garage.resetColor": "純正色に戻す",

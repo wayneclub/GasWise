@@ -712,6 +712,7 @@ export const zhTW: Record<MessageKey, string> = {
   "garage.archetype.wagon": "旅行車",
   "garage.archetype.van": "廂型休旅",
   "garage.color": "原廠車色",
+  "garage.customPhotoActive": "自訂照片顯示中",
   "garage.customColor": "自訂車色",
   "garage.colorPicker": "調色盤選色",
   "garage.resetColor": "還原原廠色",
