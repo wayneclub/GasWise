@@ -165,14 +165,14 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
     expect(resolveVehiclePhoto('2023 Tesla Model Y', null, '#0f172a')).toBe(`/vehicles/tesla_model_y_solid_black.png?v=${v}`)
     expect(resolveVehiclePhoto('Tesla Model Y', null, '#94a3b8')).toBe(`/vehicles/tesla_model_y_quicksilver.png?v=${v}`)
 
-    // Mapped photo for BMW M4 Coupe
-    expect(resolveVehiclePhoto('2019 BMW M4 Coupe')).toBe(`/vehicles/bmw_m4_coupe_alpine_white.png?v=${v}`)
-    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#1e293b')).toBe(`/vehicles/bmw_m4_coupe_black_sapphire.png?v=${v}`)
-    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#1d4ed8')).toBe(`/vehicles/bmw_m4_coupe_san_marino_blue.png?v=${v}`)
+    // Mapped photo for BMW M4 Coupe (authentic OEM cut-out)
+    expect(resolveVehiclePhoto('2019 BMW M4 Coupe')).toBe(`/vehicles/bmw_m4_coupe_yas_marina_blue.png?v=${v}`)
     expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#5c9dc0')).toBe(`/vehicles/bmw_m4_coupe_yas_marina_blue.png?v=${v}`)
-    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#eab308')).toBe(`/vehicles/bmw_m4_coupe_austin_yellow.png?v=${v}`)
-    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#a8322d')).toBe(`/vehicles/bmw_m4_coupe_sakhir_orange.png?v=${v}`)
-    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#484b50')).toBe(`/vehicles/bmw_m4_coupe_mineral_grey.png?v=${v}`)
+    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#1e293b')).toBe(`/vehicles/bmw_m4_coupe_yas_marina_blue.png?v=${v}`)
+
+    // Mapped photo for Ford F-150 and Toyota Camry
+    expect(resolveVehiclePhoto('2022 Ford F-150')).toBe(`/vehicles/ford_f150_oxford_white.png?v=${v}`)
+    expect(resolveVehiclePhoto('2021 Toyota Camry')).toBe(`/vehicles/toyota_camry_celestial_silver.png?v=${v}`)
 
     // Mapped photo for Toyota RAV4 and Crossover SUVs
     expect(resolveVehiclePhoto('2024 Toyota RAV4')).toBe(`/vehicles/toyota_rav4_wind_chill_pearl.png?v=${v}`)

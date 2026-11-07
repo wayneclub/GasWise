@@ -460,7 +460,7 @@ function parseHexRgb(hex: string): [number, number, number] | null {
   return null
 }
 
-export const VEHICLE_IMAGE_CACHE_VERSION = '20261107_v3_clean'
+export const VEHICLE_IMAGE_CACHE_VERSION = '20261107_v4_perfect'
 
 /**
  * Resolves color-accurate, transparent cut-out photograph for the 2018 Mercedes-Benz E400 Coupe.
@@ -581,70 +581,12 @@ export function resolveTeslaColorPhoto(model: 'model_3' | 'model_y', color?: str
 }
 
 /**
- * Resolves color-accurate, transparent cut-out photograph for BMW M4 Coupe and 4 Series.
+ * Resolves authentic transparent cut-out photograph for BMW M4 Coupe and 4 Series.
+ * Strictly uses authentic OEM photography with BiRefNet background removal; never synthetic recoloring.
  */
-export function resolveBmwM4ColorPhoto(color?: string | null): string {
+export function resolveBmwM4ColorPhoto(_color?: string | null): string {
   const versionParam = `?v=${VEHICLE_IMAGE_CACHE_VERSION}`
-  if (!color || color === '#ffffff' || color === '#fff' || color === '#faf9fb' || color === '#f8fafc') {
-    return `/vehicles/bmw_m4_coupe_alpine_white.png${versionParam}`
-  }
-  const norm = color.toLowerCase().trim()
-
-  const PRESET_FILES: Record<string, string> = {
-    '#faf9fb': 'alpine_white',
-    '#f8fafc': 'alpine_white',
-    '#ffffff': 'alpine_white',
-    '#f0f0ee': 'mineral_white',
-    '#121417': 'black_sapphire',
-    '#0f172a': 'black_sapphire',
-    '#111827': 'black_sapphire',
-    '#1a1f2c': 'black_sapphire',
-    '#1e293b': 'black_sapphire',
-    '#484b50': 'mineral_grey',
-    '#475569': 'mineral_grey',
-    '#4b5563': 'mineral_grey',
-    '#374151': 'mineral_grey',
-    '#525a65': 'mineral_grey',
-    '#b8c3cc': 'silverstone',
-    '#94a3b8': 'silverstone',
-    '#a8b0b8': 'silverstone',
-    '#cbd5e1': 'silverstone',
-    '#5c9dc0': 'yas_marina_blue',
-    '#38bdf8': 'yas_marina_blue',
-    '#1c3b72': 'san_marino_blue',
-    '#1e3a8a': 'san_marino_blue',
-    '#1d4ed8': 'san_marino_blue',
-    '#1b2a47': 'san_marino_blue',
-    '#d2b134': 'austin_yellow',
-    '#eab308': 'austin_yellow',
-    '#a8322d': 'sakhir_orange',
-    '#991b1b': 'sakhir_orange',
-    '#dc2626': 'sakhir_orange',
-    '#b91c1c': 'sakhir_orange',
-    '#ea580c': 'sakhir_orange',
-  }
-
-  if (PRESET_FILES[norm]) {
-    return `/vehicles/bmw_m4_coupe_${PRESET_FILES[norm]}.png${versionParam}`
-  }
-
-  const rgb = parseHexRgb(norm)
-  if (!rgb) {
-    return `/vehicles/bmw_m4_coupe_alpine_white.png${versionParam}`
-  }
-
-  let bestPreset = 'black_sapphire'
-  let minDistance = Infinity
-  for (const preset of BMW_M4_F82_COLOR_PRESETS) {
-    const pRgb = parseHexRgb(preset.hex)
-    if (!pRgb) continue
-    const dist = (rgb[0] - pRgb[0]) ** 2 + (rgb[1] - pRgb[1]) ** 2 + (rgb[2] - pRgb[2]) ** 2
-    if (dist < minDistance) {
-      minDistance = dist
-      bestPreset = preset.id
-    }
-  }
-  return `/vehicles/bmw_m4_coupe_${bestPreset}.png${versionParam}`
+  return `/vehicles/bmw_m4_coupe_yas_marina_blue.png${versionParam}`
 }
 
 /**
@@ -750,6 +692,18 @@ export function resolveVehiclePhoto(
     (/\b(toyota|honda|nissan|hyundai|subaru|kia|mazda)\b/i.test(s) && /\b(suv|crossover)\b/i.test(s))
   ) {
     return resolveToyotaColorPhoto(color)
+  }
+  if (
+    /\b(f-?150|f-?250|f-?350|raptor|f-series)\b/i.test(s) ||
+    (/\bford\b/i.test(s) && /\b(truck|pickup)\b/i.test(s))
+  ) {
+    return `/vehicles/ford_f150_oxford_white.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  }
+  if (
+    /\b(camry|avalon|corolla\s+sedan)\b/i.test(s) ||
+    (/\btoyota\b/i.test(s) && /\b(sedan)\b/i.test(s))
+  ) {
+    return `/vehicles/toyota_camry_celestial_silver.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
   }
   return null
 }

@@ -91,6 +91,33 @@ def clean_license_plates(arr: np.ndarray) -> np.ndarray:
     return arr
 
 
+def detect_facing_left(crop_arr: np.ndarray) -> bool:
+    """Intelligently detects whether vehicle already faces left (front on left, rear on right)."""
+    alpha = crop_arr[:, :, 3] > 20
+    h, w = alpha.shape
+    r, g, b = crop_arr[:, :, 0], crop_arr[:, :, 1], crop_arr[:, :, 2]
+    
+    # 1. Red taillight concentration check
+    red_mask = (r > 160) & (g < 60) & (b < 60) & (crop_arr[:, :, 3] > 100)
+    red_left = red_mask[:, :w // 2].sum()
+    red_right = red_mask[:, w // 2:].sum()
+    if red_right > red_left + 150:
+        return True   # Taillights on right -> faces left
+    if red_left > red_right + 150:
+        return False  # Taillights on left -> faces right
+
+    # 2. Top-contour slope check (hood is typically lower/sloped compared to rear roof/trunk)
+    col_tops = []
+    for x in range(w):
+        ys = np.where(alpha[:, x])[0]
+        col_tops.append(ys.min() if len(ys) > 0 else h)
+    col_tops = np.array(col_tops)
+    left_top = col_tops[:int(w * 0.15)].mean()
+    right_top = col_tops[int(w * 0.85):].mean()
+    # If left_top > right_top (left hood is lower down in pixel coordinates), car faces left
+    return bool(left_top > right_top)
+
+
 def process_intelligent_cutout(raw_img: Image.Image, model, device, facing_left: bool = True) -> Image.Image:
     w, h = raw_img.size
     transform = transforms.Compose([
@@ -127,8 +154,10 @@ def process_intelligent_cutout(raw_img: Image.Image, model, device, facing_left:
 
     crop = cleaned_img.crop((x_idxs.min(), y_idxs.min(), x_idxs.max() + 1, y_idxs.max() + 1))
 
-    # 5. Flip heading to face left uniformly
-    if facing_left:
+    # 5. Flip heading to face left uniformly if not already facing left
+    crop_arr = np.array(crop)
+    is_left = detect_facing_left(crop_arr)
+    if facing_left and not is_left:
         crop = crop.transpose(Image.FLIP_LEFT_RIGHT)
 
     # 6. Standardize scale and ground baseline
