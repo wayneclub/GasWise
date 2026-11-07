@@ -1,0 +1,12 @@
+name: Test Self-Hosted Runner
+on:
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: self-hosted
+    steps:
+      - name: Verify runner
+        run: |
+          echo "Self-hosted runner is working!"
+          hostname
+          docker --version
