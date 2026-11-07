@@ -122,6 +122,12 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
     expect(resolveVehiclePhoto('2023 Tesla Model Y', null, '#0f172a')).toBe(`/vehicles/tesla_model_y_solid_black.png?v=${v}`)
     expect(resolveVehiclePhoto('Tesla Model Y', null, '#94a3b8')).toBe(`/vehicles/tesla_model_y_quicksilver.png?v=${v}`)
 
+    // Mapped photo for BMW M4 Coupe
+    expect(resolveVehiclePhoto('2019 BMW M4 Coupe')).toBe(`/vehicles/bmw_m4_coupe_alpine_white.png?v=${v}`)
+    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#1e293b')).toBe(`/vehicles/bmw_m4_coupe_black_sapphire.png?v=${v}`)
+    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#1d4ed8')).toBe(`/vehicles/bmw_m4_coupe_portimao_blue.png?v=${v}`)
+    expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#eab308')).toBe(`/vehicles/bmw_m4_coupe_austin_yellow.png?v=${v}`)
+
     // Unmapped vehicle returns null
     expect(resolveVehiclePhoto('2019 Honda Civic EX')).toBe(null)
   })

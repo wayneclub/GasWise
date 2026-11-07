@@ -397,6 +397,66 @@ export function resolveTeslaColorPhoto(model: 'model_3' | 'model_y', color?: str
 }
 
 /**
+ * Resolves color-accurate, transparent cut-out photograph for BMW M4 Coupe and 4 Series.
+ */
+export function resolveBmwM4ColorPhoto(color?: string | null): string {
+  const versionParam = `?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  if (!color || color === '#ffffff' || color === '#fff' || color === '#f8fafc') {
+    return `/vehicles/bmw_m4_coupe_alpine_white.png${versionParam}`
+  }
+  const norm = color.toLowerCase().trim()
+
+  const PRESET_FILES: Record<string, string> = {
+    '#f8fafc': 'alpine_white',
+    '#ffffff': 'alpine_white',
+    '#0f172a': 'black_sapphire',
+    '#111827': 'black_sapphire',
+    '#1a1f2c': 'black_sapphire',
+    '#1e293b': 'black_sapphire',
+    '#4b5563': 'skyscraper_grey',
+    '#374151': 'skyscraper_grey',
+    '#525a65': 'skyscraper_grey',
+    '#475569': 'skyscraper_grey',
+    '#94a3b8': 'brooklyn_grey',
+    '#a8b0b8': 'brooklyn_grey',
+    '#cbd5e1': 'brooklyn_grey',
+    '#1d4ed8': 'portimao_blue',
+    '#1e3a8a': 'portimao_blue',
+    '#1b2a47': 'portimao_blue',
+    '#166534': 'isle_of_man_green',
+    '#15803d': 'isle_of_man_green',
+    '#3f4f3e': 'isle_of_man_green',
+    '#991b1b': 'melbourne_red',
+    '#7a1c27': 'melbourne_red',
+    '#dc2626': 'melbourne_red',
+    '#b91c1c': 'melbourne_red',
+    '#eab308': 'austin_yellow',
+  }
+
+  if (PRESET_FILES[norm]) {
+    return `/vehicles/bmw_m4_coupe_${PRESET_FILES[norm]}.png${versionParam}`
+  }
+
+  const rgb = parseHexRgb(norm)
+  if (!rgb) {
+    return `/vehicles/bmw_m4_coupe_alpine_white.png${versionParam}`
+  }
+
+  let bestPreset = 'alpine_white'
+  let minDistance = Infinity
+  for (const preset of BMW_COLOR_PRESETS) {
+    const pRgb = parseHexRgb(preset.hex)
+    if (!pRgb) continue
+    const dist = (rgb[0] - pRgb[0]) ** 2 + (rgb[1] - pRgb[1]) ** 2 + (rgb[2] - pRgb[2]) ** 2
+    if (dist < minDistance) {
+      minDistance = dist
+      bestPreset = preset.id
+    }
+  }
+  return `/vehicles/bmw_m4_coupe_${bestPreset}.png${versionParam}`
+}
+
+/**
  * Resolves an authentic vehicle photo URL if available or set.
  */
 export function resolveVehiclePhoto(
@@ -428,6 +488,9 @@ export function resolveVehiclePhoto(
   }
   if ((/\btesla\b/i.test(s) && /\b(model\s*y|my)\b/i.test(s)) || /\bmodel\s*y\b/i.test(s)) {
     return resolveTeslaColorPhoto('model_y', color)
+  }
+  if (/\b(bmw\s+m4|m4\s+coupe|m4|430i|m440i)\b/i.test(s) || (/\bbmw\b/i.test(s) && /\b(m4|4\s*series)\b/i.test(s))) {
+    return resolveBmwM4ColorPhoto(color)
   }
   return null
 }
