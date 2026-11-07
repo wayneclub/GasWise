@@ -457,6 +457,65 @@ export function resolveBmwM4ColorPhoto(color?: string | null): string {
 }
 
 /**
+ * Resolves color-accurate, transparent cut-out photograph for Toyota RAV4 and Crossover SUVs.
+ */
+export function resolveToyotaColorPhoto(color?: string | null): string {
+  const versionParam = `?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  if (!color || color === '#ffffff' || color === '#fff' || color === '#f8fafc') {
+    return `/vehicles/toyota_rav4_wind_chill_pearl.png${versionParam}`
+  }
+  const norm = color.toLowerCase().trim()
+
+  const PRESET_FILES: Record<string, string> = {
+    '#f8fafc': 'wind_chill_pearl',
+    '#ffffff': 'wind_chill_pearl',
+    '#111827': 'midnight_black',
+    '#0f172a': 'midnight_black',
+    '#1a1f2c': 'midnight_black',
+    '#1e293b': 'midnight_black',
+    '#4b5563': 'magnetic_gray',
+    '#374151': 'magnetic_gray',
+    '#525a65': 'magnetic_gray',
+    '#475569': 'magnetic_gray',
+    '#cbd5e1': 'celestial_silver',
+    '#94a3b8': 'celestial_silver',
+    '#a8b0b8': 'celestial_silver',
+    '#1d4ed8': 'blueprint',
+    '#1e3a8a': 'blueprint',
+    '#1b2a47': 'blueprint',
+    '#991b1b': 'ruby_flare',
+    '#7a1c27': 'ruby_flare',
+    '#dc2626': 'ruby_flare',
+    '#b91c1c': 'ruby_flare',
+    '#3f4f3e': 'army_green',
+    '#166534': 'army_green',
+    '#15803d': 'army_green',
+  }
+
+  if (PRESET_FILES[norm]) {
+    return `/vehicles/toyota_rav4_${PRESET_FILES[norm]}.png${versionParam}`
+  }
+
+  const rgb = parseHexRgb(norm)
+  if (!rgb) {
+    return `/vehicles/toyota_rav4_wind_chill_pearl.png${versionParam}`
+  }
+
+  let bestPreset = 'wind_chill_pearl'
+  let minDistance = Infinity
+  for (const preset of TOYOTA_COLOR_PRESETS) {
+    const pRgb = parseHexRgb(preset.hex)
+    if (!pRgb) continue
+    const dist = (rgb[0] - pRgb[0]) ** 2 + (rgb[1] - pRgb[1]) ** 2 + (rgb[2] - pRgb[2]) ** 2
+    if (dist < minDistance) {
+      minDistance = dist
+      bestPreset = preset.id
+    }
+  }
+  return `/vehicles/toyota_rav4_${bestPreset}.png${versionParam}`
+}
+
+/**
  * Resolves an authentic vehicle photo URL if available or set.
  */
 export function resolveVehiclePhoto(
@@ -489,8 +548,17 @@ export function resolveVehiclePhoto(
   if ((/\btesla\b/i.test(s) && /\b(model\s*y|my)\b/i.test(s)) || /\bmodel\s*y\b/i.test(s)) {
     return resolveTeslaColorPhoto('model_y', color)
   }
-  if (/\b(bmw\s+m4|m4\s+coupe|m4|430i|m440i)\b/i.test(s) || (/\bbmw\b/i.test(s) && /\b(m4|4\s*series)\b/i.test(s))) {
+  if (
+    /\b(bmw\s+m4|m4\s+coupe|m4|430i|m440i)\b/i.test(s) ||
+    (/\bbmw\b/i.test(s) && /\b(m4|4\s*series|3\s*series|330i|m340i|m3)\b/i.test(s))
+  ) {
     return resolveBmwM4ColorPhoto(color)
+  }
+  if (
+    /\b(rav4|cr-?v|rogue|tucson|forester|crosstrek|sportage|cx-?5|equinox|highlander|rx\s?350|nx\s?350)\b/i.test(s) ||
+    (/\b(toyota|honda|nissan|hyundai|subaru|kia|mazda)\b/i.test(s) && /\b(suv|crossover)\b/i.test(s))
+  ) {
+    return resolveToyotaColorPhoto(color)
   }
   return null
 }

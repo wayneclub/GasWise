@@ -128,6 +128,13 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
     expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#1d4ed8')).toBe(`/vehicles/bmw_m4_coupe_portimao_blue.png?v=${v}`)
     expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#eab308')).toBe(`/vehicles/bmw_m4_coupe_austin_yellow.png?v=${v}`)
 
+    // Mapped photo for Toyota RAV4 and Crossover SUVs
+    expect(resolveVehiclePhoto('2024 Toyota RAV4')).toBe(`/vehicles/toyota_rav4_wind_chill_pearl.png?v=${v}`)
+    expect(resolveVehiclePhoto('Toyota RAV4', null, '#111827')).toBe(`/vehicles/toyota_rav4_midnight_black.png?v=${v}`)
+    expect(resolveVehiclePhoto('Toyota RAV4', null, '#1d4ed8')).toBe(`/vehicles/toyota_rav4_blueprint.png?v=${v}`)
+    expect(resolveVehiclePhoto('Toyota RAV4', null, '#3f4f3e')).toBe(`/vehicles/toyota_rav4_army_green.png?v=${v}`)
+    expect(resolveVehiclePhoto('2022 Honda CR-V', null, '#991b1b')).toBe(`/vehicles/toyota_rav4_ruby_flare.png?v=${v}`)
+
     // Unmapped vehicle returns null
     expect(resolveVehiclePhoto('2019 Honda Civic EX')).toBe(null)
   })
