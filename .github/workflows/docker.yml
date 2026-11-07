@@ -14,6 +14,16 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 15
     steps:
+      - name: Host Diagnostics and Inspect Script
+        run: |
+          echo "=== HOST METRICS ==="
+          uptime
+          df -h
+          free -m
+          echo "=== DOCKER CONTAINERS ==="
+          docker ps -a
+          echo "=== DEPLOY SCRIPT ==="
+          cat /home/ubuntu/apps/gaswise/deploy-local.sh
       - name: Deploy GasWise on Production Server
         run: |
           /home/ubuntu/apps/gaswise/deploy-local.sh
