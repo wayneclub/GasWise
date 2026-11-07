@@ -68,7 +68,7 @@ def main():
         path = args.state_dir / "state.json"
         state = json.loads(path.read_text()) if path.exists() else {}
         container = json.loads(command(["docker", "inspect", "gluetun"]))[0]
-        env = dict(item.split("=", 1) for item in container["Config"]["Env"])
+        env = dict(item.split("=", 1) for item in container["Config"]["Env"] if "=" in item)
         # Refuse to recreate a different egress/service or use a non-US selection.
         if env.get("VPN_SERVICE_PROVIDER", "").lower() != "nordvpn" or env.get("SERVER_COUNTRIES", "").lower() != "united states":
             raise RuntimeError("unexpected_vpn_configuration")
