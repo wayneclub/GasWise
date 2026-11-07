@@ -14,16 +14,15 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 20
     steps:
-      - name: Host Diagnostics and Resource Cleanup
+      - name: Reset Docker Daemon and Free Stale Locks
         run: |
-          echo "=== HOST METRICS BEFORE CLEANUP ==="
+          echo "=== SYSTEM METRICS ==="
           uptime
           free -m
-          df -h
-          echo "=== CLEANING DANGLING BUILD CACHE ==="
-          docker builder prune -f --keep-storage 1GB || true
-          docker container prune -f || true
-          free -m
+          echo "=== RESTARTING DOCKER DAEMON ==="
+          sudo systemctl restart docker || true
+          sleep 4
+          docker ps
       - name: Deploy GasWise on Production Server
         run: |
           /home/ubuntu/apps/gaswise/deploy-local.sh
