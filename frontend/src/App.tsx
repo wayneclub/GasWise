@@ -78,7 +78,18 @@ function ServiceTabs({ prefs, update, replace }: { prefs: Prefs; update: (change
     <div role="tabpanel" id="panel-fuel" aria-labelledby="tab-fuel" hidden={settingsOpen || tab !== 'fuel'}><Decide active={!settingsOpen && tab === 'fuel'} prefs={prefs} update={update} onSettings={() => setSettingsView('all')} onEditCar={handleNavigateToGarage} /></div>
     <div role="tabpanel" id="panel-parts" aria-labelledby="tab-parts" hidden={settingsOpen || tab !== 'parts'}>
       <Suspense fallback={null}>
-        <Parts key={prefs.vehicle?.id ?? 'manual'} vehicle={prefs.vehicle} onChooseCar={() => { setTab('my'); setSettingsView(null) }} />
+        <Parts
+          vehicle={prefs.vehicle}
+          garage={prefs.garage && prefs.garage.length > 0 ? prefs.garage : (prefs.vehicle ? [prefs.vehicle] : [])}
+          onSelectVehicle={(car) =>
+            update({
+              vehicle: car,
+              fuelType: car.fuelType,
+              mpg: car.combinedMpg,
+            })
+          }
+          onChooseCar={() => { setTab('my'); setSettingsView(null) }}
+        />
       </Suspense>
     </div>
     <div role="tabpanel" id="panel-my" aria-labelledby="tab-my" hidden={settingsOpen || tab !== 'my'}>

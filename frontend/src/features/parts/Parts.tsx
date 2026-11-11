@@ -24,6 +24,7 @@ import { useVehicleIdentity, type VehicleIdentity } from '../../lib/vehicleIdent
 import { validIdentity } from '../../lib/identity'
 import { IdentityFields } from '../setup/IdentityFields'
 import { VehicleThumbnail } from '../my/VehicleThumbnail'
+import { GarageVehicleSwitcher } from '../my/GarageVehicleSwitcher'
 
 import { safeProductLink, isAmazonProduct } from '../../lib/partsLinks'
 
@@ -68,7 +69,17 @@ const CATEGORIES: readonly { id: PartCategory; label: MessageKey }[] = [
   { id: 'chassis', label: 'parts.catChassis' },
 ]
 
-export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; onChooseCar: () => void }) {
+export function Parts({
+  vehicle,
+  garage = [],
+  onSelectVehicle,
+  onChooseCar,
+}: {
+  vehicle: SavedVehicle | null
+  garage?: SavedVehicle[]
+  onSelectVehicle?: (car: SavedVehicle) => void
+  onChooseCar: () => void
+}) {
   const { t } = useI18n()
   const { identity, setIdentity, setVehicleIdentity } = useVehicleIdentity()
   const [settingIdentity, setSettingIdentity] = useState(false)
@@ -84,6 +95,11 @@ export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; 
   const controller = useRef<AbortController | null>(null)
   useEffect(() => () => controller.current?.abort(), [])
   const invalidate = () => { controller.current?.abort(); setPending(false); setResult(null); setSearchResult(null); setError(false) }
+
+  useEffect(() => {
+    setSettingIdentity(false)
+    setInlineIdentity({ kind: 'vin', value: { vin: '' } })
+  }, [vehicle?.id])
   async function search() {
     controller.current?.abort()
     const abort = new AbortController()
@@ -110,6 +126,17 @@ export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; 
     <h1 className="text-2xl font-semibold tracking-tight">{t('parts.title')}</h1>
     {identity ? <p className="mt-2 text-sm leading-relaxed text-muted">{t(mode === 'search' ? 'parts.searchLead' : 'parts.productLead')}</p> : null}
     {!identity ? <section className="mt-6 rounded-box border border-line bg-surface p-6 sm:p-8">
+      {garage.length > 0 && onSelectVehicle ? (
+        <div className="mb-6 pb-5 border-b border-line/60">
+          <GarageVehicleSwitcher
+            garage={garage}
+            activeVehicleId={vehicle?.id}
+            onSelectVehicle={onSelectVehicle}
+            onManageGarage={onChooseCar}
+            showIdentity
+          />
+        </div>
+      ) : null}
       {vehicle ? (
         <div className="mb-4">
           <VehicleThumbnail
@@ -178,7 +205,17 @@ export function Parts({ vehicle, onChooseCar }: { vehicle: SavedVehicle | null; 
     <details open={!result && !searchResult} className="mt-5 rounded-box border border-line bg-surface p-5">
       <summary className="cursor-pointer text-sm font-medium">{t('parts.edit')}</summary>
       <div className="mt-4">
-      {vehicle ? (
+      {garage.length > 0 && onSelectVehicle ? (
+        <div className="mb-5 pb-4 border-b border-line/60">
+          <GarageVehicleSwitcher
+            garage={garage}
+            activeVehicleId={vehicle?.id}
+            onSelectVehicle={onSelectVehicle}
+            onManageGarage={onChooseCar}
+            showIdentity
+          />
+        </div>
+      ) : vehicle ? (
         <div className="flex items-center gap-3">
           <VehicleThumbnail
             label={vehicle.label}
