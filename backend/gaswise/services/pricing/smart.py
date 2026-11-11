@@ -25,6 +25,7 @@ from gaswise.domain.ports import (
     PriceSnapshot,
     ProgressiveSearchCapacityExceeded,
     ProviderError,
+    ProviderUnavailableError,
     SmartRoutingNotConfiguredError,
     SnapshotExpiredError,
     SnapshotNoRoutesError,
@@ -45,7 +46,9 @@ from gaswise.domain.pricing.shared_cache import background_acquisition
 from gaswise.domain.pricing.top_tier import tag_top_tier
 from gaswise.domain.vehicles.fuel_policy import check_vehicle_fuel, resolve_fuel_query
 from gaswise.services.pricing.cache import TTLCache
+from gaswise.services.pricing.circuit_breaker import CircuitBreakerRegistry
 from gaswise.services.pricing.discovery import acquire, acquired
+from gaswise.services.pricing.progressive import ProgressiveSearchManager
 from gaswise.services.pricing.regional import address_region, benchmarks, match_benchmark
 from gaswise.services.pricing.search import SearchService
 from gaswise.services.pricing.shared_cache import cache_observations
@@ -159,10 +162,21 @@ class SmartService:
         self.cache = TTLCache()
         self.failures = TTLCache(capacity=64)
         self.source_failures = TTLCache(capacity=16)
+        self.circuit_breakers = CircuitBreakerRegistry(failure_threshold=3, recovery_timeout=30.0)
         self.signer = SnapshotSigner(secret)
-        self.progressive_jobs = {}
-        self.progressive_tasks = set()
-        self.progressive_slots = asyncio.Semaphore(8)
+        self.progressive = ProgressiveSearchManager(self)
+
+    @property
+    def progressive_jobs(self):
+        return self.progressive.jobs
+
+    @property
+    def progressive_tasks(self):
+        return self.progressive.tasks
+
+    @property
+    def progressive_slots(self):
+        return self.progressive.slots
 
     def sign(self, snapshot):
         return self.signer.sign(snapshot)
@@ -171,135 +185,22 @@ class SmartService:
         return await self.coalesce("search:" + query.model_dump_json(), lambda: self.collect(query))
 
     def _progressive_state(self, job):
-        return ProgressiveSearchState(**{key: value for key, value in job.items() if key != "updated_at"})
+        return self.progressive._state(job)
 
     def _prune_progressive_jobs(self):
-        cutoff = monotonic() - 300
-        for job_id in [key for key, job in self.progressive_jobs.items() if job["updated_at"] < cutoff]:
-            self.progressive_jobs.pop(job_id, None)
+        self.progressive.prune()
 
     async def start_progressive_search(self, query):
-        self._prune_progressive_jobs()
-        active = sum(job["status"] in {"pending", "partial"} for job in self.progressive_jobs.values())
-        if active >= 8:
-            raise ProgressiveSearchCapacityExceeded()
-        if len(self.progressive_jobs) >= 100:
-            terminal = next(
-                (key for key, job in self.progressive_jobs.items() if job["status"] in {"complete", "failed"}),
-                None,
-            )
-            if terminal is not None:
-                self.progressive_jobs.pop(terminal)
-        job_id = secrets.token_urlsafe(24)
-        job = {
-            "job_id": job_id,
-            "status": "pending",
-            "revision": 0,
-            "completed_sources": [],
-            "result": None,
-            "error": None,
-            "updated_at": monotonic(),
-        }
-        self.progressive_jobs[job_id] = job
-        task = asyncio.create_task(self._run_progressive_search(job, query))
-        self.progressive_tasks.add(task)
-        task.add_done_callback(self.progressive_tasks.discard)
-        return self._progressive_state(job)
+        return await self.progressive.start(query)
 
     async def poll_progressive_search(self, job_id):
-        self._prune_progressive_jobs()
-        job = self.progressive_jobs.get(job_id)
-        return self._progressive_state(job) if job is not None else None
+        return await self.progressive.poll(job_id)
 
     async def _run_progressive_search(self, job, query):
-        try:
-            async with self.progressive_slots:
-                if self.demo is not None:
-                    result = await self.search(query)
-                    job.update(status="complete", revision=1, completed_sources=["synthetic"], result=result, updated_at=monotonic())
-                    return
-                sources = [name for name, provider in (("gasbuddy", self.gasbuddy), ("maps", self.maps_web), ("waze", self.waze)) if provider is not None]
-                source_query = query
-
-                async def collect_source(source):
-                    try:
-                        return source, await self.collect(source_query, sources={source})
-                    except ProviderError:
-                        return source, None
-
-                tasks = [asyncio.create_task(collect_source(source)) for source in sources]
-                results = []
-                try:
-                    for completed in asyncio.as_completed(tasks):
-                        source, result = await completed
-                        job["completed_sources"].append(source)
-                        if result is not None:
-                            results.append(result)
-                            merged = await self._merge_progressive_results(results)
-                            job.update(
-                                status="partial" if len(job["completed_sources"]) < len(sources) else "complete",
-                                revision=job["revision"] + 1,
-                                result=merged,
-                                updated_at=monotonic(),
-                            )
-                finally:
-                    for task in tasks:
-                        if not task.done():
-                            task.cancel()
-                    await asyncio.gather(*tasks, return_exceptions=True)
-                if job["result"] is None:
-                    job.update(status="failed", error="smart_price_sources_unavailable", updated_at=monotonic())
-                elif len(job["completed_sources"]) == len(sources):
-                    job.update(status="complete", updated_at=monotonic())
-        except asyncio.CancelledError:
-            raise
-        except Exception:
-            job.update(status="failed", error="progressive_search_failed", updated_at=monotonic())
+        return await self.progressive._run_search(job, query)
 
     async def _merge_progressive_results(self, results):
-        newest = results[-1]
-        snapshot = newest.snapshot.model_copy(deep=True)
-        snapshot.discovery_metrics = {key: value for result in results
-                                      for key, value in result.snapshot.discovery_metrics.items()}
-        stations = {}
-        statuses = {}
-        inventory = {}
-        warnings = []
-        unlocated = {}
-        upstream_calls = {}
-        cache_hits = 0
-        for result in results:
-            cache_hits += result.cache_hits
-            for key, value in result.upstream_calls.items():
-                upstream_calls[key] = upstream_calls.get(key, 0) + value
-            for station in result.snapshot.stations:
-                key = (station.source, station.id, station.payment_type, station.price_per_gallon)
-                stations[key] = station
-            for status in result.snapshot.source_statuses:
-                statuses[status.source] = status
-            for item in result.snapshot.inventory:
-                inventory[item.place_id] = item
-            for warning in result.snapshot.warnings:
-                if warning not in warnings:
-                    warnings.append(warning)
-            for quote in result.snapshot.unlocated_gasbuddy:
-                unlocated[quote.id] = quote
-        snapshot = snapshot.model_copy(update={
-            "stations": list(stations.values()),
-            "source_statuses": list(statuses.values()),
-            "inventory": list(inventory.values()),
-            "warnings": warnings,
-            "unlocated_gasbuddy": list(unlocated.values()),
-        })
-        ranking = await self.rank(snapshot, snapshot.query) if snapshot.baseline is not None else None
-        return SmartResult(
-            snapshot=snapshot,
-            signature=self.sign(snapshot),
-            ranking=ranking,
-            cache_hits=cache_hits,
-            upstream_calls=upstream_calls,
-            timings_ms={"total": max(result.timings_ms.get("total", 0) for result in results)},
-        )
+        return await self.progressive.merge_results(results)
 
     async def cached(self, key, operation, seconds=90, refresh=False):
         source = key.split(":", 1)[0]
@@ -327,6 +228,12 @@ class SmartService:
         shared = key in self.inflight
 
         async def guarded_operation():
+            if not self.circuit_breakers.can_execute(source):
+                breaker = self.circuit_breakers.get(source)
+                error_msg = breaker.last_error or f"{source}_circuit_open"
+                error = ProviderUnavailableError(error_msg)
+                error.cache_hit = True
+                raise error
             failure = self.source_failures.get(source)
             if failure:
                 error = ProviderError(failure)
@@ -342,10 +249,12 @@ class SmartService:
                     async with source_slot:
                         value = await guarded_operation()
             except ProviderError as error:
+                self.circuit_breakers.record_failure(source, error)
                 if error.is_rate_limited:
                     self.source_failures.put(source, str(error), 30)
                 self.failures.put(key, str(error), 30)
                 raise
+            self.circuit_breakers.record_success(source)
             self.failures.entries.pop(key, None)
             self.cache.put(key, value, seconds)
             return value
@@ -387,12 +296,8 @@ class SmartService:
                 self.inflight.pop(key, None)
 
     async def close(self):
-        progressive_tasks = list(self.progressive_tasks)
-        for task in progressive_tasks:
-            task.cancel()
-        await asyncio.gather(*progressive_tasks, return_exceptions=True)
-        self.progressive_tasks.clear()
-        self.progressive_jobs.clear()
+        await self.progressive.close()
+        self.circuit_breakers.clear()
         if self.shared_cache is not None:
             await self.shared_cache.close()
         tasks = list(self.inflight.values())
@@ -403,7 +308,6 @@ class SmartService:
         self.cache.clear()
         self.failures.clear()
         self.source_failures.clear()
-        self.failures.clear()
 
     async def collect(self, query, vehicle_override=None, sources=None):
         token = cache_observations.set({})
