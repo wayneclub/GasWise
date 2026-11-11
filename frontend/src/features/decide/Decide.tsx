@@ -190,11 +190,11 @@ export function Decide({
             </p>
           ) : null}
 
-          {phase === 'searching' || phase === 'idle' || (phase === 'locating' && !result) ? (
+          {!result && (phase === 'searching' || phase === 'idle' || phase === 'locating') ? (
             <PickSkeleton label={phase === 'searching' ? t('decide.searching') : t('decide.locating')} />
           ) : phase === 'error' && error?.kind === 'location' ? (
             null
-          ) : phase === 'error' && error ? (
+          ) : phase === 'error' && error && !result ? (
             <ErrorState
               key={error.at}
               error={error}
@@ -204,7 +204,7 @@ export function Decide({
               onDemoLocation={import.meta.env.DEV ? () => void start({ override: DOWNTOWN_LA }) : undefined}
             />
           ) : result && assessment && hero ? (
-            <div className={`transition-opacity ${session.reranking ? 'opacity-60' : ''}`} aria-busy={session.reranking}>
+            <div className={`transition-opacity ${session.reranking || session.refreshing ? 'opacity-70' : ''}`} aria-busy={session.reranking || session.refreshing}>
               <HeroPick
                 pick={hero}
                 assessment={assessment}
@@ -216,10 +216,10 @@ export function Decide({
               />
             </div>
           ) : null}
-          {result && phase === 'ready' ? <SearchFallback result={result} completing={session.completing} radius={prefs.searchRadiusMiles ?? 5} navApp={prefs.navApp} onRadius={searchRadiusMiles => update({ searchRadiusMiles })} onRetry={() => void session.refresh()} /> : null}
+          {result ? <SearchFallback result={result} completing={session.completing} radius={prefs.searchRadiusMiles ?? 5} navApp={prefs.navApp} onRadius={searchRadiusMiles => update({ searchRadiusMiles })} onRetry={() => void session.refresh()} /> : null}
         </div>
 
-        {(phase === 'ready' || phase === 'locating') && result ? (
+        {result ? (
           <div className="contents">
             <div className="min-w-0">
             <Leaderboards result={result} primary={primary} onStrategyChange={strategy=>update({preference:strategy==='cheapest_overall'?'money':strategy==='fastest_stop'?'time':'balanced'})} navApp={prefs.navApp} tripMode={prefs.tripMode} />

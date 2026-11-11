@@ -97,7 +97,7 @@ class Settings(BaseSettings):
     vehicle_specifications_transport: Literal["curl", "httpx"] = "curl"
     cors_origins: list[str] = ["http://localhost:5173"]
     refresh_seconds: int = Field(default=300, ge=60, le=3600)
-    max_concurrent_searches: int = Field(default=2, ge=1, le=20)
+    max_concurrent_searches: int = Field(default=6, ge=1, le=20)
 
     @model_validator(mode="after")
     def expand_collection_preset(self):

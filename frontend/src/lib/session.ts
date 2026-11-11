@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, api } from '../api/client'
 import type { RankOptions, SmartResult, SmartSearchBody } from '../api/types'
-import { type Prefs } from './prefs'
+import { effectiveFuel, type Prefs } from './prefs'
 import { clearFuelSession, loadFuelSession, saveFuelSession } from './fuelSessionStorage'
 
 export interface Origin {
@@ -22,6 +22,7 @@ function rankOptions(prefs: Prefs): Partial<RankOptions> {
   return {
     strategy: prefs.preference === 'money' ? 'cheapest_overall' : prefs.preference === 'time' ? 'fastest_stop' : 'best_value',
     gallons: String(prefs.gallons),
+    ...(!prefs.vehicle && prefs.mpg ? { mpg: String(prefs.mpg) } : {}),
     payment_type: prefs.payment,
     credit_cashback_percent: prefs.creditCashbackPercent || '0',
     memberships: prefs.costco ? ['costco'] : [],
@@ -55,7 +56,7 @@ export function searchBody(prefs: Prefs, origin: Origin): SmartSearchBody {
     ...(prefs.tripMode === 'on_route' && prefs.destination ? { destination: prefs.destination } : {}),
     ...(prefs.vehicle
       ? { vehicle_id: prefs.vehicle.id }
-      : { fuel_type: prefs.fuelType, mpg: prefs.mpg }),
+      : { fuel_type: effectiveFuel(prefs), mpg: prefs.mpg }),
   } as SmartSearchBody
 }
 
@@ -127,8 +128,9 @@ export function haversineDistanceMeters(a: Origin, b: Origin): number {
  * locally-held snapshots with zero upstream calls. No polling in hidden tabs; manual refresh still respects the shared price freshness window and provider budgets.
  */
 export function useFuelSession(prefs: Prefs, active = true) {
-  const rankKey = JSON.stringify(rankOptions(prefs))
-  const searchKey = JSON.stringify([prefs.vehicle?.id ?? null, prefs.fuelType, prefs.mpg, prefs.tripMode, prefs.destination, prefs.searchRadiusMiles])
+  const fuel = effectiveFuel(prefs)
+  const rankKey = JSON.stringify([rankOptions(prefs), prefs.vehicle?.id ?? null])
+  const searchKey = JSON.stringify([fuel, prefs.tripMode, prefs.destination, prefs.searchRadiusMiles])
   const [restored] = useState(() => loadFuelSession(searchKey, rankKey))
   const [phase, setPhase] = useState<Phase>(restored ? 'ready' : 'idle')
   const [error, setError] = useState<SessionError | null>(null)
@@ -173,22 +175,25 @@ export function useFuelSession(prefs: Prefs, active = true) {
     lastTrackedOrigin.current = at
     const abort = new AbortController()
     controller.current = abort
-    if (!background) setPhase('searching')
-    if (!background) clearFuelSession()
-    setRefreshing(background)
+    const hasExistingResult = !!resultRef.current
+    if (!hasExistingResult && !background) {
+      setPhase('searching')
+      clearFuelSession()
+    }
+    setRefreshing(true)
     setCompleting(true)
     lastCheck.current = Date.now()
     setError(null)
     try {
       const requestedPrefs = prefsRef.current
+      const currentFuel = effectiveFuel(requestedPrefs)
       const body = searchBody(requestedPrefs, at)
       const held = resultRef.current
       const trip = held?.snapshot.query
       const sameSearch = trip && trip.origin.lat === at.lat && trip.origin.lng === at.lng &&
         trip.radius_meters === body.radius_meters && trip.trip_mode === body.trip_mode &&
         JSON.stringify(trip.destination ?? null) === JSON.stringify(body.destination ?? null) &&
-        (trip.vehicle_id ?? null) === (body.vehicle_id ?? null) &&
-        (body.vehicle_id != null || trip.fuel_type === body.fuel_type)
+        trip.fuel_type === currentFuel
       const canRefreshPrices = (force || background) && held && sameSearch && Date.parse(held.snapshot.expires_at) > Date.now()
       let next: SmartResult
       if (canRefreshPrices) {
@@ -214,7 +219,7 @@ export function useFuelSession(prefs: Prefs, active = true) {
         )
       }
       if (abort.signal.aborted) return
-      lastRankKey.current = JSON.stringify(rankOptions(requestedPrefs))
+      lastRankKey.current = JSON.stringify([rankOptions(requestedPrefs), requestedPrefs.vehicle?.id ?? null])
       resultRef.current = next
       setResult(next)
       setExpired(false)
