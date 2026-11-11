@@ -14,15 +14,18 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 20
     steps:
-      - name: Reset Docker Daemon and Free Stale Locks
+      - name: System Diagnostics and Memory Relief
         run: |
           echo "=== SYSTEM METRICS ==="
           uptime
           free -m
-          echo "=== RESTARTING DOCKER DAEMON ==="
-          sudo systemctl restart docker || true
-          sleep 4
-          docker ps
+          echo "=== ENSURE DOCKER RESPONSIVE ==="
+          docker ps >/dev/null 2>&1 || sudo systemctl restart docker || true
+          echo "=== MEMORY BUFFER RELIEF ==="
+          sudo sync || true
+          echo 3 | sudo tee /proc/sys/vm/drop_caches || true
+          docker container prune -f || true
+          free -m
       - name: Deploy GasWise on Production Server
         run: |
           /home/ubuntu/apps/gaswise/deploy-local.sh

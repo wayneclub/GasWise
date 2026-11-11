@@ -1,9 +1,9 @@
-# syntax=docker/dockerfile:1
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci
 COPY frontend/ ./
+ENV NODE_OPTIONS="--max-old-space-size=1024"
 RUN npm run build
 
 FROM node:24-bookworm-slim AS runtime
