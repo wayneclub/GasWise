@@ -49,22 +49,7 @@ from gaswise.services.pricing.discovery import acquire, acquired
 from gaswise.services.pricing.regional import address_region, benchmarks, match_benchmark
 from gaswise.services.pricing.search import SearchService
 from gaswise.services.pricing.shared_cache import cache_observations
-
-
-def canonical(value):
-    """JSON-number-agnostic form: browsers re-serialize 3.0 as 3 and reorder integer-like keys."""
-    if isinstance(value, dict):
-        return {key: canonical(item) for key, item in value.items()}
-    if isinstance(value, list):
-        return [canonical(item) for item in value]
-    if isinstance(value, float) and math.isfinite(value) and value.is_integer():
-        return int(value)
-    return value
-
-
-def snapshot_bytes(snapshot):
-    payload = canonical(snapshot.model_dump(mode="json"))
-    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+from gaswise.services.pricing.signer import SnapshotSigner, canonical, snapshot_bytes
 
 
 def point_key(point):
@@ -174,13 +159,13 @@ class SmartService:
         self.cache = TTLCache()
         self.failures = TTLCache(capacity=64)
         self.source_failures = TTLCache(capacity=16)
+        self.signer = SnapshotSigner(secret)
         self.progressive_jobs = {}
         self.progressive_tasks = set()
         self.progressive_slots = asyncio.Semaphore(8)
 
     def sign(self, snapshot):
-        # Clients return the snapshot through their own JSON stack, so sign a canonical form.
-        return hmac.new(self.secret, snapshot_bytes(snapshot), hashlib.sha256).hexdigest()
+        return self.signer.sign(snapshot)
 
     async def search(self, query):
         return await self.coalesce("search:" + query.model_dump_json(), lambda: self.collect(query))
@@ -874,10 +859,7 @@ class SmartService:
             )
 
     def verify(self, snapshot, signature):
-        if not hmac.compare_digest(signature, self.sign(snapshot)):
-            raise InvalidSnapshotSignatureError()
-        if datetime.now(UTC) >= snapshot.expires_at:
-            raise SnapshotExpiredError()
+        return self.signer.verify(snapshot, signature)
 
     async def refresh_prices(self, request):
         return await self.coalesce("refresh-prices:" + request.model_dump_json(), lambda: self._refresh_prices(request))
