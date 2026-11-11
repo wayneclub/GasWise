@@ -4,7 +4,6 @@ import { Button } from '../../components/ui'
 import { useI18n } from '../../i18n'
 import { effectiveFuel, type Prefs, type SavedVehicle } from '../../lib/prefs'
 import { fuelKey } from '../../lib/format'
-import { VehicleThumbnail } from '../my/VehicleThumbnail'
 import { GarageVehicleSwitcher } from '../my/GarageVehicleSwitcher'
 
 export function SearchContext({
