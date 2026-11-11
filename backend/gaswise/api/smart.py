@@ -12,7 +12,12 @@ from gaswise.contracts.smart import (
     SmartRouteRequest,
     SmartSearch,
 )
-from gaswise.domain.ports import ProgressiveSearchCapacityExceeded, ProviderError
+from gaswise.domain.ports import (
+    InvalidSnapshotSignatureError,
+    ProgressiveSearchCapacityExceeded,
+    ProviderError,
+    SnapshotExpiredError,
+)
 
 router = APIRouter()
 
@@ -63,6 +68,8 @@ async def smart_routes(
 async def smart_rerank(query: SmartRerank, *, services: Services = Depends(get_services)):
     try:
         return await services.smart.rerank(query)
+    except (InvalidSnapshotSignatureError, SnapshotExpiredError) as error:
+        raise HTTPException(409, str(error)) from None
     except ProviderError as error:
         raise HTTPException(409, str(error)) from None
     except ValueError:
@@ -78,6 +85,8 @@ async def smart_refresh_prices(
 ):
     try:
         services.smart.verify(query.snapshot, query.signature)
+    except (InvalidSnapshotSignatureError, SnapshotExpiredError) as error:
+        raise HTTPException(409, str(error)) from None
     except ProviderError as error:
         raise HTTPException(409, str(error)) from None
     return await operations.run(lambda: services.smart.refresh_prices(query))

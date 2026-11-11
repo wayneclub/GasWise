@@ -45,6 +45,39 @@ class UnsupportedPowertrainError(ProviderError):
         super().__init__(message)
 
 
+class SnapshotExpiredError(ProviderError):
+    """Raised when a pricing snapshot has passed its validity window."""
+    def __init__(self, message: str = "snapshot_expired"):
+        super().__init__(message)
+
+
+class InvalidSnapshotSignatureError(ProviderError):
+    """Raised when a pricing snapshot HMAC signature fails verification."""
+    def __init__(self, message: str = "invalid_snapshot_signature"):
+        super().__init__(message)
+
+
+class SnapshotNoRoutesError(ProviderError):
+    """Raised when ranking is requested on a snapshot without baseline routes."""
+    def __init__(self, message: str = "snapshot_has_no_routes"):
+        super().__init__(message)
+
+
+class ConfigurationMissingError(ProviderError):
+    """Raised when an optional capability or provider is not configured."""
+    pass
+
+
+class SmartRoutingNotConfiguredError(ConfigurationMissingError):
+    def __init__(self, message: str = "smart_routing_not_configured"):
+        super().__init__(message)
+
+
+class VehicleCatalogNotConfiguredError(ConfigurationMissingError):
+    def __init__(self, message: str = "vehicle_catalog_not_configured"):
+        super().__init__(message)
+
+
 class PriceSource(Protocol):
     async def stations(self, query: Search) -> list[Station]: ...
 

@@ -20,7 +20,16 @@ from gaswise.contracts.smart import (
     SnapshotRoute,
 )
 from gaswise.contracts.sources import GooglePriceSearch, MapsWebSearch
-from gaswise.domain.ports import PriceSnapshot, ProgressiveSearchCapacityExceeded, ProviderError
+from gaswise.domain.ports import (
+    InvalidSnapshotSignatureError,
+    PriceSnapshot,
+    ProgressiveSearchCapacityExceeded,
+    ProviderError,
+    SmartRoutingNotConfiguredError,
+    SnapshotExpiredError,
+    SnapshotNoRoutesError,
+    VehicleCatalogNotConfiguredError,
+)
 from gaswise.domain.pricing.comparison import (
     comparison_price,
     distance_meters,
@@ -423,14 +432,14 @@ class SmartService:
         stage_timings = {}
         if query.calculate_routes and self.router is None and self.demo is None:
             # Fail before collecting any price or Places data.
-            raise ProviderError("smart_routing_not_configured")
+            raise SmartRoutingNotConfiguredError()
         search = Search.model_validate(
             query.model_dump(exclude={"estimate_unrouted_routes", "calculate_routes", "route_limit", "maps_detail_limit", "discovery_tiles", "force_refresh", "gasbuddy_page_limit", "station_lookup_limit"})
         )
         vehicle = vehicle_override
         if search.vehicle_id is not None and vehicle is None:
             if self.vehicles is None:
-                raise ProviderError("vehicle_catalog_not_configured")
+                raise VehicleCatalogNotConfiguredError()
             vehicle = await self.vehicles.vehicle(search.vehicle_id)
         search = resolve_fuel_query(search, vehicle)
         if vehicle is not None:
@@ -866,9 +875,9 @@ class SmartService:
 
     def verify(self, snapshot, signature):
         if not hmac.compare_digest(signature, self.sign(snapshot)):
-            raise ProviderError("invalid_snapshot_signature")
+            raise InvalidSnapshotSignatureError()
         if datetime.now(UTC) >= snapshot.expires_at:
-            raise ProviderError("snapshot_expired")
+            raise SnapshotExpiredError()
 
     async def refresh_prices(self, request):
         return await self.coalesce("refresh-prices:" + request.model_dump_json(), lambda: self._refresh_prices(request))
@@ -912,7 +921,7 @@ class SmartService:
     async def route_snapshot(self, request):
         self.verify(request.snapshot, request.signature)
         if self.router is None and self.demo is None:
-            raise ProviderError("smart_routing_not_configured")
+            raise SmartRoutingNotConfiguredError()
         snapshot = request.snapshot.model_copy(deep=True)
         calls = {"gasbuddy_search": 0, "google_nearby": 0, "google_text_search": 0, "routes": 0}
         if snapshot.baseline is None or ("route_limit" in request.model_fields_set and len(snapshot.routes) < request.route_limit):
@@ -927,7 +936,7 @@ class SmartService:
 
     async def rank(self, snapshot, query):
         if snapshot.baseline is None:
-            raise ProviderError("snapshot_has_no_routes")
+            raise SnapshotNoRoutesError()
         result = await SearchService(
             SnapshotProvider(snapshot), self.mode, vehicle_profile=snapshot.vehicle
         ).search(query)

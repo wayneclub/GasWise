@@ -6,7 +6,12 @@ from typing import TypeVar
 
 from fastapi import HTTPException
 
-from gaswise.domain.ports import ProviderError
+from gaswise.domain.ports import (
+    ProviderCapacityExceededError,
+    ProviderError,
+    ProviderRateLimitedError,
+    ProviderUnavailableError,
+)
 
 T = TypeVar("T")
 
@@ -25,6 +30,12 @@ class OperationRunner:
         try:
             async with asyncio.timeout(self.timeout):
                 return await operation()
+        except ProviderRateLimitedError as error:
+            raise HTTPException(429, str(error), headers={"Retry-After": "10"}) from None
+        except ProviderCapacityExceededError as error:
+            raise HTTPException(429, str(error), headers={"Retry-After": "5"}) from None
+        except ProviderUnavailableError as error:
+            raise HTTPException(503, str(error)) from None
         except ProviderError as error:
             raise HTTPException(502, str(error)) from None
         except TimeoutError:
