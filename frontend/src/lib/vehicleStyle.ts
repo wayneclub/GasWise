@@ -582,11 +582,71 @@ export function resolveTeslaColorPhoto(model: 'model_3' | 'model_y', color?: str
 
 /**
  * Resolves authentic transparent cut-out photograph for BMW M4 Coupe and 4 Series.
- * Strictly uses authentic OEM photography with BiRefNet background removal; never synthetic recoloring.
+ * Isolates factory OEM body paint while strictly preserving glass reflections, alloy wheels, and carbon fiber roof.
  */
-export function resolveBmwM4ColorPhoto(_color?: string | null): string {
+export function resolveBmwM4ColorPhoto(color?: string | null): string {
   const versionParam = `?v=${VEHICLE_IMAGE_CACHE_VERSION}`
-  return `/vehicles/bmw_m4_coupe_yas_marina_blue.png${versionParam}`
+  if (!color || color === '#5c9dc0' || color === '#38bdf8') {
+    return `/vehicles/bmw_m4_coupe_yas_marina_blue.png${versionParam}`
+  }
+  const norm = color.toLowerCase().trim()
+
+  const PRESET_FILES: Record<string, string> = {
+    '#5c9dc0': 'yas_marina_blue',
+    '#38bdf8': 'yas_marina_blue',
+    '#d2b134': 'austin_yellow',
+    '#eab308': 'austin_yellow',
+    '#a8322d': 'sakhir_orange',
+    '#991b1b': 'sakhir_orange',
+    '#dc2626': 'sakhir_orange',
+    '#ea580c': 'sakhir_orange',
+    '#b91c1c': 'sakhir_orange',
+    '#1c3b72': 'san_marino_blue',
+    '#1e3a8a': 'san_marino_blue',
+    '#1d4ed8': 'san_marino_blue',
+    '#1b2a47': 'san_marino_blue',
+    '#484b50': 'mineral_grey',
+    '#475569': 'mineral_grey',
+    '#4b5563': 'mineral_grey',
+    '#374151': 'mineral_grey',
+    '#525a65': 'mineral_grey',
+    '#121417': 'black_sapphire',
+    '#0f172a': 'black_sapphire',
+    '#111827': 'black_sapphire',
+    '#1a1f2c': 'black_sapphire',
+    '#1e293b': 'black_sapphire',
+    '#faf9fb': 'alpine_white',
+    '#f8fafc': 'alpine_white',
+    '#ffffff': 'alpine_white',
+    '#fff': 'alpine_white',
+    '#b8c3cc': 'silverstone',
+    '#94a3b8': 'silverstone',
+    '#a8b0b8': 'silverstone',
+    '#cbd5e1': 'silverstone',
+    '#f0f0ee': 'mineral_white',
+  }
+
+  if (PRESET_FILES[norm]) {
+    return `/vehicles/bmw_m4_coupe_${PRESET_FILES[norm]}.png${versionParam}`
+  }
+
+  const rgb = parseHexRgb(norm)
+  if (!rgb) {
+    return `/vehicles/bmw_m4_coupe_yas_marina_blue.png${versionParam}`
+  }
+
+  let bestPreset = 'yas_marina_blue'
+  let minDistance = Infinity
+  for (const preset of BMW_M4_F82_COLOR_PRESETS) {
+    const pRgb = parseHexRgb(preset.hex)
+    if (!pRgb) continue
+    const dist = (rgb[0] - pRgb[0]) ** 2 + (rgb[1] - pRgb[1]) ** 2 + (rgb[2] - pRgb[2]) ** 2
+    if (dist < minDistance) {
+      minDistance = dist
+      bestPreset = preset.id
+    }
+  }
+  return `/vehicles/bmw_m4_coupe_${bestPreset}.png${versionParam}`
 }
 
 /**
