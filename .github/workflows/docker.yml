@@ -14,13 +14,15 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 20
     steps:
-      - name: System Diagnostics and Memory Relief
+      - name: System Diagnostics and Service Readiness
         run: |
           echo "=== SYSTEM METRICS ==="
           uptime
           free -m
-          echo "=== ENSURE DOCKER RESPONSIVE ==="
-          docker ps >/dev/null 2>&1 || sudo systemctl restart docker || true
+          echo "=== DOCKER CONTAINERS ==="
+          docker ps -a
+          echo "=== ENSURE INFRASTRUCTURE CONTAINERS RUNNING ==="
+          docker start postgres || true
           echo "=== MEMORY BUFFER RELIEF ==="
           sudo sync || true
           echo 3 | sudo tee /proc/sys/vm/drop_caches || true
@@ -33,3 +35,12 @@ jobs:
         run: |
           curl --fail --silent --show-error --retry 5 --retry-delay 3 https://gaswise.wayneclub.com/ -o /dev/null
           echo "GasWise is live and healthy at https://gaswise.wayneclub.com/"
+      - name: Diagnostic Logs on Failure
+        if: always()
+        run: |
+          echo "=== DOCKER LOGS GASWISE-BACKEND ==="
+          docker logs --tail 100 gaswise-backend || true
+          echo "=== DOCKER LOGS GASWISE-FRONTEND ==="
+          docker logs --tail 100 gaswise-frontend || true
+          echo "=== DOCKER PS ==="
+          docker ps -a
