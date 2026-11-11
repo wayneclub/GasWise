@@ -19,15 +19,14 @@ jobs:
           echo "=== SYSTEM METRICS ==="
           uptime
           free -m
-          echo "=== DOCKER CONTAINERS ==="
-          docker ps -a
-          echo "=== ENSURE INFRASTRUCTURE CONTAINERS RUNNING ==="
-          docker start postgres || true
-          echo "=== MEMORY BUFFER RELIEF ==="
-          sudo sync || true
-          echo 3 | sudo tee /proc/sys/vm/drop_caches || true
-          docker container prune -f || true
-          free -m
+          echo "=== DOCKER VOLUMES ==="
+          docker volume ls
+          echo "=== COMPOSE FILES ON HOST ==="
+          find /home/ubuntu -maxdepth 3 \( -name "*compose*.yml" -o -name "*compose*.yaml" \) 2>/dev/null || true
+          echo "=== SYSTEMCTL SERVICES ==="
+          systemctl list-unit-files | grep -iE "postgres|gaswise" || true
+          echo "=== CHECKING GASWISE ENV DATABASE_URL ==="
+          grep -i "DATABASE_URL" /home/ubuntu/apps/gaswise/.env | sed -E 's/(:\/\/.*:)(.*)(@.*)/\1****\3/' || true
       - name: Deploy GasWise on Production Server
         run: |
           /home/ubuntu/apps/gaswise/deploy-local.sh
