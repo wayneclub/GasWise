@@ -20,7 +20,7 @@ from gaswise.contracts.smart import (
     SnapshotRoute,
 )
 from gaswise.contracts.sources import GooglePriceSearch, MapsWebSearch
-from gaswise.domain.ports import PriceSnapshot, ProviderError
+from gaswise.domain.ports import PriceSnapshot, ProgressiveSearchCapacityExceeded, ProviderError
 from gaswise.domain.pricing.comparison import (
     comparison_price,
     distance_meters,
@@ -188,7 +188,7 @@ class SmartService:
         self._prune_progressive_jobs()
         active = sum(job["status"] in {"pending", "partial"} for job in self.progressive_jobs.values())
         if active >= 8:
-            raise ProviderError("progressive_search_capacity_exceeded")
+            raise ProgressiveSearchCapacityExceeded()
         if len(self.progressive_jobs) >= 100:
             terminal = next(
                 (key for key, job in self.progressive_jobs.items() if job["status"] in {"complete", "failed"}),
@@ -348,7 +348,7 @@ class SmartService:
                     async with source_slot:
                         value = await guarded_operation()
             except ProviderError as error:
-                if "rate_limited" in str(error):
+                if error.is_rate_limited:
                     self.source_failures.put(source, str(error), 30)
                 self.failures.put(key, str(error), 30)
                 raise

@@ -5,7 +5,7 @@ import unicodedata
 from difflib import SequenceMatcher
 
 from gaswise.contracts.vehicles import VehicleChoice, VehicleResolution
-from gaswise.domain.ports import ProviderError
+from gaswise.domain.ports import ProviderError, UnsupportedPowertrainError
 
 ALIASES = {
     "benz": "Mercedes-Benz",
@@ -353,16 +353,14 @@ class VehicleSelector:
             raise ProviderError("vehicle_catalog_invalid_option") from None
         try:
             vehicle = await self.catalog.vehicle(vehicle_id)
-        except ProviderError as error:
-            if str(error) == "vehicle_powertrain_not_supported":
-                return VehicleResolution(
-                    status="no_match",
-                    year=year,
-                    make=make,
-                    matched_models=matches,
-                    question="這個配置不是目前支援的汽油、柴油或非插電式油電車。",
-                )
-            raise
+        except UnsupportedPowertrainError:
+            return VehicleResolution(
+                status="no_match",
+                year=year,
+                make=make,
+                matched_models=matches,
+                question="這個配置不是目前支援的汽油、柴油或非插電式油電車。",
+            )
         if vehicle.year != year or vehicle.make != make or vehicle.model != matches[0]:
             raise ProviderError("vehicle_catalog_selection_mismatch")
         return VehicleResolution(

@@ -4,7 +4,7 @@ import re
 from decimal import Decimal
 
 from gaswise.contracts.vehicles import VehicleChoice, VinResolution
-from gaswise.domain.ports import ProviderError
+from gaswise.domain.ports import ProviderError, UnsupportedPowertrainError
 from gaswise.domain.vehicles.matching import drive_class
 from gaswise.services.vehicles.selection import body, compact
 
@@ -131,10 +131,8 @@ class VinSelector:
                 vehicle = await self.catalog.vehicle(vehicle_id)
             except ValueError:
                 raise ProviderError("vehicle_catalog_invalid_option") from None
-            except ProviderError as error:
-                if str(error) == "vehicle_powertrain_not_supported":
-                    continue
-                raise
+            except UnsupportedPowertrainError:
+                continue
             if vehicle.year != decoded.year or vehicle.make != make or vehicle.model != name:
                 raise ProviderError("vehicle_catalog_selection_mismatch")
             if compatible(decoded, vehicle):

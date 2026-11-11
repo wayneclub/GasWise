@@ -8,7 +8,7 @@ import httpx
 from pydantic import ValidationError
 
 from gaswise.contracts.vehicles import VehicleFuelRecommendation, VehicleMenu, VehicleProfile
-from gaswise.domain.ports import ProviderError
+from gaswise.domain.ports import ProviderError, UnsupportedPowertrainError
 from gaswise.domain.vehicles.fuel_policy import FUEL_GRADES
 from gaswise.domain.vehicles.fuel_policy import check_vehicle_fuel as check_vehicle_fuel
 from gaswise.domain.vehicles.fuel_policy import resolve_fuel_query as resolve_fuel_query
@@ -89,7 +89,7 @@ class VehicleProvider:
             or data.get("fuelType2") not in {None, ""}
             or atv not in {None, "", "Hybrid", "Diesel"}
         ):
-            raise ProviderError("vehicle_powertrain_not_supported")
+            raise UnsupportedPowertrainError()
         try:
             profile = VehicleProfile(
                 id=data["id"],

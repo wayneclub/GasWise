@@ -9,7 +9,40 @@ from gaswise.contracts.vehicles import PlateRequest, VehicleMenu, VehicleProfile
 
 
 class ProviderError(Exception):
+    """Base exception for provider and upstream operation errors."""
+    def __init__(self, message: str = "", code: str = ""):
+        super().__init__(message or code)
+        self.code = code or message
+
+    @property
+    def is_rate_limited(self) -> bool:
+        return "rate_limited" in str(self) or isinstance(self, ProviderRateLimitedError)
+
+
+class ProviderCapacityExceededError(ProviderError):
+    """Raised when request volume or progressive search capacity is exceeded."""
     pass
+
+
+class ProgressiveSearchCapacityExceeded(ProviderCapacityExceededError):
+    def __init__(self, message: str = "progressive_search_capacity_exceeded"):
+        super().__init__(message)
+
+
+class ProviderRateLimitedError(ProviderCapacityExceededError):
+    """Raised when an upstream provider throttles or rate limits requests."""
+    pass
+
+
+class ProviderUnavailableError(ProviderError):
+    """Raised when an upstream provider is offline, unreachable, or failing."""
+    pass
+
+
+class UnsupportedPowertrainError(ProviderError):
+    """Raised when vehicle powertrain is unsupported."""
+    def __init__(self, message: str = "vehicle_powertrain_not_supported"):
+        super().__init__(message)
 
 
 class PriceSource(Protocol):

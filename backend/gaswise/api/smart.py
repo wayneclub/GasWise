@@ -12,7 +12,7 @@ from gaswise.contracts.smart import (
     SmartRouteRequest,
     SmartSearch,
 )
-from gaswise.domain.ports import ProviderError
+from gaswise.domain.ports import ProgressiveSearchCapacityExceeded, ProviderError
 
 router = APIRouter()
 
@@ -23,10 +23,8 @@ async def smart_search_job_start(query: SmartSearch, *, services: Services = Dep
         raise HTTPException(503, "smart_routing_not_configured")
     try:
         return await services.smart.start_progressive_search(query)
-    except ProviderError as error:
-        if str(error) == "progressive_search_capacity_exceeded":
-            raise HTTPException(429, str(error)) from None
-        raise
+    except ProgressiveSearchCapacityExceeded as error:
+        raise HTTPException(429, str(error)) from None
 
 
 @router.post("/v1/smart/search-jobs/poll", response_model=ProgressiveSearchState, dependencies=[Depends(authorize)])
