@@ -53,6 +53,11 @@ CREATE TABLE IF NOT EXISTS gaswise.stations (
     PRIMARY KEY (source, station_id)
 );
 CREATE INDEX IF NOT EXISTS stations_canonical_id ON gaswise.stations (canonical_id);
+CREATE INDEX IF NOT EXISTS stations_seen_at ON gaswise.stations (seen_at DESC);
+CREATE INDEX IF NOT EXISTS stations_lat_lng ON gaswise.stations (
+    ((metadata->'location'->>'lat')::float),
+    ((metadata->'location'->>'lng')::float)
+) WHERE (metadata ? 'location');
 CREATE TABLE IF NOT EXISTS gaswise.quotes (
     source text NOT NULL,
     station_id text NOT NULL,

@@ -24,6 +24,23 @@ export default defineConfig(({ mode }) => {
   const token = backendToken(env)
   return {
     plugins: [react(), tailwindcss()],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/@phosphor-icons/react')) {
+              return 'vendor-icons'
+            }
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+              return 'vendor-react'
+            }
+            if (id.includes('/src/i18n/')) {
+              return 'i18n'
+            }
+          },
+        },
+      },
+    },
     server: {
       proxy: {
         '/api': {

@@ -95,11 +95,17 @@ class PostgresPricingCache(CollectionEvents, WarmQueries, HotspotCoverage, Stati
         self.pool = pool
 
     @classmethod
-    async def connect(cls, dsn):
+    async def connect(cls, dsn, min_size: int = 2, max_size: int = 10):
         dsn = SecretStr(dsn)
         pool = None
         try:
-            pool = await asyncpg.create_pool(dsn.get_secret_value(), min_size=1, max_size=4, timeout=8, command_timeout=8)
+            pool = await asyncpg.create_pool(
+                dsn.get_secret_value(),
+                min_size=min_size,
+                max_size=max_size,
+                timeout=10,
+                command_timeout=10,
+            )
             async with pool.acquire() as connection, connection.transaction():
                 await connection.execute("SELECT pg_advisory_xact_lock(743103131)")
                 await connection.execute(files("gaswise.providers.storage").joinpath("schema.sql").read_text())

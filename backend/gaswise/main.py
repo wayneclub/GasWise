@@ -85,7 +85,8 @@ def create_app(
     @app.middleware("http")
     async def prevent_cache(request, call_next):
         response = await call_next(request)
-        response.headers["Cache-Control"] = "no-store"
+        if "Cache-Control" not in response.headers:
+            response.headers["Cache-Control"] = "no-store"
         return response
 
     return app

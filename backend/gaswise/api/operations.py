@@ -12,7 +12,7 @@ T = TypeVar("T")
 
 
 class OperationRunner:
-    def __init__(self, capacity: int, *, acquire_timeout: float = 0.05, timeout: float = 55):
+    def __init__(self, capacity: int, *, acquire_timeout: float = 0.5, timeout: float = 55):
         self.slots = asyncio.Semaphore(capacity)
         self.acquire_timeout = acquire_timeout
         self.timeout = timeout

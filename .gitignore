@@ -89,6 +89,7 @@ Thumbs.db
 
 # Local research outputs and workspace-specific tools
 artifacts/
+graphify-out/
 *.zip
 .claude/
 .taste-skill/

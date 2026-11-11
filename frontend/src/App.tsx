@@ -1,11 +1,11 @@
 import { BellIcon, CheckCircleIcon, GasPumpIcon, GearSixIcon, UserIcon, WrenchIcon } from '@phosphor-icons/react'
 import { LanguagePicker } from './components/LanguagePicker'
-import { PreferencesForm } from './features/setup/PreferencesForm'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Decide } from './features/decide/Decide'
-import { Parts } from './features/parts/Parts'
-import { MyPage } from './features/my/MyPage'
+import { PreferencesForm } from './features/setup/PreferencesForm'
 import { Setup } from './features/setup/Setup'
+const Parts = lazy(() => import('./features/parts/Parts').then(m => ({ default: m.Parts })))
+const MyPage = lazy(() => import('./features/my/MyPage').then(m => ({ default: m.MyPage })))
 import { useBrowserLocale, useI18n } from './i18n'
 import { I18nProvider } from './i18n/I18nProvider'
 import { usePrefs, type Prefs } from './lib/prefs'
@@ -76,8 +76,16 @@ function ServiceTabs({ prefs, update, replace }: { prefs: Prefs; update: (change
       </div>
     </header>
     <div role="tabpanel" id="panel-fuel" aria-labelledby="tab-fuel" hidden={settingsOpen || tab !== 'fuel'}><Decide active={!settingsOpen && tab === 'fuel'} prefs={prefs} update={update} onSettings={() => setSettingsView('all')} onEditCar={handleNavigateToGarage} /></div>
-    <div role="tabpanel" id="panel-parts" aria-labelledby="tab-parts" hidden={settingsOpen || tab !== 'parts'}><Parts key={prefs.vehicle?.id ?? 'manual'} vehicle={prefs.vehicle} onChooseCar={() => { setTab('my'); setSettingsView(null) }} /></div>
-    <div role="tabpanel" id="panel-my" aria-labelledby="tab-my" hidden={settingsOpen || tab !== 'my'}><MyPage prefs={prefs} update={update} replace={replace} onNavigateToFuel={() => { setTab('fuel'); setSettingsView(null) }} /></div>
+    <div role="tabpanel" id="panel-parts" aria-labelledby="tab-parts" hidden={settingsOpen || tab !== 'parts'}>
+      <Suspense fallback={null}>
+        <Parts key={prefs.vehicle?.id ?? 'manual'} vehicle={prefs.vehicle} onChooseCar={() => { setTab('my'); setSettingsView(null) }} />
+      </Suspense>
+    </div>
+    <div role="tabpanel" id="panel-my" aria-labelledby="tab-my" hidden={settingsOpen || tab !== 'my'}>
+      <Suspense fallback={null}>
+        <MyPage prefs={prefs} update={update} replace={replace} onNavigateToFuel={() => { setTab('fuel'); setSettingsView(null) }} />
+      </Suspense>
+    </div>
     {settingsOpen ? (
       <main aria-label={t('decide.settings')} className="mx-auto max-w-5xl px-4 py-6 sm:py-8 lg:py-10">
         <div className="mb-6 flex items-center justify-between border-b border-line pb-5">

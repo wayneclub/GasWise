@@ -16,11 +16,30 @@ interface VaultPayload {
   vehicles: Record<number, VehicleIdentity>
 }
 
+let cachedDb: IDBDatabase | null = null
+let cachedFactory: IDBFactory | null = null
+
 function open(): Promise<IDBDatabase> {
+  if (cachedDb && cachedFactory === indexedDB) {
+    return Promise.resolve(cachedDb)
+  }
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DATABASE, 1)
+    const factory = indexedDB
+    const request = factory.open(DATABASE, 1)
     request.onupgradeneeded = () => request.result.createObjectStore(STORE)
-    request.onsuccess = () => resolve(request.result)
+    request.onsuccess = () => {
+      const db = request.result
+      cachedDb = db
+      cachedFactory = factory
+      db.onversionchange = () => {
+        db.close()
+        if (cachedDb === db) cachedDb = null
+      }
+      db.onclose = () => {
+        if (cachedDb === db) cachedDb = null
+      }
+      resolve(db)
+    }
     request.onerror = () => reject(new Error('private_storage_unavailable'))
     request.onblocked = () => reject(new Error('private_storage_unavailable'))
   })
@@ -28,32 +47,40 @@ function open(): Promise<IDBDatabase> {
 
 async function read(): Promise<VaultRecord | undefined> {
   const db = await open()
-  try {
-    return await new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
+    try {
       const tx = db.transaction(STORE, 'readonly')
       const request = tx.objectStore(STORE).get(SLOT)
       request.onsuccess = () => resolve(request.result)
-      request.onerror = () => reject(new Error('private_storage_unavailable'))
-    })
-  } finally {
-    db.close()
-  }
+      request.onerror = () => {
+        cachedDb = null
+        reject(new Error('private_storage_unavailable'))
+      }
+    } catch {
+      cachedDb = null
+      reject(new Error('private_storage_unavailable'))
+    }
+  })
 }
 
 async function write(record: VaultRecord | null) {
   const db = await open()
-  try {
-    await new Promise<void>((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
+    try {
       const tx = db.transaction(STORE, 'readwrite')
       const store = tx.objectStore(STORE)
       if (record) store.put(record, SLOT)
       else store.delete(SLOT)
       tx.oncomplete = () => resolve()
-      tx.onerror = tx.onabort = () => reject(new Error('private_storage_unavailable'))
-    })
-  } finally {
-    db.close()
-  }
+      tx.onerror = tx.onabort = () => {
+        cachedDb = null
+        reject(new Error('private_storage_unavailable'))
+      }
+    } catch {
+      cachedDb = null
+      reject(new Error('private_storage_unavailable'))
+    }
+  })
 }
 
 export function supportsIdentityVault() {

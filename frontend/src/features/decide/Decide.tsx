@@ -2,7 +2,7 @@ import { CaretDownIcon, GasPumpIcon } from '@phosphor-icons/react'
 import { SourcePill } from './SourcePill'
 import { SharedCacheStatus } from './SharedCacheStatus'
 import { SearchContext } from './SearchContext'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Segmented, Stepper } from '../../components/ui'
 import { Select } from '../../components/Select'
 import { type MessageKey, useI18n } from '../../i18n'
@@ -83,11 +83,14 @@ export function Decide({
     return () => { active = false }
   }, [result, session.origin, prefs.gallons, prefs.mpg, prefs.vehicle])
   const primary = PRIORITY_STRATEGY[prefs.preference]
-  const cards = result ? picks(result, primary) : []
-  const assessment = result ? assess(result, primary) : null
+  const cards = useMemo(() => (result ? picks(result, primary) : []), [result, primary])
+  const assessment = useMemo(() => (result ? assess(result, primary) : null), [result, primary])
   const [hero] = cards
   const rows = result?.ranking?.results ?? []
-  const sources = result?.snapshot.source_statuses.filter((s) => s.status === 'ok') ?? []
+  const sources = useMemo(
+    () => result?.snapshot.source_statuses.filter((s) => s.status === 'ok') ?? [],
+    [result?.snapshot.source_statuses],
+  )
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pb-12 sm:max-w-2xl sm:px-6 lg:max-w-5xl">
