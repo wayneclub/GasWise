@@ -7,9 +7,11 @@ This handles VPN connection failures, never HTTP/provider rate-limit responses.
 import argparse
 import json
 import os
+import re
 import subprocess
 import tempfile
 import time
+import urllib.request
 from pathlib import Path
 
 LABEL = 'gaswise.purpose=managed-pricing-egress'
@@ -77,7 +79,45 @@ def remove_owned(name):
         return
     if row['Config'].get('Labels', {}).get('gaswise.purpose') != 'managed-pricing-egress':
         raise RuntimeError('Target is not owned by this supervisor')
-    docker('rm', '-f', name)
+    try:
+        docker('rm', '-f', name)
+    except subprocess.CalledProcessError:
+        pass
+
+
+def known_gluetun_nodes(source="gluetun"):
+    try:
+        raw = docker('exec', source, 'grep', '-o', '"us[0-9]*\\.nordvpn\\.com"', '/gluetun/servers/nordvpn.json')
+        return set(h.strip('"') for h in raw.splitlines())
+    except Exception:
+        return set()
+
+
+def recommended_node_for_city(city, excluded=(), known=None):
+    url = "https://api.nordvpn.com/v1/servers/recommendations?filters[country_id]=228&limit=50"
+    req = urllib.request.Request(url, headers={"User-Agent": "GasWise-Egress-Supervisor/1"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.load(resp)
+        for item in sorted(data, key=lambda r: r.get("load", 100)):
+            h = item.get("hostname", "")
+            if not re.fullmatch(r"us\d+\.nordvpn\.com", h) or h in excluded:
+                continue
+            if known and h not in known:
+                continue
+            locs = item.get("locations", [])
+            item_city = locs[0].get("country", {}).get("city", {}).get("name", "") if locs else ""
+            if city.lower() in item_city.lower():
+                return h
+        for item in sorted(data, key=lambda r: r.get("load", 100)):
+            h = item.get("hostname", "")
+            if re.fullmatch(r"us\d+\.nordvpn\.com", h) and h not in excluded:
+                if known and h not in known:
+                    continue
+                return h
+    except Exception:
+        pass
+    return None
 
 
 def create_exit(source, target, city, network):
@@ -87,8 +127,16 @@ def create_exit(source, target, city, network):
     env = {key: values[key] for key in keys}
     if env['VPN_SERVICE_PROVIDER'] != 'nordvpn' or env['VPN_TYPE'] != 'openvpn':
         raise RuntimeError('This supervisor requires an existing NordVPN OpenVPN source')
-    env.update(SERVER_COUNTRIES='United States', SERVER_CITIES=city, OPENVPN_PROTOCOL='udp',
-               HTTPPROXY='on', HTTPPROXY_LISTENING_ADDRESS=':8888')
+    source_hostname = values.get('SERVER_HOSTNAMES', '')
+    excluded = [source_hostname] if source_hostname else []
+    known = known_gluetun_nodes(source)
+    node = recommended_node_for_city(city, excluded, known=known)
+    env.update(SERVER_COUNTRIES='United States', OPENVPN_PROTOCOL='udp',
+               HTTPPROXY='on', HTTPPROXY_LISTENING_ADDRESS=':8888', UPDATER_PERIOD='24h')
+    if node:
+        env['SERVER_HOSTNAMES'] = node
+    else:
+        env['SERVER_CITIES'] = city
     if any('\n' in value or '\r' in value for value in env.values()):
         raise RuntimeError('Multiline environment inputs are not supported')
     descriptor, filename = tempfile.mkstemp(prefix='gaswise-egress-', dir='/tmp')

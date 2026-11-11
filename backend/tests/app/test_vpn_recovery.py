@@ -23,8 +23,17 @@ def test_startup_grace_and_three_sustained_failures():
 
 def test_recovery_cooldown_and_repeated_failure_backoff():
     state = {"failures": 4, "last_attempt": 10000, "attempts": 1}
-    assert not recovery.decide(state, "unhealthy", 0, 11000)[1]
-    assert recovery.decide(state, "unhealthy", 0, 11800)[1]
+    assert not recovery.decide(state, "unhealthy", 0, 10100)[1]
+    assert recovery.decide(state, "unhealthy", 0, 10180)[1]
     state["attempts"] = 3
-    assert not recovery.decide(state, "unhealthy", 0, 11800)[1]
-    assert recovery.decide(state, "unhealthy", 0, 17200)[1]
+    assert not recovery.decide(state, "unhealthy", 0, 10500)[1]
+    assert recovery.decide(state, "unhealthy", 0, 10600)[1]
+
+
+def test_reboot_clears_stale_attempts_and_failures():
+    state = {"failures": 5, "attempts": 3, "last_attempt": 10000, "boot_time": 1000}
+    new_state, switch = recovery.decide(state, "unhealthy", 0, 20000, boot_time=2000)
+    assert not switch
+    assert new_state["attempts"] == 0
+    assert new_state["failures"] == 1
+    assert new_state["boot_time"] == 2000
