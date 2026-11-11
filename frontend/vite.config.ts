@@ -35,6 +35,11 @@ export default defineConfig(({ mode }) => {
               return 'vendor-react'
             }
             if (id.includes('/src/i18n/')) {
+              for (const lang of ['es', 'ja', 'ko', 'zh-TW', 'zh-CN']) {
+                if (id.includes(`/i18n/${lang}.ts`)) {
+                  return `i18n-${lang}`
+                }
+              }
               return 'i18n'
             }
           },

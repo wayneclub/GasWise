@@ -3,7 +3,7 @@ import { en } from './en'
 import { es } from './es'
 import { ja } from './ja'
 import { ko } from './ko'
-import { detectLocale, translator } from './index'
+import { detectLocale, isCatalogLoaded, loadCatalog, registerCatalog, translator } from './index'
 import { zhTW } from './zh-TW'
 import { zhCN } from './zh-CN'
 
@@ -28,6 +28,16 @@ describe('i18n', () => {
     expect(detectLocale(['ko'])).toBe('ko')
     expect(detectLocale(['fr-FR', 'ko-KR', 'ja-JP'])).toBe('ko')
     expect(detectLocale(['fr-FR'])).toBe('en')
+  })
+
+  it('loads catalogs on demand asynchronously', async () => {
+    expect(isCatalogLoaded('en')).toBe(true)
+    const spanish = await loadCatalog('es')
+    expect(spanish['comparison.sort']).toBe('Ordenar estaciones')
+    expect(isCatalogLoaded('es')).toBe(true)
+
+    const tw = await loadCatalog('zh-TW')
+    expect(tw['comparison.sort']).toBe('加油站排序')
   })
 
   it('keeps every placeholder in every translation', () => {
