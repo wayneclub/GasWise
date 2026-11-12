@@ -54,6 +54,7 @@ export function GarageVehicleCard({
   const [photoInputUrl, setPhotoInputUrl] = useState<string>('')
 
   const currentColor = car.color || '#1e293b'
+  const isCustomPhoto = Boolean(car.imageUrl && !car.imageUrl.startsWith('/vehicles/'))
 
   return (
     <div
@@ -181,7 +182,7 @@ export function GarageVehicleCard({
                 setPhotoInputUrl(car.imageUrl || '')
               }}
               className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition ${
-                car.imageUrl || editingPhoto
+                isCustomPhoto || editingPhoto
                   ? 'bg-accent text-white shadow-2xs font-semibold'
                   : 'text-muted hover:text-ink'
               }`}
@@ -189,7 +190,7 @@ export function GarageVehicleCard({
             >
               <CameraIcon size={13} />
               <span>{t('garage.photo')}</span>
-              {car.imageUrl ? <span className="size-1.5 rounded-full bg-emerald-400" /> : null}
+              {isCustomPhoto ? <span className="size-1.5 rounded-full bg-emerald-400" /> : null}
             </button>
           </div>
 
@@ -200,7 +201,7 @@ export function GarageVehicleCard({
               (p) => p.hex.toLowerCase() === currentColor.toLowerCase(),
             )
             const displayName = matchedPreset ? (isZh ? matchedPreset.labelZh : matchedPreset.name) : currentColor
-            if (car.imageUrl) {
+            if (isCustomPhoto) {
               return (
                 <span className="inline-flex items-center gap-1 rounded-md bg-accent-soft/40 px-2 py-0.5 text-[11px] font-medium text-accent">
                   <CameraIcon size={12} />
@@ -224,7 +225,7 @@ export function GarageVehicleCard({
         </div>
 
         {/* Photo Customization Panel */}
-        {editingPhoto || (car.imageUrl && !editingColor) ? (
+        {editingPhoto || (isCustomPhoto && !editingColor) ? (
           <div className="flex flex-col gap-2 pt-2 border-t border-line/40">
             <div className="flex items-center gap-1.5">
               <input
@@ -280,7 +281,7 @@ export function GarageVehicleCard({
               )}
 
               {/* Clear Photo / Revert to Studio */}
-              {car.imageUrl ? (
+              {isCustomPhoto ? (
                 <button
                   type="button"
                   onClick={() => onPhotoChange(undefined)}
@@ -294,7 +295,7 @@ export function GarageVehicleCard({
         ) : null}
 
         {/* Factory Color Swatches */}
-        {!car.imageUrl && (editingColor || !editingPhoto) ? (
+        {!isCustomPhoto && (editingColor || !editingPhoto) ? (
           <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-line/40">
             <div className="flex flex-wrap items-center gap-1.5">
               {getVehicleColorPresets(car.label).map((preset) => {

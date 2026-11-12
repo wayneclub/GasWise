@@ -49,6 +49,7 @@ export function VehicleThumbnail({
   const { t } = useI18n()
   const uid = useId().replace(/:/g, '')
   const [imgError, setImgError] = useState(false)
+  const [prevPhotoUrl, setPrevPhotoUrl] = useState<string | null>(null)
 
   const silhouette: VehicleSilhouette = useMemo(() => {
     const specific = inferVehicleSilhouette(label)
@@ -88,6 +89,10 @@ export function VehicleThumbnail({
   }, [baseColor])
 
   const { photoUrl, isStudio } = useDynamicVehiclePhoto(label, imageUrl, color)
+  if (photoUrl !== prevPhotoUrl) {
+    setPrevPhotoUrl(photoUrl)
+    setImgError(false)
+  }
   const showPhoto = Boolean(photoUrl && !imgError && !preferVector)
 
   const dimensions = {

@@ -70,7 +70,7 @@ export function VehiclePicker({
           label,
           fuelType: gradeOf(resolution),
           combinedMpg: v.combined_mpg,
-          imageUrl: initialPhoto || undefined,
+          imageUrl: initialPhoto && !initialPhoto.startsWith('/vehicles/') ? initialPhoto : undefined,
         })
         setIdentity(null)
         setEditing(false)

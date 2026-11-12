@@ -718,15 +718,17 @@ export function resolveVehiclePhoto(
 ): string | null {
   if (customImageUrl && customImageUrl.trim().length > 0) {
     const raw = customImageUrl.trim()
-    // Support direct Carvana vehicle listing URLs
-    const carvanaMatch = raw.match(/carvana\.com\/vehicle\/(\d+)/i)
-    if (carvanaMatch) {
-      const vehicleId = carvanaMatch[1]
-      if (vehicleId === '4856325') {
-        return resolveE400ColorPhoto(color)
+    if (!raw.startsWith('/vehicles/')) {
+      // Support direct Carvana vehicle listing URLs
+      const carvanaMatch = raw.match(/carvana\.com\/vehicle\/(\d+)/i)
+      if (carvanaMatch) {
+        const vehicleId = carvanaMatch[1]
+        if (vehicleId === '4856325') {
+          return resolveE400ColorPhoto(color)
+        }
       }
+      return raw
     }
-    return raw
   }
   if (!label) return null
   const s = label.toLowerCase()
