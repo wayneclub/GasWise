@@ -729,6 +729,8 @@ export const es: Record<MessageKey, string> = {
   "garage.clearIdentity": "Borrar identidad",
   "garage.saveIdentity": "Guardar identidad",
   "garage.noIdentity": "Sin VIN o matrícula vinculada",
+  "garage.popularCars": "Selección rápida de modelos populares",
+  "garage.allBrands": "Todas las marcas",
   "parts.bindIdentity": "Configurar VIN o matrícula para este auto",
   "parts.saveAndSearch": "Guardar y buscar repuestos",
   "parts.manageGarage": "Gestionar autos en el garaje",

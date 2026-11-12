@@ -1,9 +1,10 @@
-import { CarIcon, XIcon } from '@phosphor-icons/react'
+import { CarIcon, SparkleIcon, XIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { Button } from '../../components/ui'
 import { useI18n } from '../../i18n'
 import type { SavedVehicle } from '../../lib/prefs'
 import { getVehicleColorPresets } from '../../lib/vehicleStyle'
+import { POPULAR_BRANDS, POPULAR_VEHICLES, type PopularVehiclePreset } from '../../lib/popularVehicles'
 import { VehiclePicker } from '../setup/VehiclePicker'
 
 interface AddVehicleModalProps {
@@ -15,10 +16,33 @@ interface AddVehicleModalProps {
 export function AddVehicleModal({ open, onClose, onAddCar }: AddVehicleModalProps) {
   const { t, locale } = useI18n()
   const isZh = locale?.startsWith('zh')
-  const [addModalMake, setAddModalMake] = useState<string | null>(null)
-  const [newCarColor, setNewCarColor] = useState<string>('#1e293b')
+  const [selectedBrand, setSelectedBrand] = useState<string>('Toyota')
+  const [addModalMake, setAddModalMake] = useState<string | null>('Toyota')
+  const [newCarColor, setNewCarColor] = useState<string>('#4b5563')
 
   if (!open) return null
+
+  const filteredPresets = selectedBrand === 'ALL'
+    ? POPULAR_VEHICLES
+    : POPULAR_VEHICLES.filter((v) => v.brand.toLowerCase() === selectedBrand.toLowerCase())
+
+  const handleSelectPreset = (preset: PopularVehiclePreset) => {
+    setAddModalMake(preset.label)
+    setNewCarColor(preset.defaultColor)
+    onAddCar(
+      {
+        id: preset.id,
+        label: preset.label,
+        fuelType: preset.fuelType,
+        combinedMpg: preset.combinedMpg,
+        year: preset.year,
+        make: preset.make,
+        model: preset.model,
+        bodyStyle: preset.bodyStyle,
+      },
+      preset.defaultColor,
+    )
+  }
 
   return (
     <div
@@ -43,6 +67,80 @@ export function AddVehicleModal({ open, onClose, onAddCar }: AddVehicleModalProp
           >
             <XIcon size={18} />
           </button>
+        </div>
+
+        {/* Popular Vehicle Quick Pick Section */}
+        <div className="flex flex-col gap-2.5 rounded-xl border border-line bg-sunken/40 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-ink">
+              <SparkleIcon size={14} weight="fill" className="text-accent" />
+              <span>{t('garage.popularCars')}</span>
+            </div>
+            <span className="text-[11px] text-muted">
+              {isZh ? '點擊一鍵加入車庫' : 'Click to add instantly'}
+            </span>
+          </div>
+
+          {/* Brand Filter Chips */}
+          <div className="flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setSelectedBrand('ALL')}
+              className={`rounded-md px-2 py-0.5 text-xs font-medium transition ${
+                selectedBrand === 'ALL'
+                  ? 'bg-accent text-white shadow-2xs'
+                  : 'bg-surface text-muted hover:text-ink border border-line/60'
+              }`}
+            >
+              {t('garage.allBrands')}
+            </button>
+            {POPULAR_BRANDS.map((brand) => {
+              const active = selectedBrand.toLowerCase() === brand.toLowerCase()
+              return (
+                <button
+                  key={brand}
+                  type="button"
+                  onClick={() => {
+                    setSelectedBrand(brand)
+                    setAddModalMake(brand)
+                    const presets = getVehicleColorPresets(brand)
+                    if (presets.length > 0) {
+                      setNewCarColor(presets[0].hex)
+                    }
+                  }}
+                  className={`rounded-md px-2 py-0.5 text-xs font-medium transition ${
+                    active
+                      ? 'bg-accent text-white shadow-2xs'
+                      : 'bg-surface text-muted hover:text-ink border border-line/60'
+                  }`}
+                >
+                  {brand}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Quick Model Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+            {filteredPresets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => handleSelectPreset(preset)}
+                className="flex items-center justify-between gap-2 rounded-lg border border-line bg-surface p-2 text-left transition hover:border-accent hover:shadow-xs group"
+              >
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-ink group-hover:text-accent truncate">
+                    {preset.label}
+                  </div>
+                  <div className="text-[10px] text-muted">
+                    {preset.combinedMpg} MPG · {preset.fuelType}
+                  </div>
+                </div>
+                <span className="shrink-0 size-4 rounded-full border border-line/80 shadow-2xs" style={{ backgroundColor: preset.defaultColor }} />
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Optional initial color selector before adding */}
@@ -78,13 +176,17 @@ export function AddVehicleModal({ open, onClose, onAddCar }: AddVehicleModalProp
           </div>
         </div>
 
-        <div className="py-2">
+        {/* Or Search by text / VIN / plate */}
+        <div className="py-1">
+          <p className="text-xs text-muted mb-2 font-medium">
+            {isZh ? '或是自行搜尋年份、車型或 VIN 車牌：' : 'Or search by year, model, or VIN / license plate:'}
+          </p>
           <VehiclePicker
             vehicle={null}
             onSelectionChange={(draft) => {
               setAddModalMake(draft)
               const presets = getVehicleColorPresets(draft)
-              if (presets.length > 0 && (newCarColor === '#1e293b' || newCarColor === '#f8fafc')) {
+              if (presets.length > 0 && (newCarColor === '#1e293b' || newCarColor === '#f8fafc' || newCarColor === '#4b5563')) {
                 setNewCarColor(presets[0].hex)
               }
             }}

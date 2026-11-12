@@ -729,6 +729,8 @@ export const zhTW: Record<MessageKey, string> = {
   "garage.clearIdentity": "清除識別",
   "garage.saveIdentity": "儲存識別",
   "garage.noIdentity": "尚未綁定 VIN 或車牌",
+  "garage.popularCars": "熱門車款快速加入",
+  "garage.allBrands": "全部品牌",
   "parts.bindIdentity": "為此車設定 VIN 或車牌",
   "parts.saveAndSearch": "儲存並開始查詢",
   "parts.manageGarage": "前往車庫更換車輛",

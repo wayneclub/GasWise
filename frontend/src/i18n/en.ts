@@ -729,6 +729,8 @@ export const en = {
   "garage.clearIdentity": "Clear Identity",
   "garage.saveIdentity": "Save Identity",
   "garage.noIdentity": "No VIN or plate linked",
+  "garage.popularCars": "Popular Models Quick Pick",
+  "garage.allBrands": "All Brands",
   "parts.bindIdentity": "Set VIN or plate for this car",
   "parts.saveAndSearch": "Save & Find Parts",
   "parts.manageGarage": "Manage Cars in Garage",

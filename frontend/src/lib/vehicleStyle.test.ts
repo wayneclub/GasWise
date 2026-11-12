@@ -174,18 +174,24 @@ describe('inferVehicleSilhouette & inferVehicleArchetype', () => {
     expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#121417')).toBe(`/vehicles/bmw_m4_coupe_black_sapphire.png?v=${v}`)
     expect(resolveVehiclePhoto('2019 BMW M4 Coupe', null, '#484b50')).toBe(`/vehicles/bmw_m4_coupe_mineral_grey.png?v=${v}`)
 
-    // Mapped photo for Ford F-150 and Toyota Camry
+    // Mapped photos for popular US models (Ford, Toyota, Nissan, Kia, Honda)
     expect(resolveVehiclePhoto('2022 Ford F-150')).toBe(`/vehicles/ford_f150_oxford_white.png?v=${v}`)
+    expect(resolveVehiclePhoto('2024 Ford Mustang')).toBe(`/vehicles/ford_mustang_race_red.png?v=${v}`)
     expect(resolveVehiclePhoto('2021 Toyota Camry')).toBe(`/vehicles/toyota_camry_celestial_silver.png?v=${v}`)
+    expect(resolveVehiclePhoto('2024 Toyota Tacoma')).toBe(`/vehicles/toyota_tacoma_magnetic_gray.png?v=${v}`)
+    expect(resolveVehiclePhoto('2024 Nissan Rogue')).toBe(`/vehicles/nissan_rogue_glacier_white.png?v=${v}`)
+    expect(resolveVehiclePhoto('2024 Nissan Altima')).toBe(`/vehicles/nissan_altima_brilliant_silver.png?v=${v}`)
+    expect(resolveVehiclePhoto('2024 Kia Sportage')).toBe(`/vehicles/kia_sportage_gravity_gray.png?v=${v}`)
+    expect(resolveVehiclePhoto('2024 Kia Telluride')).toBe(`/vehicles/kia_telluride_dark_moss.png?v=${v}`)
+    expect(resolveVehiclePhoto('2022 Honda CR-V')).toBe(`/vehicles/honda_crv_lunar_silver.png?v=${v}`)
 
-    // Mapped photo for Toyota RAV4 and Crossover SUVs
+    // Mapped photo for Toyota RAV4 with dedicated color swatches
     expect(resolveVehiclePhoto('2024 Toyota RAV4')).toBe(`/vehicles/toyota_rav4_wind_chill_pearl.png?v=${v}`)
     expect(resolveVehiclePhoto('Toyota RAV4', null, '#111827')).toBe(`/vehicles/toyota_rav4_midnight_black.png?v=${v}`)
     expect(resolveVehiclePhoto('Toyota RAV4', null, '#1d4ed8')).toBe(`/vehicles/toyota_rav4_blueprint.png?v=${v}`)
     expect(resolveVehiclePhoto('Toyota RAV4', null, '#3f4f3e')).toBe(`/vehicles/toyota_rav4_army_green.png?v=${v}`)
-    expect(resolveVehiclePhoto('2022 Honda CR-V', null, '#991b1b')).toBe(`/vehicles/toyota_rav4_ruby_flare.png?v=${v}`)
 
-    // Unmapped vehicle returns null
+    // Unmapped vehicle returns null (cleanly falls back to dynamic vector silhouette)
     expect(resolveVehiclePhoto('2019 Honda Civic EX')).toBe(null)
   })
 

@@ -138,7 +138,11 @@ export function useDynamicVehiclePhoto(
       (studioOrCustom.includes('/vehicles/2018_mercedes_benz_e400') ||
         studioOrCustom.includes('/vehicles/tesla_model_') ||
         studioOrCustom.includes('/vehicles/bmw_m4_coupe_') ||
-        studioOrCustom.includes('/vehicles/toyota_rav4_')),
+        studioOrCustom.includes('/vehicles/toyota_') ||
+        studioOrCustom.includes('/vehicles/ford_') ||
+        studioOrCustom.includes('/vehicles/nissan_') ||
+        studioOrCustom.includes('/vehicles/kia_') ||
+        studioOrCustom.includes('/vehicles/honda_')),
   )
 
   const [dynamicUrl, setDynamicUrl] = useState<string | null>(() => {

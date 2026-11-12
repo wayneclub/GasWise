@@ -172,6 +172,7 @@ export const KIA_COLOR_PRESETS: VehicleColorPreset[] = [
   { id: 'glacial_white', name: 'Glacial White Pearl (GWP)', hex: '#f8fafc', labelZh: '冰川白珍珠 (GWP)', labelEn: 'Glacial White Pearl' },
   { id: 'ebony_black', name: 'Ebony Black (EB)', hex: '#0f172a', labelZh: '烏木黑 (EB)', labelEn: 'Ebony Black (EB)' },
   { id: 'gravity_gray', name: 'Gravity Gray (KDG)', hex: '#475569', labelZh: '引力灰 (KDG)', labelEn: 'Gravity Gray (KDG)' },
+  { id: 'dark_moss', name: 'Dark Moss (M9Y)', hex: '#3b4c3d', labelZh: '深苔蘚綠 (M9Y)', labelEn: 'Dark Moss (M9Y)' },
   { id: 'everlasting_silver', name: 'Everlasting Silver (4SS)', hex: '#cbd5e1', labelZh: '恆久銀 (4SS)', labelEn: 'Everlasting Silver' },
   { id: 'sapphire_blue', name: 'Sapphire Blue (B3L)', hex: '#1e3a8a', labelZh: '藍寶石藍 (B3L)', labelEn: 'Sapphire Blue' },
   { id: 'dawning_red', name: 'Dawning Red (DRD)', hex: '#991b1b', labelZh: '黎明紅 (DRD)', labelEn: 'Dawning Red (DRD)' },
@@ -749,23 +750,48 @@ export function resolveVehiclePhoto(
   ) {
     return resolveBmwM4ColorPhoto(color)
   }
-  if (
-    /\b(rav4|cr-?v|rogue|tucson|forester|crosstrek|sportage|cx-?5|equinox|highlander|rx\s?350|nx\s?350)\b/i.test(s) ||
-    (/\b(toyota|honda|nissan|hyundai|subaru|kia|mazda)\b/i.test(s) && /\b(suv|crossover)\b/i.test(s))
-  ) {
+  // Toyota RAV4 (with dedicated 7-color factory cutouts)
+  if (/\brav4\b/i.test(s)) {
     return resolveToyotaColorPhoto(color)
   }
+  // Toyota Camry
+  if (/\b(camry|avalon)\b/i.test(s)) {
+    return `/vehicles/toyota_camry_celestial_silver.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  }
+  // Toyota Tacoma
+  if (/\b(tacoma|tundra)\b/i.test(s)) {
+    return `/vehicles/toyota_tacoma_magnetic_gray.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  }
+  // Ford F-150 / Pickup
   if (
     /\b(f-?150|f-?250|f-?350|raptor|f-series)\b/i.test(s) ||
     (/\bford\b/i.test(s) && /\b(truck|pickup)\b/i.test(s))
   ) {
     return `/vehicles/ford_f150_oxford_white.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
   }
-  if (
-    /\b(camry|avalon|corolla\s+sedan)\b/i.test(s) ||
-    (/\btoyota\b/i.test(s) && /\b(sedan)\b/i.test(s))
-  ) {
-    return `/vehicles/toyota_camry_celestial_silver.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  // Ford Mustang
+  if (/\b(mustang|mach\s?1|shelby)\b/i.test(s)) {
+    return `/vehicles/ford_mustang_race_red.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  }
+  // Nissan Rogue
+  if (/\b(rogue|x-?trail)\b/i.test(s)) {
+    return `/vehicles/nissan_rogue_glacier_white.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  }
+  // Nissan Altima
+  if (/\b(altima|maxima|sentra)\b/i.test(s)) {
+    return `/vehicles/nissan_altima_brilliant_silver.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  }
+  // Kia Sportage
+  if (/\bsportage\b/i.test(s)) {
+    return `/vehicles/kia_sportage_gravity_gray.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  }
+  // Kia Telluride
+  if (/\b(telluride|palisade)\b/i.test(s)) {
+    return `/vehicles/kia_telluride_dark_moss.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
+  }
+  // Honda CR-V
+  if (/\bcr-?v\b/i.test(s)) {
+    return `/vehicles/honda_crv_lunar_silver.png?v=${VEHICLE_IMAGE_CACHE_VERSION}`
   }
   return null
 }

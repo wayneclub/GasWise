@@ -191,8 +191,8 @@ def main():
     if args.input and args.output:
         t0 = time.time()
         if args.input.startswith("http://") or args.input.startswith("https://"):
-            req = urllib.request.Request(args.input, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req) as resp:
+            req = urllib.request.Request(args.input, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
                 raw_img = Image.open(resp)
         else:
             raw_img = Image.open(args.input)

@@ -708,6 +708,8 @@ export const ko: Record<MessageKey, string> = {
   "garage.clearIdentity": "식별 정보 삭제",
   "garage.saveIdentity": "식별 정보 저장",
   "garage.noIdentity": "VIN 또는 번호판 미등록",
+  "garage.popularCars": "인기 모델 빠른 선택",
+  "garage.allBrands": "모든 브랜드",
   "parts.bindIdentity": "이 차량의 VIN / 번호판 설정",
   "parts.saveAndSearch": "저장 후 부품 찾기",
   "parts.manageGarage": "차고에서 차량 변경",

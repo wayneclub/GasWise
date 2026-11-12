@@ -7,13 +7,11 @@ import {
   MERCEDES_COLOR_PRESETS,
   TESLA_COLOR_PRESETS,
   BMW_M4_F82_COLOR_PRESETS,
-  BMW_COLOR_PRESETS,
   TOYOTA_RAV4_COLOR_PRESETS,
   TOYOTA_COLOR_PRESETS,
   FORD_MUSTANG_COLOR_PRESETS,
   FORD_COLOR_PRESETS,
   PORSCHE_911_COLOR_PRESETS,
-  PORSCHE_COLOR_PRESETS,
   HONDA_COLOR_PRESETS,
   CHEVROLET_COLOR_PRESETS,
   HYUNDAI_COLOR_PRESETS,
@@ -25,7 +23,6 @@ import {
   AUDI_COLOR_PRESETS,
   LEXUS_COLOR_PRESETS,
   VOLVO_COLOR_PRESETS,
-  UNIVERSAL_COLOR_PRESETS,
 } from './vehicleStyle'
 
 const PUBLIC_DIR = path.resolve(__dirname, '../../public')
@@ -69,9 +66,39 @@ describe('Vehicle Image and Color Verification', () => {
       expectsStudioPhoto: true,
     },
     {
+      name: 'Toyota Tacoma (Truck)',
+      vehicles: ['2024 Toyota Tacoma', 'Toyota Tundra'],
+      presets: TOYOTA_COLOR_PRESETS,
+      expectsStudioPhoto: true,
+    },
+    {
       name: 'Ford F-150 (Truck)',
       vehicles: ['2020 Ford F-150', 'Ford Raptor'],
       presets: FORD_COLOR_PRESETS,
+      expectsStudioPhoto: true,
+    },
+    {
+      name: 'Ford Mustang (Muscle Coupe)',
+      vehicles: ['2024 Ford Mustang', 'Ford Mustang GT'],
+      presets: FORD_MUSTANG_COLOR_PRESETS,
+      expectsStudioPhoto: true,
+    },
+    {
+      name: 'Kia Telluride & Sportage',
+      vehicles: ['2024 Kia Telluride', '2024 Kia Sportage'],
+      presets: KIA_COLOR_PRESETS,
+      expectsStudioPhoto: true,
+    },
+    {
+      name: 'Nissan Rogue & Altima',
+      vehicles: ['2024 Nissan Rogue', '2024 Nissan Altima'],
+      presets: NISSAN_COLOR_PRESETS,
+      expectsStudioPhoto: true,
+    },
+    {
+      name: 'Honda CR-V',
+      vehicles: ['2023 Honda CR-V'],
+      presets: HONDA_COLOR_PRESETS,
       expectsStudioPhoto: true,
     },
     {
@@ -81,15 +108,9 @@ describe('Vehicle Image and Color Verification', () => {
       expectsStudioPhoto: false,
     },
     {
-      name: 'Honda Civic & CR-V',
-      vehicles: ['2022 Honda Civic', '2023 Honda CR-V'],
+      name: 'Honda Civic (Vector Silhouette)',
+      vehicles: ['2022 Honda Civic'],
       presets: HONDA_COLOR_PRESETS,
-      expectsStudioPhoto: false, // CR-V maps to crossover_suv photo/silhouette
-    },
-    {
-      name: 'Ford Mustang (Muscle Coupe)',
-      vehicles: ['2021 Ford Mustang GT'],
-      presets: FORD_MUSTANG_COLOR_PRESETS,
       expectsStudioPhoto: false,
     },
     {
@@ -102,12 +123,6 @@ describe('Vehicle Image and Color Verification', () => {
       name: 'Hyundai Tucson & Elantra',
       vehicles: ['2022 Hyundai Tucson', '2023 Hyundai Elantra'],
       presets: HYUNDAI_COLOR_PRESETS,
-      expectsStudioPhoto: false,
-    },
-    {
-      name: 'Kia Telluride & Sportage',
-      vehicles: ['2022 Kia Telluride', '2023 Kia Sportage'],
-      presets: KIA_COLOR_PRESETS,
       expectsStudioPhoto: false,
     },
     {

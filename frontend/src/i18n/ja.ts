@@ -708,6 +708,8 @@ export const ja: Record<MessageKey, string> = {
   "garage.clearIdentity": "識別情報を削除",
   "garage.saveIdentity": "識別情報を保存",
   "garage.noIdentity": "VINまたはナンバー未連携",
+  "garage.popularCars": "人気モデルのクイック選択",
+  "garage.allBrands": "全ブランド",
   "parts.bindIdentity": "この車両のVIN / ナンバーを設定",
   "parts.saveAndSearch": "保存して部品を検索",
   "parts.manageGarage": "ガレージで車両を変更",

@@ -729,6 +729,8 @@ export const zhCN: Record<MessageKey, string> = {
   "garage.clearIdentity": "清除识别",
   "garage.saveIdentity": "保存识别",
   "garage.noIdentity": "尚未绑定 VIN 或车牌",
+  "garage.popularCars": "热门车款快速加入",
+  "garage.allBrands": "全部品牌",
   "parts.bindIdentity": "为此车设置 VIN 或车牌",
   "parts.saveAndSearch": "保存并开始查询",
   "parts.manageGarage": "前往车库更换车辆",
