@@ -1,17 +1,19 @@
-import {
-  ChartLineUpIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  TrendDownIcon,
-  TrendUpIcon,
-  WarningIcon,
-} from '@phosphor-icons/react'
+import { ChartLineUpIcon, WarningIcon } from '@phosphor-icons/react'
 import { useEffect, useMemo, useState } from 'react'
 import { api, type HistoryAnalysis, type PriceObservation } from '../../api/client'
 import { Button } from '../../components/ui'
 import { useI18n } from '../../i18n'
 import { perGallon } from '../../lib/format'
 import type { FavoriteStation } from '../../lib/favorites'
+import {
+  STATION_PALETTE,
+  type ComputedChartData,
+} from './priceChartMath'
+import { MultiStationPriceLegend } from './MultiStationPriceLegend'
+import {
+  MultiStationPriceSvg,
+  type HoveredChartPoint,
+} from './MultiStationPriceSvg'
 
 export interface TrendAnalysisSummary {
   trend: 'falling' | 'rising' | 'stable'
@@ -27,14 +29,6 @@ interface MultiStationPriceChartProps {
   onTrendAnalysis?: (summary: TrendAnalysisSummary) => void
 }
 
-const STATION_PALETTE = [
-  { stroke: '#10b981', bg: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500/10 border-emerald-500/30' },
-  { stroke: '#0ea5e9', bg: 'bg-sky-500', text: 'text-sky-600 dark:text-sky-400', badge: 'bg-sky-500/10 border-sky-500/30' },
-  { stroke: '#8b5cf6', bg: 'bg-violet-500', text: 'text-violet-600 dark:text-violet-400', badge: 'bg-violet-500/10 border-violet-500/30' },
-  { stroke: '#f59e0b', bg: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', badge: 'bg-amber-500/10 border-amber-500/30' },
-  { stroke: '#ec4899', bg: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400', badge: 'bg-rose-500/10 border-rose-500/30' },
-]
-
 const parseTimestamp = (row: PriceObservation) =>
   new Date(row.observation_kind === 'daily_check' ? row.observed_at : row.reported_at ?? row.observed_at).getTime()
 
@@ -46,14 +40,7 @@ export function MultiStationPriceChart({
   const { t, locale } = useI18n()
   const [days, setDays] = useState<7 | 30 | 90>(30)
   const [hiddenStationIds, setHiddenStationIds] = useState<Set<string>>(new Set())
-  const [hoveredPoint, setHoveredPoint] = useState<{
-    stationName: string
-    color: string
-    time: number
-    price: number
-    x: number
-    y: number
-  } | null>(null)
+  const [hoveredPoint, setHoveredPoint] = useState<HoveredChartPoint | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
@@ -102,8 +89,7 @@ export function MultiStationPriceChart({
           observations: res.observations ?? [],
           analysis: res.analysis,
         }
-      } catch (err: any) {
-        if (err?.name === 'AbortError') throw err
+      } catch {
         return {
           station,
           observations: [],
@@ -118,73 +104,76 @@ export function MultiStationPriceChart({
         setStationHistories(results)
         setLoading(false)
 
-        // Compute overall trend analysis to pass to parent advisor
-        if (onTrendAnalysis) {
-          let totalDelta = 0
-          let deltaCount = 0
-          let preWeekendRisk = false
-          let cycleLowCount = 0
+        // Calculate macro trend analysis
+        const analyses = results.map((r) => r.analysis).filter(Boolean) as HistoryAnalysis[]
+        if (analyses.length > 0 && onTrendAnalysis) {
+          const fallingCount = analyses.filter((a) => a.trend === 'falling').length
+          const risingCount = analyses.filter((a) => a.trend === 'rising').length
+          const avgDelta = analyses.reduce((acc, a) => acc + (a.delta ?? 0), 0) / analyses.length
+          const anyHikeRisk = analyses.some((a) => a.pre_weekend_hike_risk)
+          const anyCycleLow = analyses.some((a) => a.cycle_low)
 
-          for (const item of results) {
-            if (item.analysis?.weekend_cycle?.pre_weekend_hike_risk) {
-              preWeekendRisk = true
-            }
-            if (item.analysis?.price_band?.band === 'near_low' || item.analysis?.price_band?.is_cycle_low) {
-              cycleLowCount++
-            }
-            const valid = (item.observations ?? [])
-              .filter((o) => Number.isFinite(Number(o.price)) && Number(o.price) > 0)
-              .sort((a, b) => parseTimestamp(a) - parseTimestamp(b))
-            if (valid.length >= 2) {
-              const firstP = Number(valid[0].price)
-              const lastP = Number(valid[valid.length - 1].price)
-              totalDelta += lastP - firstP
-              deltaCount++
-            }
-          }
+          const validLastPrices = results
+            .map((r) => {
+              const pts = r.observations
+                .map((o) => ({
+                  time: parseTimestamp(o),
+                  price: typeof o.price === 'number' ? o.price : parseFloat(String(o.price)),
+                }))
+                .filter((p) => !isNaN(p.price) && p.price > 0)
+                .sort((a, b) => a.time - b.time)
+              return {
+                stationId: r.station.id,
+                lastPrice: pts[pts.length - 1]?.price,
+              }
+            })
+            .filter((x): x is { stationId: string; lastPrice: number } => typeof x.lastPrice === 'number')
 
-          const avgDelta = deltaCount > 0 ? totalDelta / deltaCount : 0
-          const trend = avgDelta < -0.04 ? 'falling' : avgDelta > 0.04 ? 'rising' : 'stable'
+          validLastPrices.sort((a, b) => a.lastPrice - b.lastPrice)
+          const cheapestId = validLastPrices[0]?.stationId
+
           onTrendAnalysis({
-            trend,
+            trend: fallingCount > risingCount ? 'falling' : risingCount > fallingCount ? 'rising' : 'stable',
             delta: avgDelta,
-            preWeekendHikeRisk: preWeekendRisk,
-            cycleLow: cycleLowCount > 0,
+            preWeekendHikeRisk: anyHikeRisk,
+            cycleLow: anyCycleLow,
+            cheapestObservedStationId: cheapestId,
           })
         }
       })
-      .catch((_err) => {
-        if (controller.signal.aborted) return
-        setError(true)
-        setLoading(false)
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setError(true)
+          setLoading(false)
+        }
       })
 
-    return () => controller.abort()
-  }, [eligibleStations, fuelType, days, retryCount, onTrendAnalysis])
+    return () => {
+      controller.abort()
+    }
+  }, [eligibleStations, days, fuelType, retryCount, onTrendAnalysis])
 
-  // Process data for the SVG chart
-  const chartData = useMemo(() => {
+  // Process data for multi-line SVG plotting
+  const chartData: ComputedChartData = useMemo(() => {
     const series = stationHistories.map((item, idx) => {
       const palette = STATION_PALETTE[idx % STATION_PALETTE.length]
-      const validObs = (item.observations ?? [])
-        .map((obs) => {
-          const t = parseTimestamp(obs)
-          const p = Number(obs.price)
-          return { time: t, price: p, raw: obs }
-        })
-        .filter((d) => Number.isFinite(d.time) && Number.isFinite(d.price) && d.price > 0)
+      const points = (item.observations ?? [])
+        .map((o) => ({
+          time: parseTimestamp(o),
+          price: typeof o.price === 'number' ? o.price : parseFloat(String(o.price)),
+        }))
+        .filter((p) => !isNaN(p.price) && p.price > 0)
         .sort((a, b) => a.time - b.time)
 
-      const first = validObs[0]
-      const last = validObs[validObs.length - 1]
-      const delta = first && last && validObs.length > 1 ? last.price - first.price : 0
+      const lastPrice = points[points.length - 1]?.price
+      const firstPrice = points[0]?.price
+      const delta = lastPrice != null && firstPrice != null ? lastPrice - firstPrice : 0
 
       return {
         station: item.station,
         palette,
-        points: validObs,
-        firstPrice: first?.price ?? null,
-        lastPrice: last?.price ?? null,
+        points,
+        lastPrice,
         delta,
         hidden: hiddenStationIds.has(item.station.id),
       }
@@ -348,60 +337,10 @@ export function MultiStationPriceChart({
       </div>
 
       {/* Station Badges & Toggle Pill Legend */}
-      {chartData.series.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2">
-          {chartData.series.map((s) => {
-            const isHidden = s.hidden
-            return (
-              <button
-                key={s.station.id}
-                type="button"
-                onClick={() => toggleStation(s.station.id)}
-                title={t('favorites.historyStationToggle')}
-                className={`flex items-center gap-2 rounded-control border px-3 py-1.5 text-xs transition-all ${
-                  isHidden
-                    ? 'border-line/60 bg-sunken/40 text-muted/60 opacity-50 line-through'
-                    : `${s.palette.badge} bg-surface text-ink shadow-sm`
-                }`}
-              >
-                <span
-                  className="size-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: isHidden ? '#9ca3af' : s.palette.stroke }}
-                />
-                <span className="font-semibold truncate max-w-[130px] sm:max-w-[180px]">
-                  {s.station.name}
-                </span>
-                {s.lastPrice ? (
-                  <span className="num font-bold text-ink">
-                    {perGallon(s.lastPrice.toFixed(2))}
-                  </span>
-                ) : null}
-                {s.delta !== 0 ? (
-                  <span
-                    className={`num text-[11px] font-semibold flex items-center ${
-                      s.delta < 0
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-amber-600 dark:text-amber-400'
-                    }`}
-                  >
-                    {s.delta < 0 ? (
-                      <TrendDownIcon size={12} weight="bold" className="mr-0.5 inline" />
-                    ) : (
-                      <TrendUpIcon size={12} weight="bold" className="mr-0.5 inline" />
-                    )}
-                    {s.delta > 0 ? `+` : `-`}${Math.abs(s.delta).toFixed(2)}
-                  </span>
-                ) : null}
-                {isHidden ? (
-                  <EyeSlashIcon size={14} className="text-muted ml-0.5 shrink-0" />
-                ) : (
-                  <EyeIcon size={14} className="text-muted/70 ml-0.5 shrink-0" />
-                )}
-              </button>
-            )
-          })}
-        </div>
-      ) : null}
+      <MultiStationPriceLegend
+        series={chartData.series}
+        onToggleStation={toggleStation}
+      />
 
       {/* Multi-Station Notice if only 1 station */}
       {eligibleStations.length === 1 ? (
@@ -436,132 +375,12 @@ export function MultiStationPriceChart({
       ) : (
         <div className="relative">
           {/* Responsive SVG Chart */}
-          <div className="w-full overflow-hidden">
-            <svg
-              viewBox={`0 0 ${chartData.svgWidth} ${chartData.svgHeight}`}
-              role="img"
-              aria-label={t('favorites.historyCompareTitle')}
-              className="w-full h-auto text-ink font-sans select-none overflow-visible"
-            >
-              {/* Horizontal Gridlines & Price Ticks */}
-              {chartData.gridLines?.map((grid, i) => (
-                <g key={i}>
-                  <line
-                    x1="46"
-                    y1={grid.y}
-                    x2="500"
-                    y2={grid.y}
-                    stroke="currentColor"
-                    strokeOpacity="0.12"
-                    strokeDasharray="4 4"
-                  />
-                  <text
-                    x="42"
-                    y={grid.y + 3.5}
-                    textAnchor="end"
-                    fontSize="10"
-                    fill="currentColor"
-                    opacity="0.65"
-                    className="num"
-                  >
-                    ${grid.price.toFixed(2)}
-                  </text>
-                </g>
-              ))}
-
-              {/* Vertical Date Ticks along Bottom */}
-              {chartData.dateTicks?.map((tick, i) => (
-                <g key={i}>
-                  <line
-                    x1={tick.x}
-                    y1={chartData.svgHeight! - 34}
-                    x2={tick.x}
-                    y2={chartData.svgHeight! - 30}
-                    stroke="currentColor"
-                    strokeOpacity="0.3"
-                  />
-                  <text
-                    x={tick.x}
-                    y={chartData.svgHeight! - 18}
-                    textAnchor="middle"
-                    fontSize="10"
-                    fill="currentColor"
-                    opacity="0.6"
-                  >
-                    {tick.label}
-                  </text>
-                </g>
-              ))}
-
-              {/* Station Continuous Polylines */}
-              {chartData.plottedLines?.map((pl) => (
-                <g key={pl.station.id}>
-                  {/* Glowing backdrop shadow line for depth */}
-                  <path
-                    d={pl.pathData}
-                    fill="none"
-                    stroke={pl.palette.stroke}
-                    strokeWidth="4"
-                    strokeOpacity="0.15"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  {/* Main Line */}
-                  <path
-                    d={pl.pathData}
-                    fill="none"
-                    stroke={pl.palette.stroke}
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-
-                  {/* Observation Dot Markers */}
-                  {pl.coordinates.map((coord, ci) => {
-                    const isHovered =
-                      hoveredPoint?.stationName === pl.station.name &&
-                      hoveredPoint?.time === coord.time
-                    return (
-                      <circle
-                        key={ci}
-                        cx={coord.x}
-                        cy={coord.y}
-                        r={isHovered ? 6 : 3.5}
-                        fill={pl.palette.stroke}
-                        stroke="#ffffff"
-                        strokeWidth={isHovered ? 2 : 1}
-                        className="cursor-pointer transition-all duration-150"
-                        onMouseEnter={() =>
-                          setHoveredPoint({
-                            stationName: pl.station.name,
-                            color: pl.palette.stroke,
-                            time: coord.time,
-                            price: coord.price,
-                            x: coord.x,
-                            y: coord.y,
-                          })
-                        }
-                        onClick={() =>
-                          setHoveredPoint({
-                            stationName: pl.station.name,
-                            color: pl.palette.stroke,
-                            time: coord.time,
-                            price: coord.price,
-                            x: coord.x,
-                            y: coord.y,
-                          })
-                        }
-                      >
-                        <title>
-                          {pl.station.name}: {perGallon(String(coord.price))} ({formatFullDate(coord.time)})
-                        </title>
-                      </circle>
-                    )
-                  })}
-                </g>
-              ))}
-            </svg>
-          </div>
+          <MultiStationPriceSvg
+            chartData={chartData}
+            hoveredPoint={hoveredPoint}
+            onHoverPoint={setHoveredPoint}
+            formatFullDate={formatFullDate}
+          />
 
           {/* Floating Tooltip Box when Point is Hovered/Tapped */}
           {hoveredPoint ? (
